@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>greatest_tables — golden fixture gallery</title>
+<style>
+:root { color-scheme: light dark; }
+body { font-family: system-ui, sans-serif; max-width: 70em;
+       margin: 2em auto; padding: 0 1em; }
+h1 { font-size: 1.3em; } h2 { font-size: 1em; opacity: 0.7;
+       margin: 2.2em 0 0.5em; font-family: monospace; }
+/* generated from greatest_tables.render.css — do not edit */
+.gt { --gt-pad-v: 0.25em; --gt-pad-h: 0.6em; --gt-prose-max: 30em; --gt-rule-frame: 1.2pt solid; --gt-rule-head: 0.7pt solid; --gt-rule-0: 0.5pt solid; --gt-rule-1: 0.35pt solid; --gt-rule-2: 0.2pt solid; --gt-rule-stub: 0.5pt solid; --gt-rule-total: 0.7pt solid; --gt-neg-color: inherit; --gt-caption-align: left; width: fit-content; line-height: 1.3; }
+.gt.gt table { border-collapse: collapse; table-layout: auto; border-top: var(--gt-rule-frame); border-bottom: var(--gt-rule-frame); }
+.gt.gt .gt-caption { caption-side: top; text-align: var(--gt-caption-align); font-weight: 600; padding: 0 var(--gt-pad-h) 0.4em 0; }
+.gt.gt td, .gt.gt th { padding: var(--gt-pad-v) var(--gt-pad-h); vertical-align: top; background: transparent; border: none; }
+.gt.gt th { font-weight: 600; }
+.gt.gt thead tr:last-child th { border-bottom: var(--gt-rule-head); }
+.gt.gt .gt-l { text-align: left; }
+.gt.gt .gt-r { text-align: right; font-variant-numeric: tabular-nums; }
+.gt.gt .gt-c { text-align: center; }
+.gt.gt .gt-nowrap { white-space: nowrap; }
+.gt.gt .gt-wrap { max-width: var(--gt-prose-max); overflow-wrap: break-word; }
+.gt.gt .gt-stub-end { border-right: var(--gt-rule-stub); }
+.gt.gt tr.gt-break-0 > td { border-top: var(--gt-rule-0); }
+.gt.gt tr.gt-break-1 > td { border-top: var(--gt-rule-1); }
+.gt.gt tr.gt-break-2 > td { border-top: var(--gt-rule-2); }
+.gt.gt .gt-vbreak-0 { border-left: var(--gt-rule-0); }
+.gt.gt .gt-vbreak-1 { border-left: var(--gt-rule-1); }
+.gt.gt tr.gt-total > td { font-weight: 600; border-top: var(--gt-rule-total); }
+.gt.gt tr.gt-subtotal > td { font-weight: 600; }
+.gt.gt .gt-emph { font-weight: 600; }
+.gt.gt .gt-muted { opacity: 0.6; }
+.gt.gt .gt-neg { color: var(--gt-neg-color); }
+.gt.gt .gt-math { white-space: nowrap; }
+.gt.gt .gt-notes { font-size: 0.85em; opacity: 0.75; padding-top: 0.3em; }
+.gt.gt.gt-fit td, .gt.gt.gt-fit th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+</style>
+<script>var GtRender = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // js/src/gt-render.js
+  var gt_render_exports = {};
+  __export(gt_render_exports, {
+    CELL_PAD: () => CELL_PAD,
+    GT_RENDER_VERSION: () => GT_RENDER_VERSION,
+    IR_VERSION_SUPPORTED: () => IR_VERSION_SUPPORTED,
+    MIN_COL: () => MIN_COL,
+    default: () => gt_render_default,
+    renderTable: () => renderTable,
+    solveWidths: () => solveWidths
+  });
+  var GT_RENDER_VERSION = "1.3.0";
+  var IR_VERSION_SUPPORTED = 1;
+  var MAX_BREAK = 2;
+  var MAX_VBREAK = 1;
+  var CELL_FLAG_CLASS = { neg: "gt-neg", emphasis: "gt-emph", muted: "gt-muted" };
+  var ROW_FLAG_CLASS = {
+    total: "gt-total",
+    subtotal: "gt-subtotal",
+    emphasis: "gt-emph",
+    muted: "gt-muted"
+  };
+  var cellOf = (c) => typeof c === "string" ? { text: c } : c;
+  function renderTable(doc, opts = {}) {
+    if (doc.ir_version !== IR_VERSION_SUPPORTED) {
+      throw new Error(`gt-render supports ir_version ${IR_VERSION_SUPPORTED}, got ${doc.ir_version}`);
+    }
+    doc = Object.assign(
+      { caption: null, label: null, hash: null, notes: [], foot: [] },
+      doc
+    );
+    const d = opts.document || (typeof document !== "undefined" ? document : null);
+    if (!d) throw new Error("no document available \u2014 pass opts.document");
+    const cols = doc.columns;
+    const el = d.createElement("div");
+    el.className = "gt";
+    if (doc.hash) el.setAttribute("data-gt-hash", doc.hash);
+    if (doc.label) el.id = doc.label;
+    const table = d.createElement("table");
+    el.appendChild(table);
+    if (doc.caption != null) {
+      const cap = d.createElement("caption");
+      cap.className = "gt-caption";
+      fillCell(d, cap, cellOf(doc.caption), opts);
+      table.appendChild(cap);
+    }
+    if (doc.head.length) {
+      const thead = d.createElement("thead");
+      doc.head.forEach((row, level) => {
+        const leaf = level === doc.head.length - 1;
+        const tr = d.createElement("tr");
+        let col = 0;
+        for (const hc of row) {
+          const th = d.createElement("th");
+          const colspan = hc.colspan || 1;
+          if (colspan > 1) th.setAttribute("colspan", String(colspan));
+          th.className = headClasses(doc, col, colspan, leaf, hc).join(" ");
+          fillCell(d, th, hc, opts);
+          tr.appendChild(th);
+          col += colspan;
+        }
+        thead.appendChild(tr);
+      });
+      table.appendChild(thead);
+    }
+    const resolved = [];
+    const rawRes = [];
+    const tbody = d.createElement("tbody");
+    renderSection(d, tbody, doc, doc.body, resolved, rawRes, opts);
+    table.appendChild(tbody);
+    if (doc.foot.length) {
+      const tfoot = d.createElement("tfoot");
+      renderSection(d, tfoot, doc, doc.foot, [], [], opts);
+      table.appendChild(tfoot);
+    }
+    if (doc.notes.length) {
+      const notes = d.createElement("div");
+      notes.className = "gt-notes";
+      for (const n of doc.notes) {
+        const div = d.createElement("div");
+        div.textContent = n;
+        notes.appendChild(div);
+      }
+      el.appendChild(notes);
+    }
+    const names = cols.map((c) => c.name.join(" / "));
+    const onClick = (ev) => {
+      const td = ev.target.closest && ev.target.closest("td");
+      if (!td || !el.contains(td) || !td.hasAttribute("data-c")) return;
+      const r = Number(td.parentElement.getAttribute("data-r"));
+      const c = Number(td.getAttribute("data-c"));
+      const row = {};
+      names.forEach((n, j) => {
+        row[n] = resolved[r] ? resolved[r][j] : void 0;
+      });
+      el.dispatchEvent(new CustomEvent("gt:cellclick", {
+        bubbles: true,
+        detail: {
+          r,
+          c,
+          key: cols[c].key,
+          name: names[c],
+          text: td.textContent,
+          row
+        }
+      }));
+    };
+    el.addEventListener("click", onClick);
+    if (opts.mount) {
+      const host = typeof opts.mount === "string" ? d.querySelector(opts.mount) : opts.mount;
+      if (host) host.appendChild(el);
+    }
+    if (opts.fit) fitWidths(el, table, doc, resolved, opts.fit);
+    return {
+      el,
+      doc,
+      destroy() {
+        el.removeEventListener("click", onClick);
+        el.remove();
+      },
+      toCSV({ values = false } = {}) {
+        const lines = [names.map(csvEscape).join(",")];
+        doc.body.forEach((row, r) => {
+          lines.push(cols.map((col, j) => {
+            if (values && col.raw) {
+              const raw = rawRes[r][j];
+              return raw == null ? "" : csvEscape(String(raw));
+            }
+            return csvEscape(resolved[r][j] ?? "");
+          }).join(","));
+        });
+        return lines.join("\n") + "\n";
+      }
+    };
+  }
+  function renderSection(d, parent, doc, rows, resolved, rawRes, opts) {
+    const ncols = doc.columns.length;
+    const pending = new Array(ncols).fill(0);
+    const carry = new Array(ncols).fill("");
+    rows.forEach((row, r) => {
+      const tr = d.createElement("tr");
+      tr.setAttribute("data-r", String(r));
+      const trCls = rowClasses(doc, row).join(" ");
+      if (trCls) tr.className = trCls;
+      const texts = carry.slice();
+      const raws = new Array(ncols).fill(null);
+      let col = 0;
+      for (const entry of row.cells) {
+        const cell = cellOf(entry);
+        while (col < ncols && pending[col] > 0) col++;
+        if (col >= ncols) break;
+        const colspan = cell.colspan || 1;
+        const rowspan = cell.rowspan || 1;
+        const td = d.createElement("td");
+        td.setAttribute("data-c", String(col));
+        if (colspan > 1) td.setAttribute("colspan", String(colspan));
+        if (rowspan > 1) td.setAttribute("rowspan", String(rowspan));
+        td.className = bodyClasses(doc, col, colspan, cell).join(" ");
+        fillCell(d, td, cell, opts);
+        tr.appendChild(td);
+        for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
+          texts[cc] = cell.text;
+          if ("raw" in cell) raws[cc] = cell.raw;
+          if (rowspan > 1) {
+            pending[cc] = rowspan;
+            carry[cc] = cell.text;
+          }
+        }
+        col += colspan;
+      }
+      for (let cc = 0; cc < ncols; cc++) {
+        if (pending[cc] > 0 && --pending[cc] === 0) carry[cc] = "";
+      }
+      resolved.push(texts);
+      rawRes.push(raws);
+      parent.appendChild(tr);
+    });
+  }
+  function fillCell(d, node, cell, opts) {
+    if (cell.math) {
+      node.classList.add("gt-math");
+      if (opts.katex) {
+        opts.katex.render(cell.text, node, { throwOnError: false });
+      } else {
+        node.textContent = `\\(${cell.text}\\)`;
+      }
+    } else if (cell.html && opts.allowHtml) {
+      node.innerHTML = cell.text;
+    } else {
+      node.textContent = cell.text;
+    }
+  }
+  function columnClasses(col) {
+    const cls = [
+      `gt-${col.align}`,
+      col.role === "stub" ? "gt-stub" : "gt-data",
+      col.wrap ? "gt-wrap" : "gt-nowrap"
+    ];
+    if (col.break_depth !== void 0 && col.break_depth !== null && col.break_depth <= MAX_VBREAK) {
+      cls.push(`gt-vbreak-${col.break_depth}`);
+    }
+    return cls;
+  }
+  function headClasses(doc, col, colspan, leaf, hc) {
+    const cls = [];
+    const first = doc.columns[col];
+    const nStub = doc.n_stub_levels;
+    if (hc.align) cls.push(`gt-${hc.align}`);
+    else if (!leaf || colspan > 1) cls.push("gt-c");
+    else if (first) cls.push(`gt-${first.align}`);
+    else cls.push("gt-l");
+    cls.push(first && col < nStub ? "gt-stub" : "gt-data");
+    if (nStub > 0 && col + colspan === nStub) cls.push("gt-stub-end");
+    const bd = first && first.break_depth;
+    if (col >= nStub && bd !== void 0 && bd !== null && bd <= MAX_VBREAK) {
+      cls.push(`gt-vbreak-${bd}`);
+    }
+    for (const f of hc.flags || []) {
+      if (CELL_FLAG_CLASS[f]) cls.push(CELL_FLAG_CLASS[f]);
+    }
+    return cls;
+  }
+  function bodyClasses(doc, col, colspan, cell) {
+    const cls = columnClasses(doc.columns[col]);
+    const lastStub = doc.n_stub_levels > 0 && col + colspan === doc.n_stub_levels;
+    if (lastStub) cls.push("gt-stub-end");
+    for (const f of cell.flags || []) {
+      if (CELL_FLAG_CLASS[f]) cls.push(CELL_FLAG_CLASS[f]);
+    }
+    return cls;
+  }
+  function rowClasses(doc, row) {
+    const cls = [];
+    const d = row.break_depth;
+    if (d !== void 0 && d !== null && d <= Math.min(MAX_BREAK, doc.n_stub_levels - 2)) {
+      cls.push(`gt-break-${d}`);
+    }
+    for (const f of row.flags || []) {
+      if (ROW_FLAG_CLASS[f]) cls.push(ROW_FLAG_CLASS[f]);
+    }
+    return cls;
+  }
+  function csvEscape(s) {
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  var _canvas = null;
+  function fitWidths(el, table, doc, resolved, mode) {
+    const d = el.ownerDocument;
+    const win = d.defaultView;
+    if (!win || !d.createElement("canvas").getContext) return;
+    if (!_canvas) _canvas = d.createElement("canvas");
+    const ctx = _canvas.getContext("2d");
+    if (!ctx) return;
+    const style = win.getComputedStyle(table);
+    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const pad = 2 * parseFloat(style.fontSize || "16") * 0.6 + 2;
+    const ncols = doc.columns.length;
+    const arrays = [];
+    const floors = [];
+    for (let j = 0; j < ncols; j++) {
+      const widths = resolved.map((row) => ctx.measureText(row[j] ?? "").width + pad);
+      widths.sort((a, b) => a - b);
+      arrays.push(widths);
+      ctx.font = `600 ${style.fontSize} ${style.fontFamily}`;
+      const header = doc.columns[j].name[doc.columns[j].name.length - 1] || "";
+      floors.push(Math.max(MIN_COL, ctx.measureText(header).width + pad));
+      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    }
+    const avail = table.parentElement ? table.parentElement.clientWidth : 0;
+    if (!avail) return;
+    const solved = solveWidths(arrays, floors, avail, mode);
+    const colgroup = d.createElement("colgroup");
+    solved.forEach((w) => {
+      const col = d.createElement("col");
+      col.style.width = `${Math.round(w)}px`;
+      colgroup.appendChild(col);
+    });
+    table.insertBefore(colgroup, table.firstChild);
+    table.style.tableLayout = "fixed";
+    table.style.width = `${Math.round(solved.reduce((a, b) => a + b, 0))}px`;
+    el.classList.add("gt-fit");
+  }
+  var CELL_PAD = 18;
+  var MIN_COL = 50;
+  function solveWidths(arrays, floors, avail, mode = "equal-risk") {
+    return mode === "coverage" ? coverageWidths(arrays, floors, avail) : equalRiskWidths(arrays, floors, avail);
+  }
+  function equalRiskWidths(arrays, floors, avail) {
+    const pct = (s, q) => s.length ? s[Math.floor(q * (s.length - 1))] : 0;
+    const widthsAt = (q) => arrays.map((s, j) => Math.max(floors[j], pct(s, q)));
+    const total = (w) => w.reduce((a, b) => a + b, 0);
+    const natural = widthsAt(1);
+    if (total(natural) <= avail) return natural;
+    if (total(widthsAt(0)) >= avail) return widthsAt(0);
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 32; k++) {
+      const mid = (lo + hi) / 2;
+      if (total(widthsAt(mid)) <= avail) lo = mid;
+      else hi = mid;
+    }
+    return widthsAt(lo);
+  }
+  function coverageWidths(arrays, floors, avail) {
+    const natural = arrays.map((s, j) => Math.max(floors[j], s.length ? s[s.length - 1] : 0));
+    const sum = (a) => a.reduce((x, y) => x + y, 0);
+    if (sum(natural) <= avail) return natural;
+    if (sum(floors) >= avail) return floors.slice();
+    const widths = floors.slice();
+    let budget = avail - sum(floors);
+    const segs = [];
+    for (let j = 0; j < arrays.length; j++) {
+      const env = concaveEnvelope(arrays[j], floors[j]);
+      for (let i = 1; i < env.length; i++) {
+        const dw = env[i].w - env[i - 1].w;
+        const dc = env[i].cells - env[i - 1].cells;
+        if (dw > 0 && dc > 0) segs.push({ j, dw, slope: dc / dw });
+      }
+    }
+    segs.sort((a, b) => b.slope - a.slope);
+    for (const s of segs) {
+      if (budget <= 0) break;
+      const buy = Math.min(s.dw, budget);
+      widths[s.j] += buy;
+      budget -= buy;
+    }
+    return widths;
+  }
+  function concaveEnvelope(sorted, floor) {
+    const n = sorted.length;
+    let i = 0;
+    while (i < n && sorted[i] <= floor) i++;
+    const pts = [{ w: floor, cells: i }];
+    while (i < n) {
+      const w = sorted[i];
+      while (i < n && sorted[i] === w) i++;
+      pts.push({ w, cells: i });
+    }
+    const hull = [];
+    for (const p of pts) {
+      while (hull.length >= 2) {
+        const a = hull[hull.length - 2], b = hull[hull.length - 1];
+        const cross = (b.w - a.w) * (p.cells - a.cells) - (b.cells - a.cells) * (p.w - a.w);
+        if (cross >= 0) hull.pop();
+        else break;
+      }
+      hull.push(p);
+    }
+    return hull;
+  }
+  var gt_render_default = renderTable;
+  return __toCommonJS(gt_render_exports);
+})();
+</script>
+</head>
+<body>
+<h1>greatest_tables — golden fixture gallery</h1>
+<p>Every committed golden IR document, rendered client-side by
+<code>gt-render.iife.js</code> with the committed <code>gt.css</code>.
+Regenerated by <code>tests/make_goldens.py</code>.</p>
+<section>
+<h2>fx-bigints</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"raw":"9007199254740993","text":"9,007,199,254,740,992"},{"raw":1.5,"text":"1.500"}]},{"cells":[{"raw":"9007199254740999","text":"9,007,199,254,741,000"},{"raw":2.5,"text":"2.500"}]},{"cells":[{"raw":12,"text":"12"},{"flags":["neg"],"raw":-3.25,"text":"-3.250"}]}],"columns":[{"align":"r","dtype":"int","format":{"group":true,"kind":"int"},"key":"c0","name":["id"],"raw":true},{"align":"r","dtype":"float","format":{"digits":3,"group":true,"kind":"dec"},"key":"c1","name":["v"],"raw":true}],"generator":"greatest_tables 1.3.0","hash":"768fec45d8c5","head":[[{"text":"id"},{"text":"v"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-both-mi</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"rowspan":5,"text":"creed"},"consolation","197,032","142,605",{"flags":["neg"],"text":"-40,254"},"135,990"]},{"break_depth":1,"cells":["threatening",{"flags":["neg"],"text":"-123,711"},"90,318","581,472","77,129"]},{"break_depth":1,"cells":["attorneys",{"flags":["neg"],"text":"-380,573"},"124,289","406,399","44,519"]},{"break_depth":1,"cells":["subtype","321,479","115,525",{"flags":["neg"],"text":"-321,957"},"131,859"]},{"break_depth":1,"cells":["microcosm","295,757","97,041","221,592","73,280"]},{"break_depth":0,"cells":[{"rowspan":5,"text":"autumn"},"consolation",{"flags":["neg"],"text":"-55,460"},"153,682",{"flags":["neg"],"text":"-332,934"},"103,288"]},{"break_depth":1,"cells":["threatening","88,605","59,018","249,061",{"flags":["neg"],"text":"-6,600"}]},{"break_depth":1,"cells":["attorneys","125,689","68,802",{"flags":["neg"],"text":"-158,113"},"23,783"]},{"break_depth":1,"cells":["subtype","220,666","61,355",{"flags":["neg"],"text":"-377,521"},"160,242"]},{"break_depth":1,"cells":["microcosm",{"flags":["neg"],"text":"-230,015"},"82,998","102,238","97,588"]},{"break_depth":0,"cells":[{"rowspan":2,"text":"amplifies"},"consolation","201,767","82,645","221,441","48,751"]},{"break_depth":1,"cells":["threatening","182,060","100,370",{"flags":["neg"],"text":"-134,462"},"55,373"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c1","level":1,"name":["i_1"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["exceed","elasticity"]},{"align":"r","dtype":"int","format":{"group":true,"kind":"int"},"key":"c3","name":["exceed","force"]},{"align":"r","break_depth":0,"dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c4","name":["subdivided","elasticity"]},{"align":"r","dtype":"int","format":{"group":true,"kind":"int"},"key":"c5","name":["subdivided","force"]}],"generator":"greatest_tables 1.3.0","hash":"bedf4c6158d7","head":[[{"colspan":2,"text":""},{"colspan":2,"text":"exceed"},{"colspan":2,"text":"subdivided"}],[{"text":"i_0"},{"text":"i_1"},{"text":"elasticity"},{"text":"force"},{"text":"elasticity"},{"text":"force"}]],"ir_version":1,"n_head_levels":2,"n_stub_levels":2}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-col-mi-2</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["revolved",{"flags":["neg"],"text":"-249,962"},"1.07212","210,495","0.24544"]},{"break_depth":0,"cells":["creek",{"flags":["neg"],"text":"-237,607"},"0.42187","298,894","0.69349"]},{"break_depth":0,"cells":["view","113,839","0.67716","223,661","0.08802"]},{"break_depth":0,"cells":["lack","15,850","1.00981",{"flags":["neg"],"text":"-188,754"},"0.77267"]},{"break_depth":0,"cells":["crippled",{"flags":["neg"],"text":"-203,069"},"0.37774",{"flags":["neg"],"text":"-120,605"},"0.70817"]},{"break_depth":0,"cells":["condition","391,977","0.21265",{"flags":["neg"],"text":"-94,598"},"0.64206"]},{"break_depth":0,"cells":["prick","12,198","0.90873","358,674","0.77876"]},{"break_depth":0,"cells":["dumps","218,168","0.56723",{"flags":["neg"],"text":"-76,214"},"0.20301"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c1","name":["handicapping","return"]},{"align":"r","dtype":"float","format":{"digits":5,"group":true,"kind":"dec"},"key":"c2","name":["handicapping","decay"]},{"align":"r","break_depth":0,"dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c3","name":["vulnerability","return"]},{"align":"r","dtype":"float","format":{"digits":5,"group":true,"kind":"dec"},"key":"c4","name":["vulnerability","decay"]}],"generator":"greatest_tables 1.3.0","hash":"2ee31a6ccd55","head":[[{"text":""},{"colspan":2,"text":"handicapping"},{"colspan":2,"text":"vulnerability"}],[{"text":"i_0"},{"text":"return"},{"text":"decay"},{"text":"return"},{"text":"decay"}]],"ir_version":1,"n_head_levels":2,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-dates</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["chiropractors","2016-01-15 08:39","2024-01-25 22:52"]},{"break_depth":0,"cells":["diplomatically","2017-10-03 01:16","2025-04-27 20:04"]},{"break_depth":0,"cells":["crafted","2024-05-14 08:29","2024-05-21 04:56"]},{"break_depth":0,"cells":["teams","2018-11-30 19:24","2025-07-31 00:08"]},{"break_depth":0,"cells":["battery","2017-05-15 16:17","2024-12-08 19:36"]},{"break_depth":0,"cells":["pharmacist","2024-07-24 09:28","2024-05-19 05:01"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"c","dtype":"datetime","format":{"kind":"date","pattern":"%Y-%m-%d %H:%M"},"key":"c1","name":["funding"]},{"align":"c","dtype":"datetime","format":{"kind":"date","pattern":"%Y-%m-%d %H:%M"},"key":"c2","name":["leverage"]}],"generator":"greatest_tables 1.3.0","hash":"3070645150e1","head":[[{"text":"i_0"},{"text":"funding"},{"text":"leverage"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-empty</h2>
+<script type="application/json" class="gt-doc">{"body":[],"columns":[],"generator":"greatest_tables 1.3.0","hash":"1999a6996bd7","head":[],"ir_version":1,"n_head_levels":0,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-eng</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["versatile","103.914e-18","0.01221"]},{"break_depth":0,"cells":["prepackaged","17.941e-21","0.00000"]},{"break_depth":0,"cells":["investments","125.776e-24","0.01759"]},{"break_depth":0,"cells":["collapsible","170.946e-18","0.06254"]},{"break_depth":0,"cells":["ruby","137.094e-12","2.74355"]},{"break_depth":0,"cells":["repeated","501.357e-15","1.84756"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":3,"kind":"eng"},"key":"c1","name":["coverage"]},{"align":"r","dtype":"float","format":{"digits":5,"group":true,"kind":"dec"},"key":"c2","name":["indicator"]}],"generator":"greatest_tables 1.3.0","hash":"3a2a6df9385c","head":[[{"text":"i_0"},{"text":"coverage"},{"text":"indicator"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-headerless</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["alpha","1"]},{"cells":["beta","2"]}],"columns":[{"align":"l","dtype":"string","key":"c0","name":["0"],"wrap":true},{"align":"r","dtype":"int","format":{"group":true,"kind":"int"},"key":"c1","name":["1"]}],"generator":"greatest_tables 1.3.0","hash":"48742d1a241b","head":[],"ir_version":1,"n_head_levels":0,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-markdown</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["apples","3"]},{"cells":["pears","12"]}],"caption":"Simple table","columns":[{"align":"l","dtype":"string","key":"c0","name":["item"],"wrap":true},{"align":"r","dtype":"string","key":"c1","name":["count"],"wrap":true}],"generator":"greatest_tables 1.3.0","hash":"a97aff0e8d91","head":[[{"text":"item"},{"text":"count"}]],"ir_version":1,"label":"tbl-md","n_head_levels":1,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-math-html</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"math":true,"text":"\\alpha+\\beta"},{"html":true,"text":"<a href=\"x\">x<\/a>"}]},{"cells":["plain",{"html":true,"text":"<b>b<\/b>"}]},{"cells":[{"math":true,"text":"e^{i\\pi}"},{"html":true,"text":"none"}]}],"columns":[{"align":"l","dtype":"string","key":"c0","name":["expr"],"wrap":true},{"align":"l","dtype":"string","key":"c1","name":["link"],"wrap":true}],"generator":"greatest_tables 1.3.0","hash":"786c7d899001","head":[[{"text":"expr"},{"text":"link"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-negatives</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["unearthing",{"flags":["neg"],"raw":-106716.16722253218,"text":"-106,716"},{"raw":140474.40426776433,"text":"140,474"}]},{"break_depth":0,"cells":["invading",{"raw":117918.30584392574,"text":"117,918"},{"raw":291001.44363023306,"text":"291,001"}]},{"break_depth":0,"cells":["irresistible",{"raw":232868.63540998287,"text":"232,869"},{"flags":["neg"],"raw":-449251.0478821227,"text":"-449,251"}]},{"break_depth":0,"cells":["rugged",{"raw":400467.7805177992,"text":"400,468"},{"raw":813864.6604511858,"text":"813,865"}]},{"break_depth":0,"cells":["symmetrical",{"raw":562804.6852369758,"text":"562,805"},{"raw":188471.3135005022,"text":"188,471"}]},{"break_depth":0,"cells":["passivity",{"flags":["neg"],"raw":-395971.98804422596,"text":"-395,972"},{"raw":555960.9036545947,"text":"555,961"}]},{"break_depth":0,"cells":["owed",{"raw":271986.44095675624,"text":"271,986"},{"flags":["neg"],"raw":-52641.17966768949,"text":"-52,641"}]},{"break_depth":0,"cells":["viruses",{"raw":14421.766389102864,"text":"14,422"},{"raw":246366.7075615352,"text":"246,367"}]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c1","name":["settlement"],"raw":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["uptake"],"raw":true}],"generator":"greatest_tables 1.3.0","hash":"b7af291cabed","head":[[{"text":"i_0"},{"text":"settlement"},{"text":"uptake"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-nulls</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["bounding","1,629",{"flags":["neg"],"text":"-231,916"},"raged alpha"]},{"break_depth":0,"cells":["money","123,120","11,369",""]},{"break_depth":0,"cells":["differentiates",{"flags":["neg"],"text":"-384,362"},{"flags":["neg"],"text":"-135,908"},"graphically ferocity"]},{"break_depth":0,"cells":["clusters","—","—","moose penalty"]},{"break_depth":0,"cells":["enhances",{"flags":["neg"],"text":"-182,736"},"65,993","receipt rapping"]},{"break_depth":0,"cells":["veins","493,331",{"flags":["neg"],"text":"-122,783"},"transmits prolonging"]},{"break_depth":0,"cells":["adherents",{"flags":["neg"],"text":"-193,373"},"92,611",""]},{"break_depth":0,"cells":["interviewing","126,404","—","precaution expected"]},{"break_depth":0,"cells":["physicist",{"flags":["neg"],"text":"-20,917"},"289,925","coupled ergonomic"]},{"break_depth":0,"cells":["interchangeably","—","224,835","givens sabotaged"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c1","name":["proton"]},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["refraction"]},{"align":"l","dtype":"string","key":"c3","name":["input"],"wrap":true}],"generator":"greatest_tables 1.3.0","hash":"1b70d1deab47","head":[[{"text":"i_0"},{"text":"proton"},{"text":"refraction"},{"text":"input"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-plain</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["outlines","contaminate emigration","332,617","67,859"]},{"break_depth":0,"cells":["aggressor","replacements clairvoyant","378,119","32,561"]},{"break_depth":0,"cells":["rascal","baited released","35,862","154,699"]},{"break_depth":0,"cells":["exclusively","invidious revs","469,654","116,714"]},{"break_depth":0,"cells":["nibble","breathe teenager",{"flags":["neg"],"text":"-221,525"},"78,948"]},{"break_depth":0,"cells":["atheist","annex summation","93,515","155,073"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c1","name":["portfolio"],"wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["trend"]},{"align":"r","dtype":"int","format":{"group":true,"kind":"int"},"key":"c3","name":["return"]}],"generator":"greatest_tables 1.3.0","hash":"815f8563fff2","head":[[{"text":"i_0"},{"text":"portfolio"},{"text":"trend"},{"text":"return"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-ratios</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["vegas","0.458","0.576"]},{"break_depth":0,"cells":["firepower","0.468","0.624"]},{"break_depth":0,"cells":["peeking","0.860",{"flags":["neg"],"text":"-0.045"}]},{"break_depth":0,"cells":["propositions","0.220","1.023"]},{"break_depth":0,"cells":["clone","0.796","0.432"]},{"break_depth":0,"cells":["navigational","0.042","0.545"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":3,"kind":"dec"},"key":"c1","name":["trade"],"tag":"ratio"},{"align":"r","dtype":"float","format":{"digits":3,"kind":"dec"},"key":"c2","name":["loss"],"tag":"ratio"}],"generator":"greatest_tables 1.3.0","hash":"a55f2d725754","head":[[{"text":"i_0"},{"text":"trade"},{"text":"loss"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-row-mi-2</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"rowspan":5,"text":"seems"},"fantasia","60,622",{"flags":["neg"],"text":"-266,545"}]},{"break_depth":1,"cells":["grassroots","456,879","266,068"]},{"break_depth":1,"cells":["antarctica","102,425",{"flags":["neg"],"text":"-125,751"}]},{"break_depth":1,"cells":["circumscribe",{"flags":["neg"],"text":"-162,475"},"348,877"]},{"break_depth":1,"cells":["simulates",{"flags":["neg"],"text":"-51,503"},"77,068"]},{"break_depth":0,"cells":[{"rowspan":5,"text":"dumped"},"fantasia","205,309","368,886"]},{"break_depth":1,"cells":["grassroots","358,229","661,890"]},{"break_depth":1,"cells":["antarctica",{"flags":["neg"],"text":"-19,637"},{"flags":["neg"],"text":"-194,214"}]},{"break_depth":1,"cells":["circumscribe",{"flags":["neg"],"text":"-4,577"},"64,997"]},{"break_depth":1,"cells":["simulates","164,415","229,660"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c1","level":1,"name":["i_1"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["debt"]},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c3","name":["exhaustion"]}],"generator":"greatest_tables 1.3.0","hash":"88e6f1005a3e","head":[[{"text":"i_0"},{"text":"i_1"},{"text":"debt"},{"text":"exhaustion"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":2}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-row-mi-3</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"rowspan":15,"text":"chairwoman"},{"rowspan":5,"text":"organisms"},"bane",{"flags":["neg"],"text":"-82,810"},{"flags":["neg"],"text":"-221,253"}]},{"break_depth":2,"cells":["packet","416,080",{"flags":["neg"],"text":"-224,330"}]},{"break_depth":2,"cells":["damned","179,991","212,415"]},{"break_depth":2,"cells":["supplements",{"flags":["neg"],"text":"-129,182"},"471,988"]},{"break_depth":2,"cells":["freely","539,863","235,235"]},{"break_depth":1,"cells":[{"rowspan":5,"text":"rated"},"bane","74,121",{"flags":["neg"],"text":"-56,881"}]},{"break_depth":2,"cells":["packet",{"flags":["neg"],"text":"-195,548"},{"flags":["neg"],"text":"-405,240"}]},{"break_depth":2,"cells":["damned",{"flags":["neg"],"text":"-20,195"},"66,355"]},{"break_depth":2,"cells":["supplements","244,144",{"flags":["neg"],"text":"-205,580"}]},{"break_depth":2,"cells":["freely","156,760","114,210"]},{"break_depth":1,"cells":[{"rowspan":5,"text":"superfluous"},"bane",{"flags":["neg"],"text":"-132,853"},"496,573"]},{"break_depth":2,"cells":["packet","519,620",{"flags":["neg"],"text":"-68,391"}]},{"break_depth":2,"cells":["damned","121,824","119,482"]},{"break_depth":2,"cells":["supplements",{"flags":["neg"],"text":"-84,850"},"120,904"]},{"break_depth":2,"cells":["freely","442,042","434,808"]},{"break_depth":0,"cells":[{"rowspan":9,"text":"endorsing"},{"rowspan":5,"text":"organisms"},"bane","27,494","314,085"]},{"break_depth":2,"cells":["packet",{"flags":["neg"],"text":"-514,786"},{"flags":["neg"],"text":"-128,304"}]},{"break_depth":2,"cells":["damned",{"flags":["neg"],"text":"-160,994"},"36,342"]},{"break_depth":2,"cells":["supplements",{"flags":["neg"],"text":"-33,007"},{"flags":["neg"],"text":"-16,579"}]},{"break_depth":2,"cells":["freely","360,416",{"flags":["neg"],"text":"-152,965"}]},{"break_depth":1,"cells":[{"rowspan":4,"text":"rated"},"bane",{"flags":["neg"],"text":"-243,033"},"60,655"]},{"break_depth":2,"cells":["packet","255,303",{"flags":["neg"],"text":"-308,036"}]},{"break_depth":2,"cells":["damned",{"flags":["neg"],"text":"-78,570"},"446,008"]},{"break_depth":2,"cells":["supplements","635,666","317,321"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c1","level":1,"name":["i_1"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c2","level":2,"name":["i_2"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c3","name":["viscosity"]},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c4","name":["compound"]}],"generator":"greatest_tables 1.3.0","hash":"e1c9892b6b0d","head":[[{"text":"i_0"},{"text":"i_1"},{"text":"i_2"},{"text":"viscosity"},{"text":"compound"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":3}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-totals</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["disparate","300,376",{"flags":["neg"],"text":"-131,952"}]},{"break_depth":0,"cells":["buyer","189,904","152,645"]},{"break_depth":0,"cells":["implosion","414,829",{"flags":["neg"],"text":"-35,950"}]},{"break_depth":0,"cells":["story","146,423",{"flags":["neg"],"text":"-169,666"}]},{"break_depth":0,"cells":["johns",{"flags":["neg"],"text":"-95,608"},"97,884"]},{"break_depth":0,"cells":["Total","955,925",{"flags":["neg"],"text":"-87,039"}],"flags":["total"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["level_0"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c1","name":["mass"]},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["estimate"]}],"generator":"greatest_tables 1.3.0","hash":"a7c7e1abb883","head":[[{"text":"level_0"},{"text":"mass"},{"text":"estimate"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-truncated</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["brighter","archetypal","452,314"]},{"break_depth":0,"cells":["shuttles","conceding",{"flags":["neg"],"text":"-73,102"}]},{"break_depth":0,"cells":["managerial","fanatics",{"flags":["neg"],"text":"-149,488"}]},{"break_depth":0,"cells":["owing","beaver","448,617"]},{"break_depth":0,"cells":["thirty","enticing",{"flags":["neg"],"text":"-49,303"}]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"l","dtype":"string","key":"c1","name":["loss"],"wrap":true},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["force"]}],"generator":"greatest_tables 1.3.0","hash":"ba1e498b0842","head":[[{"text":"i_0"},{"text":"loss"},{"text":"force"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1,"notes":["Showing first 5 of 12 rows."]}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>fx-year</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["guffaw","2026","108,549"]},{"break_depth":0,"cells":["insinuating","2024","181,299"]},{"break_depth":0,"cells":["signatures","2019",{"flags":["neg"],"text":"-141,177"}]},{"break_depth":0,"cells":["swallowed","2012","121,738"]},{"break_depth":0,"cells":["nordic","2018",{"flags":["neg"],"text":"-125,282"}]},{"break_depth":0,"cells":["portfolios","1999","36,981"]}],"columns":[{"align":"l","dtype":"string","key":"c0","level":0,"name":["i_0"],"role":"stub","wrap":true},{"align":"c","dtype":"int","format":{"kind":"year"},"key":"c1","name":["year"],"tag":"year"},{"align":"r","dtype":"float","format":{"digits":0,"group":true,"kind":"dec"},"key":"c2","name":["amount"]}],"generator":"greatest_tables 1.3.0","hash":"9fbcfaa0120c","head":[[{"text":"i_0"},{"text":"year"},{"text":"amount"}]],"ir_version":1,"n_head_levels":1,"n_stub_levels":1}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>loss-dev</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":[{"rowspan":2,"text":"2020"},"Sub 1",{"raw":1234.5,"text":"1,234.5"},{"flags":["neg"],"raw":-89.0,"text":"(89.0)"},{"raw":250.0,"text":"250.0"}]},{"break_depth":1,"cells":["Sub 2",{"raw":null,"text":"—"},{"raw":12.3,"text":"12.3"},{"raw":4.5,"text":"4.5"}]},{"break_depth":0,"cells":[{"colspan":2,"text":"Total"},{"raw":1234.5,"text":"1,234.5"},{"flags":["neg"],"raw":-76.7,"text":"(76.7)"},{"raw":254.5,"text":"254.5"}],"flags":["total"]}],"caption":"Loss development by year","columns":[{"align":"l","dtype":"int","format":{"kind":"year"},"key":"c0","level":0,"name":["Year"],"role":"stub","tag":"year"},{"align":"l","dtype":"string","key":"c1","level":1,"name":["Sub"],"role":"stub","wrap":true},{"align":"r","dtype":"float","format":{"digits":1,"group":true,"kind":"dec","negative":"paren","scale":0.001},"key":"c2","name":["Group A","Paid"],"raw":true},{"align":"r","dtype":"float","format":{"digits":1,"group":true,"kind":"dec","negative":"paren","scale":0.001},"key":"c3","name":["Group A","Incurred"],"raw":true},{"align":"r","break_depth":0,"dtype":"float","format":{"digits":1,"group":true,"kind":"dec","negative":"paren","scale":0.001},"key":"c4","name":["Group B","Paid"],"raw":true}],"generator":"greatest_tables tests","hash":"85bf09640692","head":[[{"colspan":2,"text":""},{"colspan":2,"text":"Group A"},{"text":"Group B"}],[{"text":"Year"},{"text":"Sub"},{"text":"Paid"},{"text":"Incurred"},{"text":"Paid"}]],"ir_version":1,"label":"tbl-loss-dev","n_head_levels":2,"n_stub_levels":2,"notes":["Amounts in USD thousands."]}</script>
+<div class="host"></div>
+</section>
+<section>
+<h2>minimal</h2>
+<script type="application/json" class="gt-doc">{"body":[{"cells":["Ruin probability",{"math":true,"text":"\\psi(u) = \\Pr(U_t < 0)"}]},{"cells":["Reference",{"html":true,"text":"<a href=\"https://example.org\">doc<\/a>"}]},{"cells":["Plain","row"]}],"columns":[{"align":"l","dtype":"string","key":"c0","name":["item"],"wrap":true},{"align":"c","dtype":"string","key":"c1","name":["value"]}],"generator":"greatest_tables tests","hash":"cc4dd7d4ac00","head":[],"ir_version":1,"n_head_levels":0,"n_stub_levels":0}</script>
+<div class="host"></div>
+</section>
+<script>
+document.querySelectorAll('script.gt-doc').forEach(s => {
+    const doc = JSON.parse(s.textContent);
+    GtRender.renderTable(doc, { mount: s.nextElementSibling, allowHtml: true });
+});
+</script>
+</body>
+</html>

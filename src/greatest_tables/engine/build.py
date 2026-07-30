@@ -116,7 +116,7 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
             tag=tag,
             wrap=dt.wrap_hint(dtype, tag, label, unbreakable),
             break_depth=cbd.get(i - n_stub) if not is_stub else None,
-            format=fspec,
+            format=fspec if isinstance(fspec, FormatSpec) else None,
             raw=(not is_stub and label in raw_set),
         ))
         col_specs.append(fspec)
@@ -243,13 +243,13 @@ def _trivial_index(index: pd.Index) -> bool:
             and index.start == 0 and index.step == 1)
 
 
-def _resolve_format(label, ser, dtype, tag, spec) -> FormatSpec | None:
-    """The ladder: user sugar > semantic tag > dtype inference > None."""
+def _resolve_format(label, ser, dtype, tag, spec):
+    """The ladder: user sugar/callable > semantic tag > dtype inference > None."""
     user = spec.formats.get(label)
     if user is None and isinstance(label, tuple):
         user = spec.formats.get(label[-1])
     if user is not None:
-        return parse_sugar(user)
+        return user if callable(user) else parse_sugar(user)
     if tag == 'ratio':
         return FormatSpec(kind='dec', digits=3)
     if tag == 'year':
@@ -274,7 +274,14 @@ def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
                rowspan: int = 1, raw_dtype: str | None = None,
                extra: tuple = ()) -> Cell:
     """Format one value into a Cell, stamping neg/math/html as needed."""
-    text = apply_format(value, fspec)
+    if callable(fspec):
+        # user-supplied formatter (compat facade path); it owns NaN handling
+        try:
+            text = str(fspec(value))
+        except Exception:
+            text = str(value)
+    else:
+        text = apply_format(value, fspec)
     math_flag = False
     if (spec.math == 'auto' and isinstance(value, str) and not html):
         m = _MATH_RE.match(value)

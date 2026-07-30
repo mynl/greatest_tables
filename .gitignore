@@ -16,3 +16,6 @@ uv.lock
 !tests/fixtures/**/*.csv
 .env
 *.local.yaml
+
+.ipynb_checkpoints/
+*.ipynb

@@ -26,5 +26,17 @@ dev/                   plan docs; moved to dev/done when complete
 
 ## Status
 
-Under development, step [ir-core]. See `dev/design.md` for the full design and
-`CHANGELOG.md` for progress.
+Steps [ir-core], [engine], [walker], [notebook-html] complete — the engine,
+IR, JS walker, and Python HTML renderer are conformance-tested against each
+other. Next: [aggregate-api] adoption, then [tikz-blog]. See `dev/design.md`
+for the full design and `CHANGELOG.md` for progress.
+
+Quick look: open `demo.html` (every golden fixture rendered client-side), or
+
+```python
+from greatest_tables import GT, Fabricator
+gt = GT(Fabricator(seed=42).make(10, 's2fd', index_levels=2), caption='Demo')
+gt                      # rich display in JupyterLab (HTML)
+print(gt)               # text oracle view
+gt.doc                  # the IR as pydantic models
+```

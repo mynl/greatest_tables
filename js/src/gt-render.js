@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.2.0';
+export const GT_RENDER_VERSION = '1.3.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
@@ -210,10 +210,12 @@ function fillCell(d, node, cell, opts) {
 }
 
 function columnClasses(col) {
+    // canonical JSON omits defaulted fields: role/wrap may be absent (= data,
+    // no-wrap). Stub columns never carry break_depth, so no role guard needed.
     const cls = [`gt-${col.align}`, col.role === 'stub' ? 'gt-stub' : 'gt-data',
                  col.wrap ? 'gt-wrap' : 'gt-nowrap'];
-    if (col.role === 'data' && col.break_depth !== undefined
-        && col.break_depth !== null && col.break_depth <= MAX_VBREAK) {
+    if (col.break_depth !== undefined && col.break_depth !== null
+        && col.break_depth <= MAX_VBREAK) {
         cls.push(`gt-vbreak-${col.break_depth}`);
     }
     return cls;

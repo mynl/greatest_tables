@@ -28,7 +28,7 @@ var GtRender = (() => {
     renderTable: () => renderTable,
     solveWidths: () => solveWidths
   });
-  var GT_RENDER_VERSION = "1.2.0";
+  var GT_RENDER_VERSION = "1.3.0";
   var IR_VERSION_SUPPORTED = 1;
   var MAX_BREAK = 2;
   var MAX_VBREAK = 1;
@@ -215,7 +215,7 @@ var GtRender = (() => {
       col.role === "stub" ? "gt-stub" : "gt-data",
       col.wrap ? "gt-wrap" : "gt-nowrap"
     ];
-    if (col.role === "data" && col.break_depth !== void 0 && col.break_depth !== null && col.break_depth <= MAX_VBREAK) {
+    if (col.break_depth !== void 0 && col.break_depth !== null && col.break_depth <= MAX_VBREAK) {
       cls.push(`gt-vbreak-${col.break_depth}`);
     }
     return cls;

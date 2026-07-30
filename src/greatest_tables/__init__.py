@@ -6,6 +6,8 @@ not touch pandas options, warnings filters, or anything else global.
 """
 
 from ._version import __version__
+from .compat import GT
+from .config import load_spec
 from .engine.build import build
 from .engine.hashing import canonical_json, doc_hash, stamp
 from .fabricator import Fabricator, quick_fab
@@ -13,12 +15,13 @@ from .ir import (
     IR_VERSION, Cell, Column, FormatSpec, HeadCell, Row, TableDoc,
     canonical_dict,
 )
+from .render.html import render_html
 from .render.text import render_text
 from .spec import HouseStyle, TableSpec
 
 __all__ = [
-    'IR_VERSION', '__version__', 'Cell', 'Column', 'Fabricator', 'FormatSpec',
-    'HeadCell', 'HouseStyle', 'Row', 'TableDoc', 'TableSpec', 'build',
-    'canonical_dict', 'canonical_json', 'doc_hash', 'quick_fab',
-    'render_text', 'stamp',
+    'GT', 'IR_VERSION', '__version__', 'Cell', 'Column', 'Fabricator',
+    'FormatSpec', 'HeadCell', 'HouseStyle', 'Row', 'TableDoc', 'TableSpec',
+    'build', 'canonical_dict', 'canonical_json', 'doc_hash', 'load_spec',
+    'quick_fab', 'render_html', 'render_text', 'stamp',
 ]
