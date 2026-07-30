@@ -1,0 +1,36 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=3.56em},
+	column  2/.style={nodes={align=left  }, nosep, text width=18.00em},
+	column  3/.style={nodes={align=left  }, nosep, text width=12.11em},
+	column  4/.style={nodes={align=right }, nosep, text width=3.25em},
+	column  5/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt1fcc345d59d1) [table, ampersand replacement=\&]{
+          \&                                                                                                                                              \&                                  \&          \& \\
+ i\_0\I   \& variable length text\I                                                                                                                       \& short variable\I                 \& amount\I \& \\
+ braved   \& knee surrounded                                                                                                                              \& forged traditions                \&  207,079 \& \\
+ pigs     \& merrier comfy confectionery                                                                                                                  \& sentimental habitual statistical \&   55,638 \& \\
+ probably \& invoice turbo winced explicitly electrons eliminated prosecutors arlington patrick snapper decals detergents stomping mannered strife dermal \&                                  \&  393,811 \& \\
+ phasing  \& reproduce                                                                                                                                    \&                                  \&  142,042 \& \\
+ madly    \& flat cursing doors captivated noisy                                                                                                          \&                                  \&   31,586 \& \\
+ inserts  \& differed timing prohibited                                                                                                                   \& finders congregation redraw      \&  -94,342 \& \\
+};
+\path[draw, semithick] (gt1fcc345d59d1-1-1.north west) -- (gt1fcc345d59d1-1-5.north east);
+\path[draw, semithick] ([yshift=0.125em]gt1fcc345d59d1-3-5.north -| gt1fcc345d59d1-3-1.west) -- ([yshift=0.125em]gt1fcc345d59d1-3-5.north -| gt1fcc345d59d1-3-5.east);
+\path[draw, semithick] ([yshift=-0.125em]gt1fcc345d59d1-1-1.south west |- gt1fcc345d59d1.south) -- ([yshift=-0.125em]gt1fcc345d59d1-1-5.south east |- gt1fcc345d59d1.south);
+\path[draw, semithick] ([xshift=0.5em]gt1fcc345d59d1-1-1.south east) -- ([xshift=0.5em]gt1fcc345d59d1-1-1.south east |- gt1fcc345d59d1.south);
+\end{tikzpicture}
+\end{table}

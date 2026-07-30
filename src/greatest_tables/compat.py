@@ -78,10 +78,11 @@ class GT:
         """Monospace text rendering (the conformance oracle's view)."""
         return render_text(self.doc)
 
-    @property
+    @cached_property
     def tikz(self) -> str:
-        raise NotImplementedError(
-            'TikZ rendering arrives with the [tikz-blog] step')
+        """TikZ/LaTeX rendering (table environment + tikzpicture)."""
+        from .render.tikz import render_tikz
+        return render_tikz(self.doc)
 
     def __str__(self) -> str:
         return self.text

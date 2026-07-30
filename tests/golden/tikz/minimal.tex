@@ -1,0 +1,27 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=6.58em},
+	column  2/.style={nodes={align=center}, nosep, text width=7.43em},
+	column  3/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gtcc4dd7d4ac00) [table, ampersand replacement=\&]{
+                  \&                          \& \\
+ Ruin probability \& $\psi(u) = \Pr(U_t < 0)$ \& \\
+ Reference        \&           doc            \& \\
+ Plain            \&           row            \& \\
+};
+\path[draw, semithick] (gtcc4dd7d4ac00-1-1.north west) -- (gtcc4dd7d4ac00-1-3.north east);
+\path[draw, semithick] ([yshift=0.125em]gtcc4dd7d4ac00-2-3.north -| gtcc4dd7d4ac00-2-1.west) -- ([yshift=0.125em]gtcc4dd7d4ac00-2-3.north -| gtcc4dd7d4ac00-2-3.east);
+\path[draw, semithick] ([yshift=-0.125em]gtcc4dd7d4ac00-1-1.south west |- gtcc4dd7d4ac00.south) -- ([yshift=-0.125em]gtcc4dd7d4ac00-1-3.south east |- gtcc4dd7d4ac00.south);
+\end{tikzpicture}
+\end{table}

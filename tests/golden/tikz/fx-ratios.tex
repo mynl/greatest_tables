@@ -1,0 +1,35 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=4.95em},
+	column  2/.style={nodes={align=right }, nosep, text width=2.25em},
+	column  3/.style={nodes={align=right }, nosep, text width=2.75em},
+	column  4/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gta55f2d725754) [table, ampersand replacement=\&]{
+              \&         \&        \& \\
+ i\_0\I       \& trade\I \& loss\I \& \\
+ vegas        \&   0.458 \&  0.576 \& \\
+ firepower    \&   0.468 \&  0.624 \& \\
+ peeking      \&   0.860 \& -0.045 \& \\
+ propositions \&   0.220 \&  1.023 \& \\
+ clone        \&   0.796 \&  0.432 \& \\
+ navigational \&   0.042 \&  0.545 \& \\
+};
+\path[draw, semithick] (gta55f2d725754-1-1.north west) -- (gta55f2d725754-1-4.north east);
+\path[draw, semithick] ([yshift=0.125em]gta55f2d725754-3-4.north -| gta55f2d725754-3-1.west) -- ([yshift=0.125em]gta55f2d725754-3-4.north -| gta55f2d725754-3-4.east);
+\path[draw, semithick] ([yshift=-0.125em]gta55f2d725754-1-1.south west |- gta55f2d725754.south) -- ([yshift=-0.125em]gta55f2d725754-1-4.south east |- gta55f2d725754.south);
+\path[draw, semithick] ([xshift=0.5em]gta55f2d725754-1-1.south east) -- ([xshift=0.5em]gta55f2d725754-1-1.south east |- gta55f2d725754.south);
+\end{tikzpicture}
+\end{table}

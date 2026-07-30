@@ -13,7 +13,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from greatest_tables import TableDoc, build, canonical_json, render_text
+from greatest_tables import (
+    TableDoc, build, canonical_json, render_text, render_tikz,
+)
 from greatest_tables.render.css import write_asset
 
 from exemplars import EXEMPLARS
@@ -25,21 +27,25 @@ ROOT = Path(__file__).parent.parent
 def main() -> None:
     golden_ir = ROOT / 'tests' / 'golden' / 'ir'
     golden_text = ROOT / 'tests' / 'golden' / 'text'
-    golden_ir.mkdir(parents=True, exist_ok=True)
-    golden_text.mkdir(parents=True, exist_ok=True)
+    golden_tikz = ROOT / 'tests' / 'golden' / 'tikz'
+    for d in (golden_ir, golden_text, golden_tikz):
+        d.mkdir(parents=True, exist_ok=True)
 
     for name, make in EXEMPLARS.items():
-        path = golden_ir / f'{name}.json'
-        path.write_bytes(canonical_json(make()))
-        print(f'wrote {path}')
+        doc = make()
+        (golden_ir / f'{name}.json').write_bytes(canonical_json(doc))
+        (golden_tikz / f'{name}.tex').write_text(
+            render_tikz(doc), encoding='utf-8', newline='\n')
+        print(f'wrote {name}.json + {name}.tex')
 
     for name, (data, spec) in fixtures().items():
         doc = build(data, spec)
-        ir_path = golden_ir / f'fx-{name}.json'
-        ir_path.write_bytes(canonical_json(doc))
-        text_path = golden_text / f'{name}.txt'
-        text_path.write_text(render_text(doc), encoding='utf-8', newline='\n')
-        print(f'wrote {ir_path.name} + {text_path.name}')
+        (golden_ir / f'fx-{name}.json').write_bytes(canonical_json(doc))
+        (golden_text / f'{name}.txt').write_text(
+            render_text(doc), encoding='utf-8', newline='\n')
+        (golden_tikz / f'fx-{name}.tex').write_text(
+            render_tikz(doc), encoding='utf-8', newline='\n')
+        print(f'wrote fx-{name} ir + text + tikz')
 
     schema_path = ROOT / 'schema' / 'ir-v1.json'
     schema = TableDoc.model_json_schema()

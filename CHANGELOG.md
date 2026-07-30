@@ -3,6 +3,35 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.6.0] - 2026-07-31
+
+### Added
+
+- [tikz-blog] `render/tikz.py`: the single TikZ implementation (5.x carried
+  three, two dead), rebuilt from the live `make_tikz` mechanics against the
+  IR: matrix-of-nodes with zero-height spacer row, bold header rows with
+  bold-italic stub headers, phantom anchor column, rules as anchored `\path`
+  segments shifted into the inter-cell gaps — row break rules start at the
+  changed stub column, matching HTML/text. **New capability: real colspans**
+  — spanning labels are overlaid centered on the span via `calc` midpoints
+  (5.x blanked repeats and silently returned '' on non-unique columns).
+- `render/textlength.py`: the salvaged character-width oracle (glyph table +
+  TeX math token estimation), scoped to the TikZ renderer only.
+- `render/etcher.py`: Etcher salvaged and modernized — **tectonic** is the
+  default engine (fast, self-caching; the 5.x `.fmt` precompilation dance is
+  deleted), pdflatex fallback kept; success judged by the PDF existing, not
+  the exit code (MiKTeX exits 1 on recoverable issues). No hardcoded paths,
+  no .bat side files, no os.startfile.
+- `HouseStyle` gains the TikZ geometry and rule-weight knobs (w2tikz scale).
+- Golden `.tex` files per fixture (third renderer oracle); compile smoke
+  test via tectonic (skips when unavailable); `GT.tikz` now renders;
+  `mimebundle` adds `text/latex` under Quarto or on request.
+- `dev/compare_gt5.py`: migration check — renders sample fixtures through
+  greater_tables 5.x (in an ephemeral `uv run --with` env, keeping its
+  import side effects out of the project venv) and GT2 side by side into
+  `compare-gt5.html` (gitignored review artifact).
+- 156 tests.
+
 ## [1.5.0] - 2026-07-30
 
 ### Added

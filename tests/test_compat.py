@@ -65,6 +65,6 @@ def test_config_path(tmp_path, df):
     assert override.doc.caption == 'Explicit wins'
 
 
-def test_tikz_not_yet(df):
-    with pytest.raises(NotImplementedError, match='tikz-blog'):
-        GT(df).tikz
+def test_tikz_renders(df):
+    tikz = GT(df).tikz
+    assert '\\begin{tikzpicture}' in tikz and '\\matrix' in tikz

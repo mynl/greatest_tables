@@ -1,0 +1,36 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=4.00em},
+	column  2/.style={nodes={align=right }, nosep, text width=3.25em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  4/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gta7c7e1abb883) [table, ampersand replacement=\&]{
+                 \&                   \&                   \& \\
+ level\_0\I      \&            mass\I \&        estimate\I \& \\
+ disparate       \&           300,376 \&          -131,952 \& \\
+ buyer           \&           189,904 \&           152,645 \& \\
+ implosion       \&           414,829 \&           -35,950 \& \\
+ story           \&           146,423 \&          -169,666 \& \\
+ johns           \&           -95,608 \&            97,884 \& \\
+ \bfseries Total \& \bfseries 955,925 \& \bfseries -87,039 \& \\
+};
+\path[draw, semithick] (gta7c7e1abb883-1-1.north west) -- (gta7c7e1abb883-1-4.north east);
+\path[draw, semithick] ([yshift=0.125em]gta7c7e1abb883-3-4.north -| gta7c7e1abb883-3-1.west) -- ([yshift=0.125em]gta7c7e1abb883-3-4.north -| gta7c7e1abb883-3-4.east);
+\path[draw, thin] ([yshift=0.125em]gta7c7e1abb883-8-4.north -| gta7c7e1abb883-8-1.west) -- ([yshift=0.125em]gta7c7e1abb883-8-4.north -| gta7c7e1abb883-8-4.east);
+\path[draw, semithick] ([yshift=-0.125em]gta7c7e1abb883-1-1.south west |- gta7c7e1abb883.south) -- ([yshift=-0.125em]gta7c7e1abb883-1-4.south east |- gta7c7e1abb883.south);
+\path[draw, semithick] ([xshift=0.5em]gta7c7e1abb883-1-1.south east) -- ([xshift=0.5em]gta7c7e1abb883-1-1.south east |- gta7c7e1abb883.south);
+\end{tikzpicture}
+\end{table}

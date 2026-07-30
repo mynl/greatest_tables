@@ -1,0 +1,36 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=4.55em},
+	column  2/.style={nodes={align=left  }, nosep, text width=10.03em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  4/.style={nodes={align=right }, nosep, text width=3.25em},
+	column  5/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt815f8563fff2) [table, ampersand replacement=\&]{
+             \&                          \&          \&          \& \\
+ i\_0\I      \& portfolio\I              \&  trend\I \& return\I \& \\
+ outlines    \& contaminate emigration   \&  332,617 \&   67,859 \& \\
+ aggressor   \& replacements clairvoyant \&  378,119 \&   32,561 \& \\
+ rascal      \& baited released          \&   35,862 \&  154,699 \& \\
+ exclusively \& invidious revs           \&  469,654 \&  116,714 \& \\
+ nibble      \& breathe teenager         \& -221,525 \&   78,948 \& \\
+ atheist     \& annex summation          \&   93,515 \&  155,073 \& \\
+};
+\path[draw, semithick] (gt815f8563fff2-1-1.north west) -- (gt815f8563fff2-1-5.north east);
+\path[draw, semithick] ([yshift=0.125em]gt815f8563fff2-3-5.north -| gt815f8563fff2-3-1.west) -- ([yshift=0.125em]gt815f8563fff2-3-5.north -| gt815f8563fff2-3-5.east);
+\path[draw, semithick] ([yshift=-0.125em]gt815f8563fff2-1-1.south west |- gt815f8563fff2.south) -- ([yshift=-0.125em]gt815f8563fff2-1-5.south east |- gt815f8563fff2.south);
+\path[draw, semithick] ([xshift=0.5em]gt815f8563fff2-1-1.south east) -- ([xshift=0.5em]gt815f8563fff2-1-1.south east |- gt815f8563fff2.south);
+\end{tikzpicture}
+\end{table}

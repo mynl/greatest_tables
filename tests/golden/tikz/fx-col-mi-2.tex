@@ -1,0 +1,45 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	row 3/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 3 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=3.78em},
+	column  2/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.25em},
+	column  4/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  5/.style={nodes={align=right }, nosep, text width=3.25em},
+	column  6/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt2ee31a6ccd55) [table, ampersand replacement=\&]{
+           \&          \&         \&          \&         \& \\
+           \&          \&         \&          \&         \& \\
+ i\_0\I    \& return\I \& decay\I \& return\I \& decay\I \& \\
+ revolved  \& -249,962 \& 1.07212 \&  210,495 \& 0.24544 \& \\
+ creek     \& -237,607 \& 0.42187 \&  298,894 \& 0.69349 \& \\
+ view      \&  113,839 \& 0.67716 \&  223,661 \& 0.08802 \& \\
+ lack      \&   15,850 \& 1.00981 \& -188,754 \& 0.77267 \& \\
+ crippled  \& -203,069 \& 0.37774 \& -120,605 \& 0.70817 \& \\
+ condition \&  391,977 \& 0.21265 \&  -94,598 \& 0.64206 \& \\
+ prick     \&   12,198 \& 0.90873 \&  358,674 \& 0.77876 \& \\
+ dumps     \&  218,168 \& 0.56723 \&  -76,214 \& 0.20301 \& \\
+};
+\node[anchor=center, font=\bfseries] at ($(gt2ee31a6ccd55-2-2.west)!0.5!(gt2ee31a6ccd55-2-3.east)$) {handicapping};
+\node[anchor=center, font=\bfseries] at ($(gt2ee31a6ccd55-2-4.west)!0.5!(gt2ee31a6ccd55-2-5.east)$) {vulnerability};
+\path[draw, semithick] (gt2ee31a6ccd55-1-1.north west) -- (gt2ee31a6ccd55-1-6.north east);
+\path[draw, semithick] ([yshift=0.125em]gt2ee31a6ccd55-4-6.north -| gt2ee31a6ccd55-4-1.west) -- ([yshift=0.125em]gt2ee31a6ccd55-4-6.north -| gt2ee31a6ccd55-4-6.east);
+\path[draw, semithick] ([yshift=-0.125em]gt2ee31a6ccd55-1-1.south west |- gt2ee31a6ccd55.south) -- ([yshift=-0.125em]gt2ee31a6ccd55-1-6.south east |- gt2ee31a6ccd55.south);
+\path[draw, semithick] ([xshift=0.5em]gt2ee31a6ccd55-1-1.south east) -- ([xshift=0.5em]gt2ee31a6ccd55-1-1.south east |- gt2ee31a6ccd55.south);
+\path[draw, ultra thin] ([xshift=-0.5em, yshift=-0.125em]gt2ee31a6ccd55-2-4.south west) -- ([xshift=-0.5em]gt2ee31a6ccd55-2-4.south west |- gt2ee31a6ccd55.south);
+\end{tikzpicture}
+\end{table}

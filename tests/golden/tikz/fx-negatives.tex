@@ -1,0 +1,37 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=4.94em},
+	column  2/.style={nodes={align=right }, nosep, text width=4.11em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  4/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gtb7af291cabed) [table, ampersand replacement=\&]{
+              \&              \&          \& \\
+ i\_0\I       \& settlement\I \& uptake\I \& \\
+ unearthing   \&     -106,716 \&  140,474 \& \\
+ invading     \&      117,918 \&  291,001 \& \\
+ irresistible \&      232,869 \& -449,251 \& \\
+ rugged       \&      400,468 \&  813,865 \& \\
+ symmetrical  \&      562,805 \&  188,471 \& \\
+ passivity    \&     -395,972 \&  555,961 \& \\
+ owed         \&      271,986 \&  -52,641 \& \\
+ viruses      \&       14,422 \&  246,367 \& \\
+};
+\path[draw, semithick] (gtb7af291cabed-1-1.north west) -- (gtb7af291cabed-1-4.north east);
+\path[draw, semithick] ([yshift=0.125em]gtb7af291cabed-3-4.north -| gtb7af291cabed-3-1.west) -- ([yshift=0.125em]gtb7af291cabed-3-4.north -| gtb7af291cabed-3-4.east);
+\path[draw, semithick] ([yshift=-0.125em]gtb7af291cabed-1-1.south west |- gtb7af291cabed.south) -- ([yshift=-0.125em]gtb7af291cabed-1-4.south east |- gtb7af291cabed.south);
+\path[draw, semithick] ([xshift=0.5em]gtb7af291cabed-1-1.south east) -- ([xshift=0.5em]gtb7af291cabed-1-1.south east |- gtb7af291cabed.south);
+\end{tikzpicture}
+\end{table}

@@ -15,13 +15,16 @@ from .ir import (
     IR_VERSION, Cell, Column, FormatSpec, HeadCell, Row, TableDoc,
     canonical_dict,
 )
+from .render.etcher import Etcher
 from .render.html import render_html
 from .render.text import render_text
+from .render.tikz import render_tikz
 from .spec import HouseStyle, TableSpec
 
 __all__ = [
-    'GT', 'IR_VERSION', '__version__', 'Cell', 'Column', 'Fabricator',
-    'FormatSpec', 'HeadCell', 'HouseStyle', 'Row', 'TableDoc', 'TableSpec',
-    'build', 'canonical_dict', 'canonical_json', 'doc_hash', 'load_spec',
-    'quick_fab', 'render_html', 'render_text', 'stamp',
+    'Etcher', 'GT', 'IR_VERSION', '__version__', 'Cell', 'Column',
+    'Fabricator', 'FormatSpec', 'HeadCell', 'HouseStyle', 'Row', 'TableDoc',
+    'TableSpec', 'build', 'canonical_dict', 'canonical_json', 'doc_hash',
+    'load_spec', 'quick_fab', 'render_html', 'render_text', 'render_tikz',
+    'stamp',
 ]

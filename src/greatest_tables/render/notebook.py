@@ -1,9 +1,9 @@
 """Notebook/Quarto integration helpers.
 
-The mimebundle always carries ``text/html``. A ``text/latex`` entry joins it
-once the TikZ renderer exists ([tikz-blog]) — and then only when explicitly
-requested or a Quarto render is detected, which is what structurally fixes
-greater_tables 5.x's compute-TikZ-then-discard-it-per-repr waste.
+The mimebundle always carries ``text/html``. ``text/latex`` (the TikZ
+rendering) joins only when explicitly requested or a Quarto render is
+detected — which is what structurally fixes greater_tables 5.x's
+compute-TikZ-then-discard-it-per-repr waste.
 """
 
 from __future__ import annotations
@@ -11,7 +11,9 @@ from __future__ import annotations
 import os
 
 from ..ir import TableDoc
+from ..spec import HouseStyle
 from .html import render_html
+from .tikz import render_tikz
 
 __all__ = ['in_quarto', 'mimebundle']
 
@@ -21,6 +23,24 @@ def in_quarto() -> bool:
     return any(k.startswith('QUARTO_') for k in os.environ)
 
 
-def mimebundle(doc: TableDoc, *, css: str = 'embed') -> dict[str, str]:
-    """MIME bundle for ``_repr_mimebundle_``."""
-    return {'text/html': render_html(doc, css=css)}
+def mimebundle(doc: TableDoc, *, css: str = 'embed',
+               tikz: bool | None = None,
+               style: HouseStyle | None = None) -> dict[str, str]:
+    """MIME bundle for ``_repr_mimebundle_``.
+
+    Parameters
+    ----------
+    doc
+        The document.
+    css
+        Stylesheet policy for the HTML entry.
+    tikz
+        Include ``text/latex``: True/False forces; None (default) includes
+        it only under Quarto.
+    style
+        HouseStyle for the TikZ rendering.
+    """
+    bundle = {'text/html': render_html(doc, css=css)}
+    if tikz or (tikz is None and in_quarto()):
+        bundle['text/latex'] = render_tikz(doc, style)
+    return bundle

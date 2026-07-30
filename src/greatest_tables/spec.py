@@ -98,8 +98,25 @@ class TableSpec:
 class HouseStyle:
     """Renderer opinions — never serialized into the IR.
 
-    Grows with the renderers: [walker] adds the CSS custom-property values,
-    [tikz-blog] adds rule weights and TikZ geometry. Kept minimal until then.
+    Rule weights are the greater_tables float scale, mapped to TikZ line
+    styles via ``render.tikz.W2TIKZ`` (0 = don't draw, 0.25 = ultra thin …
+    3 = ultra thick). HTML equivalents live as CSS custom properties in
+    ``render.css.VARIABLES``.
     """
 
     max_rule_depth: int = 2
+    # --- TikZ geometry (em) and container
+    tikz_scale: float = 1.0
+    tikz_column_sep: float = 1.0
+    tikz_row_sep: float = 0.25
+    tikz_container_env: str = 'table'   # 'table' | 'figure' | 'sidewaysfigure'
+    tikz_latex: str | None = None       # placement, e.g. 'ht'
+    tikz_post_process: str = ''
+    tikz_prose_max_em: float = 18.0     # wrap columns cap (TikZ text width)
+    # --- rule weights (w2tikz scale)
+    frame_rule: float = 1.0             # top and bottom of table
+    head_rule: float = 1.0              # under the header block
+    stub_rule: float = 1.0              # stub/body vertical divider
+    total_rule: float = 0.75            # above rows flagged total
+    hrule_widths: tuple[float, float, float] = (0.5, 0.25, 0.25)
+    vrule_widths: tuple[float, float, float] = (0.25, 0.25, 0.25)

@@ -1,0 +1,42 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	row 2 column 2/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=3.22em},
+	column  2/.style={nodes={align=left  }, nosep, text width=5.17em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  4/.style={nodes={align=right }, nosep, text width=4.33em},
+	column  5/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt88e6f1005a3e) [table, ampersand replacement=\&]{
+        \&              \&          \&              \& \\
+ i\_0\I \& i\_1\I       \&   debt\I \& exhaustion\I \& \\
+ seems  \& fantasia     \&   60,622 \&     -266,545 \& \\
+        \& grassroots   \&  456,879 \&      266,068 \& \\
+        \& antarctica   \&  102,425 \&     -125,751 \& \\
+        \& circumscribe \& -162,475 \&      348,877 \& \\
+        \& simulates    \&  -51,503 \&       77,068 \& \\
+ dumped \& fantasia     \&  205,309 \&      368,886 \& \\
+        \& grassroots   \&  358,229 \&      661,890 \& \\
+        \& antarctica   \&  -19,637 \&     -194,214 \& \\
+        \& circumscribe \&   -4,577 \&       64,997 \& \\
+        \& simulates    \&  164,415 \&      229,660 \& \\
+};
+\path[draw, semithick] (gt88e6f1005a3e-1-1.north west) -- (gt88e6f1005a3e-1-5.north east);
+\path[draw, semithick] ([yshift=0.125em]gt88e6f1005a3e-3-5.north -| gt88e6f1005a3e-3-1.west) -- ([yshift=0.125em]gt88e6f1005a3e-3-5.north -| gt88e6f1005a3e-3-5.east);
+\path[draw, very thin] ([yshift=0.125em]gt88e6f1005a3e-8-5.north -| gt88e6f1005a3e-8-1.west) -- ([yshift=0.125em]gt88e6f1005a3e-8-5.north -| gt88e6f1005a3e-8-5.east);
+\path[draw, semithick] ([yshift=-0.125em]gt88e6f1005a3e-1-1.south west |- gt88e6f1005a3e.south) -- ([yshift=-0.125em]gt88e6f1005a3e-1-5.south east |- gt88e6f1005a3e.south);
+\path[draw, semithick] ([xshift=0.5em]gt88e6f1005a3e-1-2.south east) -- ([xshift=0.5em]gt88e6f1005a3e-1-2.south east |- gt88e6f1005a3e.south);
+\end{tikzpicture}
+\end{table}

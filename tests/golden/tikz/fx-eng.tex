@@ -1,0 +1,35 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=left}},
+	column  1/.style={nodes={align=left  }, inner xsep=1.0em, inner ysep=0, text width=5.05em},
+	column  2/.style={nodes={align=right }, nosep, text width=3.75em},
+	column  3/.style={nodes={align=right }, nosep, text width=3.56em},
+	column  4/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gte7b19fddaa9a) [table, ampersand replacement=\&]{
+             \&            \&             \& \\
+ i\_0\I      \& coverage\I \& indicator\I \& \\
+ versatile   \&   103.914a \&     0.01221 \& \\
+ prepackaged \&    17.941z \&     0.00000 \& \\
+ investments \&   125.776y \&     0.01759 \& \\
+ collapsible \&   170.946a \&     0.06254 \& \\
+ ruby        \&   137.094p \&     2.74355 \& \\
+ repeated    \&   501.357f \&     1.84756 \& \\
+};
+\path[draw, semithick] (gte7b19fddaa9a-1-1.north west) -- (gte7b19fddaa9a-1-4.north east);
+\path[draw, semithick] ([yshift=0.125em]gte7b19fddaa9a-3-4.north -| gte7b19fddaa9a-3-1.west) -- ([yshift=0.125em]gte7b19fddaa9a-3-4.north -| gte7b19fddaa9a-3-4.east);
+\path[draw, semithick] ([yshift=-0.125em]gte7b19fddaa9a-1-1.south west |- gte7b19fddaa9a.south) -- ([yshift=-0.125em]gte7b19fddaa9a-1-4.south east |- gte7b19fddaa9a.south);
+\path[draw, semithick] ([xshift=0.5em]gte7b19fddaa9a-1-1.south east) -- ([xshift=0.5em]gte7b19fddaa9a-1-1.south east |- gte7b19fddaa9a.south);
+\end{tikzpicture}
+\end{table}
