@@ -1,0 +1,538 @@
+{
+  "$defs": {
+    "Cell": {
+      "additionalProperties": false,
+      "description": "One body/foot cell.\n\n``text`` is plain unicode \u2014 each renderer applies its own escaping.\n``raw`` is only present when the owning column advertises ``raw: true``;\nan explicit JSON ``null`` there means a missing value, which is distinct\nfrom the field being absent (tracked via pydantic's fields-set).",
+      "properties": {
+        "colspan": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Colspan",
+          "type": "integer"
+        },
+        "flags": {
+          "default": [],
+          "items": {
+            "enum": [
+              "neg",
+              "emphasis",
+              "muted"
+            ],
+            "type": "string"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "html": {
+          "default": false,
+          "title": "Html",
+          "type": "boolean"
+        },
+        "math": {
+          "default": false,
+          "title": "Math",
+          "type": "boolean"
+        },
+        "raw": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw"
+        },
+        "rowspan": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Rowspan",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Cell",
+      "type": "object"
+    },
+    "Column": {
+      "additionalProperties": false,
+      "description": "Descriptor for one visual column, stubs first.",
+      "properties": {
+        "align": {
+          "enum": [
+            "l",
+            "r",
+            "c"
+          ],
+          "title": "Align",
+          "type": "string"
+        },
+        "break_depth": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Break Depth"
+        },
+        "dtype": {
+          "enum": [
+            "int",
+            "float",
+            "date",
+            "datetime",
+            "bool",
+            "string",
+            "object"
+          ],
+          "title": "Dtype",
+          "type": "string"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FormatSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level"
+        },
+        "name": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Name",
+          "type": "array"
+        },
+        "raw": {
+          "default": false,
+          "title": "Raw",
+          "type": "boolean"
+        },
+        "role": {
+          "default": "data",
+          "enum": [
+            "stub",
+            "data"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "enum": [
+                "ratio",
+                "year",
+                "date",
+                "raw"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "wrap": {
+          "default": false,
+          "title": "Wrap",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "dtype",
+        "align"
+      ],
+      "title": "Column",
+      "type": "object"
+    },
+    "FormatSpec": {
+      "additionalProperties": false,
+      "description": "Resolved display format for one column.\n\nApplicable by Python and by the JS walker (Intl.NumberFormat). The\nformatted ``text`` in cells is normative; this spec is informative \u2014\nit lets a client re-render at different precision without redoing the\nengine's column-scanning inference.",
+      "properties": {
+        "digits": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digits"
+        },
+        "group": {
+          "default": false,
+          "title": "Group",
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "int",
+            "dec",
+            "pct",
+            "sci",
+            "si",
+            "eng",
+            "year",
+            "date",
+            "str"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "negative": {
+          "default": "minus",
+          "enum": [
+            "minus",
+            "paren"
+          ],
+          "title": "Negative",
+          "type": "string"
+        },
+        "null": {
+          "default": "\u2014",
+          "title": "Null",
+          "type": "string"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pattern"
+        },
+        "prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prefix"
+        },
+        "scale": {
+          "default": 1.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "suffix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suffix"
+        },
+        "zero": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Zero"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "FormatSpec",
+      "type": "object"
+    },
+    "HeadCell": {
+      "additionalProperties": false,
+      "description": "One header cell; level is implicit in its row position within ``head``.",
+      "properties": {
+        "align": {
+          "anyOf": [
+            {
+              "enum": [
+                "l",
+                "r",
+                "c"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Align"
+        },
+        "colspan": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Colspan",
+          "type": "integer"
+        },
+        "flags": {
+          "default": [],
+          "items": {
+            "enum": [
+              "neg",
+              "emphasis",
+              "muted"
+            ],
+            "type": "string"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "html": {
+          "default": false,
+          "title": "Html",
+          "type": "boolean"
+        },
+        "math": {
+          "default": false,
+          "title": "Math",
+          "type": "boolean"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "title": "HeadCell",
+      "type": "object"
+    },
+    "Row": {
+      "additionalProperties": false,
+      "description": "One body/foot row.\n\n``cells`` holds only the *uncovered* columns \u2014 a stub cell with\n``rowspan`` in an earlier row covers its column here, exactly as HTML\n``<td rowspan>`` semantics. A cell that is plain text with no other\nattributes may be a bare string (the shorthand; canonicalized on dump).\n\n``break_depth`` is the shallowest stub level whose value changed versus\nthe previous row (0 = outermost). House style maps depth to rule weight;\nthe IR never names a weight.",
+      "properties": {
+        "break_depth": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Break Depth"
+        },
+        "cells": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Cell"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Cells",
+          "type": "array"
+        },
+        "flags": {
+          "default": [],
+          "items": {
+            "enum": [
+              "total",
+              "subtotal",
+              "emphasis",
+              "muted"
+            ],
+            "type": "string"
+          },
+          "title": "Flags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "cells"
+      ],
+      "title": "Row",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The table document \u2014 the versioned IR a semantic engine emits.\n\n``hash`` is stamped by :func:`greatest_tables.engine.hashing.stamp`\n(sha256 over canonical bytes, ``hash`` and ``generator`` excluded).",
+  "properties": {
+    "body": {
+      "items": {
+        "$ref": "#/$defs/Row"
+      },
+      "title": "Body",
+      "type": "array"
+    },
+    "caption": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Cell"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Caption"
+    },
+    "columns": {
+      "items": {
+        "$ref": "#/$defs/Column"
+      },
+      "title": "Columns",
+      "type": "array"
+    },
+    "foot": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Row"
+      },
+      "title": "Foot",
+      "type": "array"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generator"
+    },
+    "hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{12}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hash"
+    },
+    "head": {
+      "items": {
+        "items": {
+          "$ref": "#/$defs/HeadCell"
+        },
+        "type": "array"
+      },
+      "title": "Head",
+      "type": "array"
+    },
+    "ir_version": {
+      "default": 1,
+      "title": "Ir Version",
+      "type": "integer"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Label"
+    },
+    "n_head_levels": {
+      "minimum": 0,
+      "title": "N Head Levels",
+      "type": "integer"
+    },
+    "n_stub_levels": {
+      "minimum": 0,
+      "title": "N Stub Levels",
+      "type": "integer"
+    },
+    "notes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "n_stub_levels",
+    "n_head_levels",
+    "columns",
+    "head",
+    "body"
+  ],
+  "title": "TableDoc",
+  "type": "object"
+}

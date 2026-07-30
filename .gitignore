@@ -1,0 +1,18 @@
+# venv lives on V:\dev via junction
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+uv.lock
+
+# data firewall: no real data in the repo — synthetic fixtures and package data only
+*.csv
+!src/greatest_tables/data/*.csv
+!tests/fixtures/**/*.csv
+.env
+*.local.yaml
