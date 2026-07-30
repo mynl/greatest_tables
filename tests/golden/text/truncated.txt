@@ -1,0 +1,10 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+i_0        │ loss           force
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+brighter   │ archetypal   452,314
+shuttles   │ conceding    -73,102
+managerial │ fanatics    -149,488
+owing      │ beaver       448,617
+thirty     │ enticing     -49,303
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Note: Showing first 5 of 12 rows.

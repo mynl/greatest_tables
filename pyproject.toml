@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "greatest-tables"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Semantic table engine: DataFrame in, versioned table-document IR out, rendered to HTML, TikZ, text, or client-side JS."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -22,10 +22,13 @@ dev = [
     "pytest>=8.0",
 ]
 
+[tool.hatch.version]
+path = "src/greatest_tables/_version.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/greatest_tables"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# cache dir creation fails on the NAS-synced repo path; determinism > cache
-addopts = "-p no:cacheprovider"
+# .pytest_cache is a junction to V:\dev\greatest-tables\.pytest_cache (dev
+# drive, like .venv) — cache-dir creation fails on the NAS-synced repo path

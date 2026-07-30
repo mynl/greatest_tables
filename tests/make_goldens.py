@@ -11,20 +11,32 @@ Review the diff before committing — these files are the IR contract.
 import json
 from pathlib import Path
 
-from greatest_tables import TableDoc, canonical_json
+from greatest_tables import TableDoc, build, canonical_json, render_text
 
 from exemplars import EXEMPLARS
+from registry import fixtures
 
 ROOT = Path(__file__).parent.parent
 
 
 def main() -> None:
-    golden = ROOT / 'tests' / 'golden' / 'ir'
-    golden.mkdir(parents=True, exist_ok=True)
-    for name, build in EXEMPLARS.items():
-        path = golden / f'{name}.json'
-        path.write_bytes(canonical_json(build()))
+    golden_ir = ROOT / 'tests' / 'golden' / 'ir'
+    golden_text = ROOT / 'tests' / 'golden' / 'text'
+    golden_ir.mkdir(parents=True, exist_ok=True)
+    golden_text.mkdir(parents=True, exist_ok=True)
+
+    for name, make in EXEMPLARS.items():
+        path = golden_ir / f'{name}.json'
+        path.write_bytes(canonical_json(make()))
         print(f'wrote {path}')
+
+    for name, (data, spec) in fixtures().items():
+        doc = build(data, spec)
+        ir_path = golden_ir / f'fx-{name}.json'
+        ir_path.write_bytes(canonical_json(doc))
+        text_path = golden_text / f'{name}.txt'
+        text_path.write_text(render_text(doc), encoding='utf-8', newline='\n')
+        print(f'wrote {ir_path.name} + {text_path.name}')
 
     schema_path = ROOT / 'schema' / 'ir-v1.json'
     schema = TableDoc.model_json_schema()

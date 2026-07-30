@@ -1,0 +1,3 @@
+# golden files are byte-precise — no newline conversion ever
+tests/golden/** -text
+schema/** -text
