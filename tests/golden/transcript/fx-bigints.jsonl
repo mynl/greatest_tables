@@ -1,0 +1,9 @@
+{"caption":null,"label":null,"hash":"768fec45d8c5","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-data","gt-r"],"text":"id"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"v"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"9,007,199,254,740,992"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1.500"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"9,007,199,254,741,000"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"2.500"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"12"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-neg","gt-nowrap","gt-r"],"text":"-3.250"}

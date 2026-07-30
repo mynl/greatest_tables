@@ -1,0 +1,7 @@
+{"caption":null,"label":null,"hash":"cc4dd7d4ac00","notes":[]}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"Ruin probability"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-c","gt-data","gt-math","gt-nowrap"],"text":"\\(\\psi(u) = \\Pr(U_t < 0)\\)"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"Reference"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"<a href=\"https://example.org\">doc</a>"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"Plain"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"row"}

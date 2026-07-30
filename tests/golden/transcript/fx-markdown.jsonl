@@ -1,0 +1,7 @@
+{"caption":"Simple table","label":"tbl-md","hash":"a97aff0e8d91","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-data","gt-l"],"text":"item"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"count"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"apples"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"3"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"pears"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"12"}

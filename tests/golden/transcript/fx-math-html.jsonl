@@ -1,0 +1,9 @@
+{"caption":null,"label":null,"hash":"786c7d899001","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-data","gt-l"],"text":"expr"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-l"],"text":"link"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-math","gt-wrap"],"text":"\\(\\alpha+\\beta\\)"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"<a href=\"x\">x</a>"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"plain"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"<b>b</b>"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-math","gt-wrap"],"text":"\\(e^{i\\pi}\\)"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"none"}

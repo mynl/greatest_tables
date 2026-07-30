@@ -9,9 +9,12 @@ Review the diff before committing — these files are the IR contract.
 """
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 from greatest_tables import TableDoc, build, canonical_json, render_text
+from greatest_tables.render.css import write_asset
 
 from exemplars import EXEMPLARS
 from registry import fixtures
@@ -43,6 +46,15 @@ def main() -> None:
     schema_path.write_text(json.dumps(schema, indent=2, sort_keys=True) + '\n',
                            encoding='utf-8')
     print(f'wrote {schema_path}')
+
+    print(f'wrote {write_asset()}')
+
+    node = shutil.which('node')
+    if node:
+        subprocess.run([node, str(ROOT / 'js' / 'transcript.mjs'), '--write'],
+                       check=True, cwd=ROOT)
+    else:
+        print('node not found — transcript goldens not regenerated')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,22 @@
+{"caption":"Loss development by year","label":"tbl-loss-dev","hash":"85bf09640692","notes":["Amounts in USD thousands."]}
+{"s":"head","r":0,"c":0,"tag":"th","colspan":2,"classes":["gt-c","gt-stub","gt-stub-end"],"text":""}
+{"s":"head","r":0,"c":2,"tag":"th","colspan":2,"classes":["gt-c","gt-data"],"text":"Group A"}
+{"s":"head","r":0,"c":4,"tag":"th","classes":["gt-c","gt-data","gt-vbreak-0"],"text":"Group B"}
+{"s":"head","r":1,"c":0,"tag":"th","classes":["gt-l","gt-stub"],"text":"Year"}
+{"s":"head","r":1,"c":1,"tag":"th","classes":["gt-l","gt-stub","gt-stub-end"],"text":"Sub"}
+{"s":"head","r":1,"c":2,"tag":"th","classes":["gt-data","gt-r"],"text":"Paid"}
+{"s":"head","r":1,"c":3,"tag":"th","classes":["gt-data","gt-r"],"text":"Incurred"}
+{"s":"head","r":1,"c":4,"tag":"th","classes":["gt-data","gt-r","gt-vbreak-0"],"text":"Paid"}
+{"s":"body","r":0,"c":0,"tag":"td","rowspan":2,"classes":["gt-l","gt-nowrap","gt-stub"],"text":"2020"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"Sub 1"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1,234.5"}
+{"s":"body","r":0,"c":3,"tag":"td","classes":["gt-data","gt-neg","gt-nowrap","gt-r"],"text":"(89.0)"}
+{"s":"body","r":0,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"250.0"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"Sub 2"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"—"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"12.3"}
+{"s":"body","r":1,"c":3,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"4.5"}
+{"s":"body","r":2,"c":0,"tag":"td","colspan":2,"classes":["gt-l","gt-nowrap","gt-stub","gt-stub-end"],"text":"Total"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1,234.5"}
+{"s":"body","r":2,"c":3,"tag":"td","classes":["gt-data","gt-neg","gt-nowrap","gt-r"],"text":"(76.7)"}
+{"s":"body","r":2,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"254.5"}

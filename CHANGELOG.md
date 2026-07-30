@@ -3,6 +3,40 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.2.0] - 2026-07-30
+
+### Added
+
+- [walker] `render/css.py`: the RULES dict — single source of truth for the shared
+  class vocabulary — generating committed `assets/gt.css`. `.gt.gt` selector
+  doubling (beats JupyterLab/Quarto host rules without !important), per-table
+  custom properties, currentColor-only palette, no widths/fonts. Row rules ride as
+  border-top on the row's own cells, so rowspan-covered stub columns are skipped
+  and partial rules start exactly at the changed column.
+- `js/src/gt-render.js`: zero-dependency ES walker. `renderTable(doc, opts)` →
+  `{el, doc, destroy(), toCSV()}` instance handle; textContent by default with an
+  `allowHtml` gate (injection-safe); KaTeX injection or `\(...\)` fallback;
+  delegated `gt:cellclick` CustomEvent with the full row keyed by column name;
+  optional `fit` width pass (canvas measure + solver, forces single-line
+  ellipsis). Solver functions copied verbatim from csv-grid `util.js` (3.9.0,
+  commit 01a9773) with a provenance header and a drift-guard test that re-diffs
+  the copy against the csv-grid source when present.
+- `js/build.mjs` (esbuild) → committed `assets/gt-render.esm.js` + `.iife.js`
+  (global `GtRender`); root `package.json` for the secondary npm-from-git path.
+- DOM-transcript conformance harness (`js/transcript.mjs`, node + linkedom):
+  one JSON line per cell over every golden IR fixture → committed
+  `tests/golden/transcript/*.jsonl` (20 files). The Python HTML renderer must
+  byte-match these in [notebook-html]. pytest wrapper skips when node is absent.
+- CSS contract guard tests (asset drift, vocabulary coverage, selector doubling,
+  no-geometry/no-color policy).
+
+### Notes
+
+- IR goldens embed the generator version string, so `tests/make_goldens.py` runs
+  once per release — the one-line-per-fixture diff doubles as re-validation.
+- Version strings now live in `_version.py` (hatchling-dynamic), `package.json`,
+  and `GT_RENDER_VERSION` — keep all three in sync at each bump.
+
 ## [1.1.0] - 2026-07-30
 
 ### Added
