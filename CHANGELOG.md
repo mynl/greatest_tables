@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.4.0] - 2026-07-30
+
+### Added
+
+- `demo2.html`: curated showcase — TeX/math cells (page-level MathJax CDN
+  typesets the walker's `\(...\)` fallback), long-text wrapping from both
+  Fabricator generators ('s' uniform low-variance, 'w' negative-binomial
+  high-variance), wide-range floats in engineering format, and the csv-grid
+  width solver demonstrated live in both modes (equal-risk and coverage) in a
+  560px-constrained container against the natural-layout reference.
+- Four showcase fixtures (tex, wrap-low, wrap-high, wide-floats) join the
+  registry and therefore all three golden suites (IR, text, DOM transcript);
+  125 tests.
+
+### Changed
+
+- Engineering-format inference gains csv-grid's second trigger: a float column
+  whose nonzero values span more than a 10^pef_upper magnitude ratio renders as
+  engineering even when its mean sits inside the pef bounds (previously such
+  columns got fixed decimals and tiny values collapsed to 0.00000).
+
 ## [1.3.0] - 2026-07-30
 
 ### Added

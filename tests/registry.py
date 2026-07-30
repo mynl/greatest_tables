@@ -46,6 +46,22 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
                        TableSpec(max_rows=5))
     fx['headerless'] = ([['alpha', 1], ['beta', 2]], TableSpec())
     fx['empty'] = (pd.DataFrame(), TableSpec())
+    # demo2 showcase fixtures: TeX, wrapping (both text generators), wide floats
+    fx['tex'] = (Fabricator(seed=116).make(
+        8, 'xs3f', metric_name_spec=['formula', 'commentary', 'value']),
+        TableSpec())
+    fx['wrap-low'] = (Fabricator(seed=114).make(
+        6, 's14s6f',
+        metric_name_spec=['long description', 'shorter note', 'amount']),
+        TableSpec())
+    fx['wrap-high'] = (Fabricator(seed=115).make(
+        6, 'w10w4f',
+        metric_name_spec=['variable length text', 'short variable', 'amount']),
+        TableSpec())
+    fx['wide-floats'] = (Fabricator(seed=117).make(
+        8, 'flv',
+        metric_name_spec=['normal scale', 'log wide', 'extreme range']),
+        TableSpec())
     fx['markdown'] = (
         ': Simple table {#tbl-md}\n\n'
         '| item | count |\n|:-----|------:|\n| apples | 3 |\n| pears | 12 |\n',

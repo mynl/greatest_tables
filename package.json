@@ -1,6 +1,6 @@
 {
   "name": "gt-render",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "JS walker for the greatest_tables table-document IR",
   "type": "module",

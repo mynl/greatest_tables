@@ -66,17 +66,22 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
                          pef_upper: int = 6) -> FormatSpec:
     """Choose a float column's format from its statistics (GT salvage).
 
-    Digits bucket by mean magnitude (<1 → 5, <10 → 3, <20000 → 2, else 0);
-    a column whose mean magnitude falls outside ``[10**pef_lower,
-    10**pef_upper]`` renders in engineering notation. Column-level decision —
-    GT 5.x switched per cell, which mixed formats within a column.
+    Digits bucket by mean magnitude (<1 → 5, <10 → 3, <20000 → 2, else 0).
+    Engineering notation on either trigger: mean magnitude outside
+    ``[10**pef_lower, 10**pef_upper]`` (the GT rule), or nonzero values
+    spanning more than ``10**pef_upper`` orders-of-magnitude ratio (the
+    csv-grid rule — no single fixed precision serves such a column).
+    Column-level decision — GT 5.x switched per cell, which mixed formats
+    within a column.
     """
     valid = ser.dropna()
     valid = valid[[math.isfinite(float(v)) for v in valid]] if len(valid) else valid
     if len(valid) == 0:
         return FormatSpec(kind='dec', digits=2, group=True)
     amean = float(valid.abs().mean())
-    if amean > 0 and not 10.0 ** pef_lower <= amean <= 10.0 ** pef_upper:
+    absvals = [abs(float(v)) for v in valid if float(v) != 0]
+    wide = bool(absvals) and max(absvals) / min(absvals) > 10.0 ** pef_upper
+    if amean > 0 and (wide or not 10.0 ** pef_lower <= amean <= 10.0 ** pef_upper):
         return FormatSpec(kind='eng', digits=3)
     if amean < 1:
         digits = 5
