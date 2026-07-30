@@ -129,15 +129,17 @@ _DEMO2 = [
      'ones. Natural browser layout: the column takes its longest-line width '
      'up to the prose cap, everything wraps.',
      None, None),
-    ('fx-wide-floats', 'Wide-range floats → engineering format',
+    ('fx-wide-floats', 'Wide-range floats → SI suffixes (default eng display)',
      'Column-level inference: normal-scale floats get grouped decimals; '
-     'log-wide and extreme-range columns trip the engineering rule (mean '
+     'log-wide and extreme-range columns trip an engineering rule (mean '
      'outside 10^[-3,6] — the GT rule — or nonzero span ratio beyond 10^6 — '
-     'the csv-grid rule).',
+     'the csv-grid rule) and render with SI suffixes (µ m k M G T…). The '
+     'empty suffix slot is a no-break space so decimals align. Exponent '
+     "style is the 'eng' sugar opt-in, fixed-width e+00/e-00.",
      None, None),
-    ('fx-eng', 'Engineering format, tiny magnitudes',
-     'Sub-atomic scale values; both columns render as mantissa + '
-     'exponent-of-three.',
+    ('fx-eng', 'SI suffixes, tiny magnitudes',
+     'Sub-atomic scale values; suffixes run down the 2022-extended SI '
+     'ladder (a z y r q) so a column never mixes suffix and exponent style.',
      None, None),
     ('fx-wrap-high', 'Width solver: natural layout (reference)',
      'The same high-variance table again, unconstrained.',

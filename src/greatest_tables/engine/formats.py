@@ -82,7 +82,9 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
     absvals = [abs(float(v)) for v in valid if float(v) != 0]
     wide = bool(absvals) and max(absvals) / min(absvals) > 10.0 ** pef_upper
     if amean > 0 and (wide or not 10.0 ** pef_lower <= amean <= 10.0 ** pef_upper):
-        return FormatSpec(kind='eng', digits=3)
+        # SI-suffix style is the default engineering display; users opt into
+        # exponent style with the 'eng' sugar
+        return FormatSpec(kind='si', digits=3)
     if amean < 1:
         digits = 5
     elif amean < 10:
@@ -153,22 +155,35 @@ def _exp3(v: float) -> int:
 
 
 def _eng(v: float, digits: int) -> str:
-    """Engineering notation: mantissa in [1, 1000), exponent multiple of 3."""
+    """Engineering notation: mantissa in [1, 1000), exponent multiple of 3.
+
+    Exponents are fixed-width ``e+00``/``e-00`` (sign always, two digits) so
+    right-aligned columns line up exactly.
+    """
     if v == 0:
-        return f'{0:.{digits}f}e0'
+        return f'{0:.{digits}f}e+00'
     e3 = _exp3(v)
-    return f'{v / 10.0 ** e3:.{digits}f}e{e3}'
+    return f'{v / 10.0 ** e3:.{digits}f}e{"+" if e3 >= 0 else "-"}{abs(e3):02d}'
 
 
-_SI_SUFFIX = {-12: 'p', -9: 'n', -6: 'µ', -3: 'm', 0: '', 3: 'k', 6: 'M',
-              9: 'G', 12: 'T'}
+# full SI prefix ladder (2022 additions included) so real columns never mix
+# suffix and exponent styles mid-column
+_SI_SUFFIX = {-30: 'q', -27: 'r', -24: 'y', -21: 'z', -18: 'a', -15: 'f',
+              -12: 'p', -9: 'n', -6: 'µ', -3: 'm', 0: '', 3: 'k', 6: 'M',
+              9: 'G', 12: 'T', 15: 'P', 18: 'E', 21: 'Z', 24: 'Y', 27: 'R',
+              30: 'Q'}
 
 
 def _si(v: float, digits: int) -> str:
-    """SI-suffix notation (1.2M style); falls back to eng outside the table."""
+    """SI-suffix notation (1.200M style) — the default engineering display.
+
+    The empty suffix slot (exponent 0) is a no-break space so decimal points
+    stay aligned against suffixed neighbours in tabular-nums/monospace
+    rendering. Falls back to :func:`_eng` beyond ±10^30.
+    """
     if v == 0:
-        return f'{0:.{digits}f}'
-    e3 = min(12, max(-12, _exp3(v)))
-    if e3 not in _SI_SUFFIX:  # pragma: no cover — clamped above
+        return f'{0:.{digits}f}{chr(0xa0)}'
+    e3 = _exp3(v)
+    if e3 not in _SI_SUFFIX:
         return _eng(v, digits)
-    return f'{v / 10.0 ** e3:.{digits}f}{_SI_SUFFIX[e3]}'
+    return f'{v / 10.0 ** e3:.{digits}f}{_SI_SUFFIX[e3] or chr(0xa0)}'

@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.5.0] - 2026-07-30
+
+### Added
+
+- `dev/spec-gt2-for-aggregate-api.md`: the [aggregate-api] handoff spec
+  (mirrored into `T:/worktrees/aggregate_api/dev/plan-gt2-ir-adoption.md`) —
+  the adoption work is implemented by the aggregate_api agent.
+
+### Changed
+
+- Engineering display defaults to **SI suffixes** (µ m k M G T, full
+  2022-extended ladder q..Q so a column never mixes suffix and exponent
+  styles); the empty suffix slot is a no-break space so decimal points stay
+  aligned in tabular-nums/monospace rendering. Exponent style remains the
+  `'eng'` sugar opt-in and now emits fixed-width `e+00`/`e-00` exponents
+  (sign always, two digits) so right-aligned columns line up exactly.
+
 ## [1.4.0] - 2026-07-30
 
 ### Added
