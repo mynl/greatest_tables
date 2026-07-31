@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.8.0] - 2026-07-31
+
+### Added
+
+- **`irToGridInput(doc)`** in gt-render.js (also on the iife global): flattens
+  a table document into CsvGrid's input shape — `{columns, records, formats,
+  align}`. Stubs un-sparsify (rowspan values repeat down their run),
+  multi-level names join with ' / ', data cells emit raw values (null →
+  empty), IR FormatSpecs map to csv-grid format-spec strings, alignment
+  rides as an 'lrc' string. Requires `include_raw='data'` — throws with a
+  clear message otherwise, because parsing formatted text back would be the
+  re-inference the IR exists to kill. Hierarchy, flags, and foot rows are
+  deliberately dropped: they cannot coexist with sort/filter. csv-grid
+  itself is untouched. One IR fetch now feeds both the static walker and the
+  interactive grid (the aggregate-api toggle).
+- `js/adapter-check.mjs` harness + node round-trip tests (`test_adapter.py`).
+
 ## [1.7.1] - 2026-07-31
 
 ### Fixed

@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.7.1';
+export const GT_RENDER_VERSION = '1.8.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
@@ -267,6 +267,92 @@ function rowClasses(doc, row) {
 
 function csvEscape(s) {
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/* ------------------------------------------------- csv-grid adapter
+ * Flatten a table document into CsvGrid's input shape:
+ *   const g = irToGridInput(doc);
+ *   new CsvGrid(el, { columns: g.columns, records: g.records },
+ *               { formats: g.formats, align: g.align, ...hostOpts });
+ *
+ * The flattening is deliberate loss: hierarchy (rowspans, spanners) and
+ * flags don't survive because they can't coexist with sort/filter — a
+ * sorted table has no runs to span. Stubs un-sparsify (values repeat down
+ * their rowspan), multi-level names join with ' / ', and data cells emit
+ * their raw values — which is why every data column must carry raw
+ * (build with include_raw='data'); parsing formatted text back would be
+ * the re-inference this adapter exists to avoid. Foot rows are excluded
+ * (a sortable grid has no business sorting a totals row). */
+
+export function irToGridInput(doc) {
+    if (doc.ir_version !== IR_VERSION_SUPPORTED) {
+        throw new Error(`irToGridInput supports ir_version ` +
+                        `${IR_VERSION_SUPPORTED}, got ${doc.ir_version}`);
+    }
+    const cols = doc.columns;
+    for (const c of cols) {
+        if ((c.role || 'data') === 'data' && !c.raw) {
+            throw new Error(
+                `irToGridInput requires raw values on every data column ` +
+                `(missing on ${c.key} "${c.name.join(' / ')}") — ` +
+                `build the document with include_raw='data'`);
+        }
+    }
+    const ncols = cols.length;
+    const records = [];
+    const pending = new Array(ncols).fill(0);
+    const carry = new Array(ncols).fill('');
+    for (const row of doc.body) {
+        const rec = carry.slice();
+        let col = 0;
+        for (const entry of row.cells) {
+            const cell = cellOf(entry);
+            while (col < ncols && pending[col] > 0) col++;
+            if (col >= ncols) break;
+            const colspan = cell.colspan || 1;
+            const rowspan = cell.rowspan || 1;
+            const value = 'raw' in cell
+                ? (cell.raw === null ? '' : cell.raw) : cell.text;
+            for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
+                rec[cc] = value;
+                if (rowspan > 1) {
+                    pending[cc] = rowspan;
+                    carry[cc] = value;
+                }
+            }
+            col += colspan;
+        }
+        for (let cc = 0; cc < ncols; cc++) {
+            if (pending[cc] > 0 && --pending[cc] === 0) carry[cc] = '';
+        }
+        records.push(rec);
+    }
+    return {
+        columns: cols.map(c => c.name.join(' / ')),
+        records,
+        formats: cols.map(c => cgFormatSpec(c.format)),
+        align: cols.map(c => c.align).join(''),
+    };
+}
+
+/* Map a resolved IR FormatSpec to csv-grid's format-spec string language.
+ * null → let the grid infer (string columns). */
+function cgFormatSpec(f) {
+    if (!f) return null;
+    const d = f.digits;
+    const dot = d !== undefined && d !== null ? `.${d}` : '';
+    switch (f.kind) {
+        case 'int': return f.group ? ',d' : 'd';
+        case 'dec': return (f.group ? ',' : '') + dot + 'f';
+        case 'pct': return dot + '%';
+        case 'sci': return dot + 'e';
+        case 'si':
+        case 'eng': return 'eng';
+        case 'year': return 'year';
+        case 'date': return f.pattern || '%Y-%m-%d';
+        case 'str': return 's';
+        default: return null;
+    }
 }
 
 /* ------------------------------------------------------------------ fit

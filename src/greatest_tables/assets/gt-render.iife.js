@@ -25,10 +25,11 @@ var GtRender = (() => {
     IR_VERSION_SUPPORTED: () => IR_VERSION_SUPPORTED,
     MIN_COL: () => MIN_COL,
     default: () => gt_render_default,
+    irToGridInput: () => irToGridInput,
     renderTable: () => renderTable,
     solveWidths: () => solveWidths
   });
-  var GT_RENDER_VERSION = "1.7.1";
+  var GT_RENDER_VERSION = "1.8.0";
   var IR_VERSION_SUPPORTED = 1;
   var MAX_BREAK = 2;
   var MAX_VBREAK = 1;
@@ -262,6 +263,79 @@ var GtRender = (() => {
   }
   function csvEscape(s) {
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function irToGridInput(doc) {
+    if (doc.ir_version !== IR_VERSION_SUPPORTED) {
+      throw new Error(`irToGridInput supports ir_version ${IR_VERSION_SUPPORTED}, got ${doc.ir_version}`);
+    }
+    const cols = doc.columns;
+    for (const c of cols) {
+      if ((c.role || "data") === "data" && !c.raw) {
+        throw new Error(
+          `irToGridInput requires raw values on every data column (missing on ${c.key} "${c.name.join(" / ")}") \u2014 build the document with include_raw='data'`
+        );
+      }
+    }
+    const ncols = cols.length;
+    const records = [];
+    const pending = new Array(ncols).fill(0);
+    const carry = new Array(ncols).fill("");
+    for (const row of doc.body) {
+      const rec = carry.slice();
+      let col = 0;
+      for (const entry of row.cells) {
+        const cell = cellOf(entry);
+        while (col < ncols && pending[col] > 0) col++;
+        if (col >= ncols) break;
+        const colspan = cell.colspan || 1;
+        const rowspan = cell.rowspan || 1;
+        const value = "raw" in cell ? cell.raw === null ? "" : cell.raw : cell.text;
+        for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
+          rec[cc] = value;
+          if (rowspan > 1) {
+            pending[cc] = rowspan;
+            carry[cc] = value;
+          }
+        }
+        col += colspan;
+      }
+      for (let cc = 0; cc < ncols; cc++) {
+        if (pending[cc] > 0 && --pending[cc] === 0) carry[cc] = "";
+      }
+      records.push(rec);
+    }
+    return {
+      columns: cols.map((c) => c.name.join(" / ")),
+      records,
+      formats: cols.map((c) => cgFormatSpec(c.format)),
+      align: cols.map((c) => c.align).join("")
+    };
+  }
+  function cgFormatSpec(f) {
+    if (!f) return null;
+    const d = f.digits;
+    const dot = d !== void 0 && d !== null ? `.${d}` : "";
+    switch (f.kind) {
+      case "int":
+        return f.group ? ",d" : "d";
+      case "dec":
+        return (f.group ? "," : "") + dot + "f";
+      case "pct":
+        return dot + "%";
+      case "sci":
+        return dot + "e";
+      case "si":
+      case "eng":
+        return "eng";
+      case "year":
+        return "year";
+      case "date":
+        return f.pattern || "%Y-%m-%d";
+      case "str":
+        return "s";
+      default:
+        return null;
+    }
   }
   var _canvas = null;
   function fitWidths(el, table, doc, resolved, mode) {
