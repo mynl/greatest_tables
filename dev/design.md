@@ -184,7 +184,11 @@ raise becomes `max_rows` truncate-with-note. ~3k lines vs 6.9k today.
 ## Sequencing (SPA path first)
 
 Each step gets a `dev/plan-<label>.md`; moved to `dev/done` on completion.
-Each completed step is a feature version bump (1.x.0) with CHANGELOG entry + one-line commit.
+Each completed step was a feature version bump (1.x.0) with CHANGELOG entry + one-line commit.
+
+**All seven steps are complete** as of 2026-07-31; every plan is in `dev/done` and the
+version line moved from the 1.x development counter to the published 6.0 series
+(`6.0.0a1`). Remaining open items live in `dev/pending.md`, not here.
 
 - **[ir-core]**: repo bootstrap; `ir.py`, `hashing.py`, `fabricator.py`; fixture registry;
   golden IR JSONs (byte-equal); committed `schema/ir-v1.json` + CI guard; hash-stability test.
@@ -202,7 +206,8 @@ Each completed step is a feature version bump (1.x.0) with CHANGELOG entry + one
 - **[tikz-blog]**: single TikZ impl from TableDoc with colspan support (new capability; today's
   silently returns `''` on non-unique columns); Etcher (paths cleaned); validate by rendering a
   sample of real blog tables through both packages and diffing text-oracle output.
-- **[backlog]**: csv-grid additive release; `irToGridInput` adapter; publish-name decision.
+- **[backlog]**: csv-grid additive release (still open, in the csv-grid repo); `irToGridInput`
+  adapter (done, 1.8.0); publish-name decision (done, 1.9.0 — `greater-tables` 6.0).
 
 ## Verification
 

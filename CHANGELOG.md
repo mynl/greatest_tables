@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a1] - 2026-07-31
+
+First pre-release of the rewrite. **The version line switches here** from the
+1.x development counter (1.0.0 → 1.11.0, one bump per completed step) to the
+published series: this package ships as `greater-tables` **6.0** on the
+existing PyPI project, where 5.3 stays frozen and pinnable (`<6`). Further
+changes before the release are `6.0.0a2`, `a3`, …
+
+All seven design steps are complete — [ir-core], [engine], [walker],
+[aggregate-api], [notebook-html], [tikz-blog], and the [backlog] adapter —
+and every plan doc has moved to `dev/done`. Open items are in
+`dev/pending.md`; the biggest is that Read the Docs hosting is not yet set up.
+
+### Changed
+
+- Version bumped to `6.0.0a1` in `_version.py` and `GT_RENDER_VERSION`.
+  `package.json` spells the same version `6.0.0-a.1`, which is npm's semver
+  form of PEP 440's `6.0.0a1` — the two differ in punctuation only.
+- `dev/` tidied: `spec-gt2-for-aggregate-api.md` deleted (superseded — the
+  adoption landed in aggregate_api a34/a35, and their own notes carry the
+  detail), `plan-aggregate-api.md` moved to `dev/done`, and `design.md`'s
+  sequencing section records that all steps are complete rather than
+  describing them as upcoming.
+
 ## [1.11.0] - 2026-07-31
 
 ### Fixed

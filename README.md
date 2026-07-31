@@ -124,8 +124,9 @@ dev/                   plan docs; moved to dev/done when complete
 
 ## Status
 
-Steps [ir-core], [engine], [walker], [notebook-html], [tikz-blog] complete —
-the engine, IR, JS walker, Python HTML renderer, and TikZ renderer are
-conformance-tested against each other. Next: [aggregate-api] adoption, then
-the 6.0 release. See `dev/design.md` for the full design, `dev/pending.md` for
-what is outstanding, and `CHANGELOG.md` for progress.
+**6.0.0a1** — all seven design steps are complete: the engine, IR, JS walker,
+Python HTML renderer, and TikZ renderer are conformance-tested against each
+other, and the first consumer (aggregate_api's SPA) renders tables
+client-side from the IR. Pre-release while that adoption settles; further
+changes are `a2`, `a3`, … See `dev/design.md` for the full design,
+`dev/pending.md` for what is outstanding, and `CHANGELOG.md` for progress.

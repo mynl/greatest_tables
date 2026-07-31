@@ -1,5 +1,5 @@
 // js/src/gt-render.js
-var GT_RENDER_VERSION = "1.11.0";
+var GT_RENDER_VERSION = "6.0.0a1";
 var IR_VERSION_SUPPORTED = 1;
 var MAX_BREAK = 2;
 var MAX_VBREAK = 1;
