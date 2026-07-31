@@ -98,12 +98,13 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
     series_all = stub_series + [df.iloc[:, j] for j in range(len(data_cols))]
     raw_set = _resolve_raw(spec, data_cols, df)
     cbd = st.column_break_depths(data_names)
+    defaults = format_defaults(spec)
 
     for i, (label, ser) in enumerate(zip(all_labels, series_all)):
         is_stub = i < n_stub
         dtype = dt.column_dtype(ser)
         tag = dt.semantic_tag(label, tags)
-        fspec = _resolve_format(label, ser, dtype, tag, spec)
+        fspec = _resolve_format(label, ser, dtype, tag, spec, defaults)
         name = ((str(label),) if is_stub else data_names[i - n_stub])
         columns.append(Column(
             key=f'c{i}',
@@ -243,31 +244,72 @@ def _trivial_index(index: pd.Index) -> bool:
             and index.start == 0 and index.step == 1)
 
 
-def _resolve_format(label, ser, dtype, tag, spec):
-    """The ladder: user sugar/callable > semantic tag > dtype inference > None."""
-    user = spec.formats.get(label)
+_DEFAULT_FIELDS = ('float_format', 'int_format', 'ratio_format',
+                   'date_format', 'table_float_format')
+
+
+def format_defaults(spec) -> dict[str, FormatSpec | None]:
+    """Parse the house-default fields once per build (sugar → FormatSpec).
+
+    Doing it here rather than per column means a bad sugar string raises once,
+    naming the field, instead of N times from inside the column loop.
+    """
+    out: dict[str, FormatSpec | None] = {}
+    for name in _DEFAULT_FIELDS:
+        value = getattr(spec, name)
+        if value is None:
+            out[name] = None
+        elif callable(value):
+            raise TypeError(
+                f'TableSpec.{name} takes format sugar, a mapping or a '
+                'FormatSpec, not a callable — a house rule has to be '
+                'expressible in YAML. Use formatters={col: fn} for a callable.')
+        else:
+            try:
+                out[name] = parse_sugar(value)
+            except ValueError as exc:
+                raise ValueError(f'TableSpec.{name}: {exc}') from None
+    return out
+
+
+def _resolve_format(label, ser, dtype, tag, spec, defaults):
+    """Two steps: what *kind* is this column, then what does that kind wear.
+
+    The kind is its semantic tag if it has one, else its dtype. Each kind
+    then resolves top-down: an explicit ``formatters`` entry, the matching
+    house default, the built-in. ``table_float_format`` sits above even the
+    explicit entry, but only on the float line — a ratio, year or date column
+    has been given a kind, so the float sledgehammer never reaches it.
+    """
+    user = spec.formatters.get(label)
     if user is None and isinstance(label, tuple):
-        user = spec.formats.get(label[-1])
-    if user is not None:
-        return user if callable(user) else parse_sugar(user)
+        user = spec.formatters.get(label[-1])
+    if user is not None and not callable(user):
+        user = parse_sugar(user)
+
     if tag == 'ratio':
-        return FormatSpec(kind='dec', digits=3)
+        return user or defaults['ratio_format'] or FormatSpec(kind='pct', digits=1)
     if tag == 'year':
-        return FormatSpec(kind='year')
+        return user or FormatSpec(kind='year')
     if tag == 'date':
-        return FormatSpec(kind='date')
+        return user or defaults['date_format'] or FormatSpec(kind='date')
     if tag == 'raw':
-        return None
+        return user
     if dtype == 'int':
-        return FormatSpec(kind='int', group=True)
+        return user or defaults['int_format'] or FormatSpec(kind='int', group=True)
     if dtype == 'float':
-        return infer_numeric_format(ser, pef_lower=spec.pef_lower,
-                                    pef_upper=spec.pef_upper)
+        return (defaults['table_float_format'] or user
+                or defaults['float_format']
+                or infer_numeric_format(ser, pef_lower=spec.pef_lower,
+                                        pef_upper=spec.pef_upper,
+                                        digits=spec.eng_digits,
+                                        style=spec.eng_style))
     if dtype == 'date':
-        return FormatSpec(kind='date')
+        return user or defaults['date_format'] or FormatSpec(kind='date')
     if dtype == 'datetime':
-        return FormatSpec(kind='date', pattern='%Y-%m-%d %H:%M')
-    return None
+        return (user or defaults['date_format']
+                or FormatSpec(kind='date', pattern='%Y-%m-%d %H:%M'))
+    return user
 
 
 def _make_cell(value, fspec, dtype, spec, *, html: bool = False,

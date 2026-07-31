@@ -43,9 +43,30 @@ class TableSpec:
         Columns forced to ``wrap=False`` regardless of dtype.
     aligners
         ``'lrc'``-style string (positional) or mapping label → 'l'/'r'/'c'.
-    formats
-        Per-column format override: a FormatSpec, sugar string (csv-grid
-        ``',.1f'`` or GT ``'{x:.1%}'`` style), or int (decimal digits).
+    formatters
+        Per-column format override, keyed by column label (a tuple label also
+        matches on its leaf name). Values: a FormatSpec, a mapping of
+        FormatSpec fields (the YAML form), a sugar string (csv-grid
+        ``',.1f'`` or GT ``'{x:.1%}'`` style), an int (decimal digits, with
+        grouping), or a callable taking the value and returning a string.
+        A callable owns its own NaN handling and does not reach the IR, so a
+        client cannot re-render that column.
+    float_format, int_format, ratio_format, date_format
+        House defaults, one per kind — the 5.x ``default_*_str`` settings.
+        Each overrides only its own kind's built-in default and loses to an
+        explicit ``formatters`` entry. ``date_format`` covers the date tag
+        and both date and datetime dtypes. Setting ``float_format`` turns the
+        float *inference* off entirely, including the automatic
+        engineering/SI switch, so ``pef_*`` and ``eng_*`` stop applying.
+        Callables are rejected: these are house rules that must be
+        YAML-expressible.
+    table_float_format
+        The sledgehammer: every **untagged float** column, overriding even an
+        explicit ``formatters`` entry. Ratio, year and date columns have a
+        kind, so it never reaches them. Default None, and deliberately absent
+        from ``config.write_template`` — set it consciously at a call site,
+        never in a config file where it would silently defeat per-column
+        formats months later.
     row_flags
         Mapping row position (negative allowed) → flags, or a callable
         ``(position, row_series) -> flags``. Vocabulary: total, subtotal,
@@ -70,7 +91,13 @@ class TableSpec:
     pef_lower, pef_upper
         Engineering-format bounds: a float column whose mean magnitude falls
         outside ``[10**pef_lower, 10**pef_upper]`` renders in engineering
-        notation (column-level decision).
+        notation, as does one whose nonzero values span more than
+        ``10**pef_upper`` between largest and smallest (column-level
+        decisions — 5.x switched per cell, mixing formats within a column).
+    eng_digits, eng_style
+        What engineering format looks like when it fires: decimals, and
+        ``'si'`` suffixes (µ m k M G …) or ``'exp'`` aligned exponents.
+        Both are dead if ``float_format`` is set — that turns inference off.
     """
 
     caption: str | None = None
@@ -85,7 +112,14 @@ class TableSpec:
     html_cols: ColSelector = None
     unbreakable: ColSelector = None
     aligners: str | Mapping[Hashable, str] | None = None
-    formats: Mapping[Hashable, FormatSpec | str | int] = field(default_factory=dict)
+    formatters: Mapping[Hashable, FormatSpec | Mapping | str | int
+                        | Callable[[Any], str]] = field(default_factory=dict)
+    # --- house defaults, one per kind (5.x's default_*_str)
+    float_format: FormatSpec | Mapping | str | int | None = None
+    int_format: FormatSpec | Mapping | str | int | None = None
+    ratio_format: FormatSpec | Mapping | str | int | None = None
+    date_format: FormatSpec | Mapping | str | int | None = None
+    table_float_format: FormatSpec | Mapping | str | int | None = None
     row_flags: Mapping[int, Sequence[str]] | Callable[[int, Any], Sequence[str]] | None = None
     cell_flags: Callable[[int, Hashable, Any], Sequence[str]] | None = None
     math: str = 'auto'
@@ -95,6 +129,8 @@ class TableSpec:
     sparsify_columns: bool = True
     pef_lower: int = -3
     pef_upper: int = 6
+    eng_digits: int = 3
+    eng_style: Literal['si', 'exp'] = 'si'
 
 
 @dataclass

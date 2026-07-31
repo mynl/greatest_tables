@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Mapping
 
 import pandas as pd
 
@@ -31,16 +32,26 @@ _PYSPEC_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fde%])?$
 _KIND_MAP = {'f': 'dec', 'd': 'int', '%': 'pct', 'e': 'sci', 's': 'str'}
 
 
-def parse_sugar(value: FormatSpec | str | int) -> FormatSpec:
+def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
     """Normalize a user format override to a FormatSpec.
+
+    Accepts a FormatSpec, a mapping of its fields (the YAML form — the only
+    way a config file can reach ``negative='paren'``, ``scale``, ``prefix``,
+    ``suffix``, ``null`` or ``zero``), a csv-grid spec string (``',.1f'``), a
+    GT f-string (``'{x:.1%}'``), a strftime pattern (``'%d %b %Y'``), the
+    words ``'year'``/``'eng'``/``'si'``, or an int (decimal digits, grouped).
 
     Raises
     ------
     ValueError
         If the sugar string is not recognized.
+    pydantic.ValidationError
+        If a mapping names a field FormatSpec does not have.
     """
     if isinstance(value, FormatSpec):
         return value
+    if isinstance(value, Mapping):
+        return FormatSpec(**value)
     if isinstance(value, int):
         return FormatSpec(kind='dec', digits=value, group=True)
     if value in ('year', 'eng', 'si'):
@@ -63,16 +74,23 @@ def parse_sugar(value: FormatSpec | str | int) -> FormatSpec:
 
 
 def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
-                         pef_upper: int = 6) -> FormatSpec:
+                         pef_upper: int = 6, digits: int = 3,
+                         style: str = 'si') -> FormatSpec:
     """Choose a float column's format from its statistics (GT salvage).
 
     Digits bucket by mean magnitude (<1 → 5, <10 → 3, <20000 → 2, else 0).
     Engineering notation on either trigger: mean magnitude outside
     ``[10**pef_lower, 10**pef_upper]`` (the GT rule), or nonzero values
     spanning more than ``10**pef_upper`` orders-of-magnitude ratio (the
-    csv-grid rule — no single fixed precision serves such a column).
-    Column-level decision — GT 5.x switched per cell, which mixed formats
-    within a column.
+    csv-grid rule — no single fixed precision serves such a column), rendered
+    with ``digits`` decimals in ``style`` (``'si'`` suffixes or ``'exp'``
+    aligned exponents). Column-level decision — GT 5.x switched per cell,
+    which mixed formats within a column.
+
+    This is the *guess*, and it only runs when the caller has not stated a
+    house rule: ``TableSpec.float_format`` (or ``table_float_format``)
+    short-circuits it in :func:`greater_tables.engine.build._resolve_format`,
+    which is what makes a document's floats consistent across tables.
     """
     valid = ser.dropna()
     valid = valid[[math.isfinite(float(v)) for v in valid]] if len(valid) else valid
@@ -82,9 +100,9 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
     absvals = [abs(float(v)) for v in valid if float(v) != 0]
     wide = bool(absvals) and max(absvals) / min(absvals) > 10.0 ** pef_upper
     if amean > 0 and (wide or not 10.0 ** pef_lower <= amean <= 10.0 ** pef_upper):
-        # SI-suffix style is the default engineering display; users opt into
-        # exponent style with the 'eng' sugar
-        return FormatSpec(kind='si', digits=3)
+        # SI suffixes are the default engineering display; eng_style='exp'
+        # switches the whole document to aligned e+00 exponents
+        return FormatSpec(kind='eng' if style == 'exp' else 'si', digits=digits)
     if amean < 1:
         digits = 5
     elif amean < 10:

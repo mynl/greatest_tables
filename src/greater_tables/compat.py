@@ -6,6 +6,12 @@ the GT2 engine; exotic 5.x config knobs are accepted with a warning and
 ignored. Everything is lazy cached — constructing a GT computes nothing, and
 TikZ is never computed on the HTML path (the 5.x eager-TikZ waste is gone by
 construction).
+
+``formatters`` is passed straight through: it is a real ``TableSpec`` field,
+not a translated shim. One deliberate difference from 5.x — a bare int now
+groups (``{'paid': 2}`` → ``1,234.57``, where 5.x meant ``1234.57``), because
+GT2 groups whenever it chooses the format for you. Write ``'.2f'`` for the
+ungrouped form.
 """
 
 from __future__ import annotations
@@ -32,7 +38,7 @@ class GT:
 
     Parameters mirror the greater_tables constructor where they still make
     sense; ``formatters`` accepts the 5.x shapes (callable, ``'{x:...}'``
-    format string, or int = decimal digits without grouping). ``config_path``
+    format string, or int = decimal digits, now grouped). ``config_path``
     loads YAML TableSpec defaults which explicit arguments override.
     ``style`` takes a :class:`~greater_tables.spec.HouseStyle` and is
     forwarded to every renderer. Additional keyword arguments naming
@@ -50,10 +56,8 @@ class GT:
             'unbreakable': unbreakable, 'ratio_cols': ratio_cols,
             'year_cols': year_cols, 'date_cols': date_cols,
             'raw_cols': raw_cols, 'show_index': show_index,
+            'formatters': formatters,
         }
-        if formatters is not None:
-            kwargs['formats'] = {k: _map_formatter(v)
-                                 for k, v in formatters.items()}
         for key, value in overrides.items():
             if key in _SPEC_FIELDS:
                 kwargs[key] = value
@@ -96,12 +100,3 @@ class GT:
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return mimebundle(self.doc, style=self.style)
-
-
-def _map_formatter(value):
-    """Map a 5.x formatter (callable | '{x:...}' | int) to GT2 sugar."""
-    if callable(value):
-        return value
-    if isinstance(value, int):
-        return f'{{x:.{value}f}}'    # 5.x meaning: N digits, no grouping
-    return value

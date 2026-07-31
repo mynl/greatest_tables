@@ -58,12 +58,21 @@ Width machinery
     most of 5.x's surprises.
 
 Default format strings
-    ``default_integer_str``, ``default_float_str``, ``default_ratio_str``,
-    ``default_date_str``, ``table_float_format``, ``default_formatter`` —
-    replaced by per-column resolution in the engine (spec override → tag →
-    dtype → column statistics), expressed as a
-    :class:`~greater_tables.ir.FormatSpec` rather than a format string.
-    Per-column ``formats`` in the spec is the explicit lever.
+    ``default_integer_str``, ``default_float_str``, ``default_ratio_str`` and
+    ``default_date_str`` have direct equivalents: ``int_format``,
+    ``float_format``, ``ratio_format`` and ``date_format`` on
+    :class:`~greater_tables.spec.TableSpec`. They take the same sugar plus a
+    :class:`~greater_tables.ir.FormatSpec`, they are YAML-expressible, and
+    each replaces only its own kind's built-in. ``table_float_format``
+    survives with its 5.x precedence — it beats even a per-column entry —
+    narrowed to *untagged float* columns, so ratio, year and date columns are
+    immune. ``default_formatter`` is gone: there is no single fallback across
+    dtypes, which is what makes the four named defaults predictable.
+
+    The resolution order per column is its **kind** (semantic tag if it has
+    one, else dtype), then within that kind: ``formatters[col]`` → the house
+    default → the built-in. Setting ``float_format`` turns float *inference*
+    off entirely, including the automatic SI/engineering switch.
 
 The 50-row raise
     ``large_ok`` / ``large_warning`` are gone. ``max_rows`` (default 200)

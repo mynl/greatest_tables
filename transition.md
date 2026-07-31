@@ -12,7 +12,7 @@ signature. The import name is unchanged `from greater_tables import GT` and the 
 | **TableSpec** | Semantics that ride with the table. `TableSpec(...)` → `build(df, spec)`, or the same keyword on the `GT` facade. YAML-loadable via `load_spec`. |
 | **HouseStyle** | Renderer opinions — rule depth, weights, TikZ geometry. Never enters the IR. Pass it to any renderer or to the facade: `GT(df, style=HouseStyle(...))`, `render_html(doc, style=...)`, `render_text(doc, style)`, `render_tikz(doc, style)`; YAML via `load_style(path)`. |
 | **CSS** | A custom property on the `.gt` wrapper, set in your own stylesheet or a theme block. Defaults live in `render/css.py::VARIABLES`. |
-| **engine** | No longer a knob: the engine decides per column from dtype and column statistics. Override per column with `TableSpec.formats`. |
+| **engine** | No longer a knob: the engine decides per column from dtype and column statistics. Override per column with `TableSpec.formatters`. |
 | **gone** | Deleted, with no replacement. The "Notes" column says what to do instead, if anything. |
 
 The split is the whole design: semantics (what the table *means*) stay in
@@ -27,7 +27,7 @@ to each renderer. Most deletions below are options that crossed that line.
 | `caption` | `''` | Table caption | **TableSpec** `.caption` | 5.x also picked up a `df.gt_caption` attribute if the argument was empty; that magic is gone — pass the caption. |
 | `label` | `''` | Quarto cross-reference id | **TableSpec** `.label` | Emits `id=` on the wrapper; no element ids at all when unset. |
 | `aligners` | `None` | dict col → `'l'/'r'/'c'`, or a positional string | **TableSpec** `.aligners` | Same two shapes. |
-| `formatters` | `None` | dict col → callable, `'{x:...}'` string, or int digits | **TableSpec** `.formats` | The `GT` facade still accepts `formatters=` and maps all three 5.x shapes; `formats=` additionally takes csv-grid sugar (`',.1f'`) and an explicit `FormatSpec`. |
+| `formatters` | `None` | dict col → callable, `'{x:...}'` string, or int digits | **TableSpec** `.formatters` | Same name, now a real spec field rather than a shim. Also takes csv-grid sugar (`',.1f'`), a `FormatSpec`, and a mapping of its fields (the YAML form). ⚠️ **A bare int now groups**: `{'paid': 2}` gives `1,234.57` where 5.x gave `1234.57` — write `'.2f'` for the old result. |
 | `tabs` | `None` | Column widths in characters or ems | **gone** | Width machinery deleted; see the width block below. The `Configurator` field was already commented out in 5.3. |
 | `unbreakable` | `None` | Columns that must not wrap | **TableSpec** `.unbreakable` | Sets `wrap=False` → `gt-nowrap`. |
 | `ratio_cols` | `None` | Columns to format as percentages | **TableSpec** `.ratio_cols` | All four `*_cols` selectors take a list, `'all'`, or a regex, as before. |
@@ -45,12 +45,12 @@ to each renderer. Most deletions below are options that crossed that line.
 
 | 5.x option | Default | What it did | GT2 home | Notes |
 |---|---|---|---|---|
-| `default_integer_str` | `'{x:,d}'` | Format f-string for integers | **engine** | Resolves to `FormatSpec(kind='int', group=True)`. Per column: `formats={'n': 'd'}` for no grouping. |
-| `default_float_str` | `'{x:,.3f}'` | Format f-string for floats | **engine** | Decimals now come from the column's own magnitude rather than one global default — the single biggest reason GT2 output looks better untuned. Override per column with `formats={'v': ',.3f'}` or `formats={'v': 3}`. |
-| `default_date_str` | `'%Y-%m-%d'` | strftime pattern for dates | **TableSpec** `.formats` | ISO is the default; per column `formats={'d': FormatSpec(kind='date', pattern='%b %Y')}`. |
-| `default_ratio_str` | `'{x:.1%}'` | Format for ratio columns | **engine** (via the `ratio` tag) | `ratio_cols` → `FormatSpec(kind='pct', digits=1)`. Override per column for other precision. |
-| `default_formatter` | `None` | Fallback formatter f-string | **gone** | Per-column `formats` is the only lever; it accepts a callable. |
-| `table_float_format` | `None` | One float format for the whole table, overriding per-column | **gone** | Nearest equivalent: `formats={c: ',.2f' for c in df.columns}`. Deliberately not a single knob — it was the option most likely to wreck a mixed-magnitude table. |
+| `default_integer_str` | `'{x:,d}'` | Format f-string for integers | **TableSpec** `.int_format` | The direct equivalent, and YAML-able. Unset, the built-in is `FormatSpec(kind='int', group=True)`. |
+| `default_float_str` | `'{x:,.3f}'` | Format f-string for floats | **TableSpec** `.float_format` | The direct equivalent. Left unset, decimals come from each column's own magnitude — better for one table, inconsistent across a document, which is exactly what this field is for. Setting it also turns off the automatic SI/engineering switch. |
+| `default_date_str` | `'%Y-%m-%d'` | strftime pattern for dates | **TableSpec** `.date_format` | Covers the date tag and both the date and datetime dtypes, so it also drops the time component from datetimes. ISO if unset. |
+| `default_ratio_str` | `'{x:.1%}'` | Format for ratio columns | **TableSpec** `.ratio_format` | `ratio_cols` → `FormatSpec(kind='pct', digits=1)`, the same as 5.x; `ratio_format` changes every ratio column at once. |
+| `default_formatter` | `None` | Fallback formatter f-string | **gone** | There is no single fallback across dtypes — the four named defaults above are per kind, which is what makes them predictable. |
+| `table_float_format` | `None` | One float format for the whole table, overriding per-column | **TableSpec** `.table_float_format` | Same meaning and the same precedence: it beats an explicit `formatters` entry. Narrowed in one way — it reaches only **untagged float** columns, so `ratio_cols`/`year_cols`/`date_cols` are immune. Never written into a config template, on purpose. |
 
 ### Rules and lines
 
@@ -91,7 +91,7 @@ row flags) are computed by the engine and each renderer maps them to weights.
 
 | 5.x option | Default | What it did | GT2 home | Notes |
 |---|---|---|---|---|
-| `pef_precision` | `3` | Digits after the decimal in engineering format | **engine** | Per column: `formats={'v': FormatSpec(kind='eng', digits=3)}`. |
+| `pef_precision` | `3` | Digits after the decimal in engineering format | **TableSpec** `.eng_digits` | Plus `eng_style` (`'si'` suffixes or `'exp'` aligned exponents), which 5.x had no way to choose. |
 | `pef_lower` | `-3` | Use engineering format below `10**pef_lower` | **TableSpec** `.pef_lower` | Unchanged, same default. Now a **column-level** decision (the column's mean magnitude), not per cell. |
 | `pef_upper` | `6` | Use engineering format above `10**pef_upper` | **TableSpec** `.pef_upper` | Unchanged, same default. Default display is SI suffixes (µ m k M G T…); aligned `e+00` exponents are the `'eng'` sugar opt-in. |
 

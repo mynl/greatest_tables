@@ -54,8 +54,10 @@ The engine
     and apply semantic tags — ratio, year, date, raw — from the spec's
     selectors (list, ``'all'``, or regex).
 ``formats.py``
-    Resolve display format per column: explicit spec override, then tag, then
-    dtype, then column statistics. A float column's mean magnitude picks its
+    Resolve display format per column. Two steps: the column's **kind** is
+    its semantic tag if it has one, else its dtype; then that kind resolves
+    ``formatters[col]`` → the matching house default (``float_format`` and
+    friends) → the built-in → inference. A float column's mean magnitude picks its
     decimals, and a column spanning many orders of magnitude switches to
     engineering notation (SI suffixes by default; aligned exponents on
     request). Accepts csv-grid spec strings and Python format strings as

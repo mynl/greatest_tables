@@ -30,12 +30,16 @@ def test_lazy_and_cached(df):
 
 def test_formatter_shapes():
     df = pd.DataFrame({'a': [1234.5678, 2.0], 'b': [0.1234, 0.5],
-                       'c': [1.0, 2.0]})
-    gt = GT(df, formatters={'a': 2, 'b': '{x:.1%}', 'c': lambda x: f'<{x}>'})
+                       'c': [1.0, 2.0], 'd': [9876.5, 1.0]})
+    gt = GT(df, formatters={'a': 2, 'b': '{x:.1%}', 'c': lambda x: f'<{x}>',
+                            'd': '.2f'})
     texts = [c.text for c in gt.doc.body[0].cells]
-    assert texts[0] == '1234.57'             # int ⇒ digits, no grouping (5.x)
+    # a bare int groups — GT2 groups whenever it picks the format for you.
+    # 5.x meant "no grouping" here; write '.2f' for that, as column d does.
+    assert texts[0] == '1,234.57'
     assert texts[1] == '12.3%'
     assert texts[2] == '<1.0>'
+    assert texts[3] == '9876.50'             # explicit sugar means what it says
     assert gt.doc.columns[2].format is None  # callables never enter the IR
 
 

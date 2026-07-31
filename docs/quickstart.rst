@@ -78,33 +78,69 @@ Column selectors (``ratio_cols``, ``year_cols``, ``date_cols``, ``raw_cols``,
 .. code:: python
 
    TableSpec(
-       ratio_cols='all',                      # regex / list / 'all'
-       formats={'paid': ',.1f', 'count': 0},  # csv-grid or GT format sugar
-       aligners='llrrc',                      # positional, or {label: 'r'}
-       row_flags={-1: ['total']},             # or a callable (pos, row) -> flags
+       ratio_cols='all',                          # regex / list / 'all'
+       formatters={'paid': ',.1f', 'count': 0},   # per column
+       float_format=',.2f',                       # house rule for all floats
+       aligners='llrrc',                          # positional, or {label: 'r'}
+       row_flags={-1: ['total']},                 # or a callable (pos, row)
        notes=['Amounts in USD thousands.'],
-       include_raw='data',                    # ship raw values for clients
-       max_rows=500,                          # truncate with a note
+       include_raw='data',                        # ship raw values for clients
+       max_rows=500,                              # truncate with a note
    )
 
 Formats accept both dialects: csv-grid spec strings (``',.1f'``), Python
-format strings (``'{x:.1%}'``), a plain int (decimal digits), a callable, or
-an explicit :class:`~greater_tables.ir.FormatSpec`. Anything not specified is
-inferred from the column's dtype and its own statistics — magnitude decides
-decimals, and a float column spanning many orders of magnitude switches to
-engineering notation.
+format strings (``'{x:.1%}'``), a plain int (decimal digits, grouped), a
+mapping of :class:`~greater_tables.ir.FormatSpec` fields, an explicit
+``FormatSpec``, or — in ``formatters`` only — a callable.
 
-Defaults can live in YAML (this project's config format):
+House rules, one per kind
+-------------------------
+
+``float_format``, ``int_format``, ``ratio_format`` and ``date_format`` are the
+5.x ``default_*_str`` settings. Each replaces its own kind's built-in and
+loses to an explicit ``formatters`` entry, so the resolution per column is:
+its **kind** (semantic tag if it has one, else dtype), then
+``formatters[col]`` → the house default → the built-in.
+
+Anything you leave unset is inferred from the column's dtype and its own
+statistics — magnitude decides decimals, and a float column spanning many
+orders of magnitude switches to engineering notation. Setting
+``float_format`` turns that inference off for floats entirely, **including**
+the engineering switch: a stated house rule beats a guess, which is what
+makes twelve exhibits in one report agree with each other.
+
+``table_float_format`` is the exception that overrides even a per-column
+entry, on untagged float columns only. Use it at a call site for a quick
+"show me everything at 6 dp" pass; never put it in a config file, where it
+would silently defeat every ``formatters`` entry you write later.
+
+Because these are ordinary spec fields, one YAML file can govern a whole
+document:
+
+.. code:: yaml
+
+   # house.yaml
+   float_format: ',.2f'
+   ratio_format: '.1%'
+   date_format: '%d %b %Y'
+   ratio_cols: 'lr|ratio$'
+   formatters: {paid: {kind: dec, digits: 1, negative: paren}}
 
 .. code:: python
 
-   from greater_tables import load_spec
+   from functools import partial
+   from greater_tables import GT, load_spec
    from greater_tables.config import write_template
 
-   write_template('tables.yaml')       # commented starting point
-   spec = load_spec('tables.yaml')
+   myGT = partial(GT, config_path='house.yaml')     # every exhibit, one rule
+   spec = load_spec('house.yaml')                   # or the explicit route
 
-Unknown keys raise, so typos surface at load.
+   write_template('house.yaml')                     # commented starting point
+   write_template('house.yaml', gt.spec)            # this table's actual settings
+
+Unknown keys raise, so typos surface at load. A ``partial`` is also the way to
+make a domain-specific ``GT`` — ``partial(GT, year_cols=r'^(year|ay)$',
+ratio_cols=r'lr|ratio$')`` — since the column tags are regexes.
 
 Notebooks and Quarto
 --------------------

@@ -3,6 +3,69 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a4] - 2026-08-01
+
+Step 2 of two: house rules for formats. 5.x's `default_*_str` settings come
+back as real fields, so one YAML file can govern every table in a document
+instead of a per-column dict in every call.
+
+### Changed
+
+- **`ratio_cols` renders as percent again** — `FormatSpec(kind='pct',
+  digits=1)`, restoring 5.x's `default_ratio_str = '{x:.1%}'`. GT2 had been
+  producing `dec`/3, so `0.4576` showed as `0.458` instead of `45.8%`; both
+  `transition.md` and `docs/migration.rst` already claimed percent, so the
+  docs were describing the intended behavior all along. **To keep the old
+  output**: `TableSpec(ratio_format='.3f')` reproduces it exactly.
+- **`TableSpec.formats` is renamed `formatters`** — one name, matching
+  `aligners`, and the same name 5.x used on its constructor. The
+  `compat.GT` translation layer is gone with it. One deliberate difference
+  from 5.x: **a bare int now groups** (`formatters={'paid': 2}` →
+  `1,234.57`), because GT2 groups whenever it picks the format for you.
+  Write `'.2f'` for the ungrouped form — explicit sugar still means exactly
+  what it means in Python and csv-grid, where the comma is the grouping flag.
+- `infer_numeric_format` takes the engineering digits and style, so the
+  hard-coded `si`/3 is now `TableSpec.eng_digits` / `eng_style`.
+
+### Added
+
+- **House defaults on `TableSpec`: `float_format`, `int_format`,
+  `ratio_format`, `date_format`.** Each replaces its own kind's built-in and
+  loses to an explicit `formatters` entry. They apply to stub columns too,
+  and they are YAML-expressible, which is the point: `GT(df,
+  config_path='house.yaml')` gives every exhibit in a document the same
+  decimals regardless of what its own data looks like. Setting
+  `float_format` turns float inference off entirely, including the automatic
+  SI/engineering switch — a stated house rule beats a guess.
+- **`table_float_format`** — the sledgehammer: every **untagged float**
+  column, overriding even a per-column entry. Ratio, year and date columns
+  have a kind, so it never reaches them (a ratio is an honorary non-float).
+  Default None, and deliberately omitted from `write_template`: it belongs
+  at a conscious call site, not in a file where it would silently defeat
+  every `formatters` entry you write months later.
+- **`eng_digits` (3) and `eng_style`** (`'si'` suffixes or `'exp'` aligned
+  exponents) — 5.x's `pef_precision`, plus the style choice it never had.
+- **`parse_sugar` accepts a mapping**, so YAML can express a full
+  `FormatSpec`: `formatters: {paid: {kind: dec, digits: 1, negative: paren}}`.
+  Without it a config file could only say `',.2f'` — exactly what 5.x could
+  already say — leaving paren negatives, `scale`, `prefix`/`suffix` and
+  custom null/zero strings Python-only.
+- **`config.spec_to_yaml(spec)` and `write_template(path, spec=None)`** —
+  the template is now generated from the dataclass with a hint per field
+  (it covered 12 of 22 and rotted), and passing a spec dumps its *effective*
+  values uncommented. That is the round trip 5.x had via
+  `GT().config.model_dump()`: `write_template('house.yaml', gt.spec)` → edit
+  → `config_path='house.yaml'`.
+- **`tests/test_formats.py`** — `parse_sugar`, `infer_numeric_format` and
+  `apply_format` had **zero** direct tests; everything rode on goldens.
+  Plus `tests/test_house_rules.py` for the ladder and the YAML round trip.
+
+### Fixed
+
+- `load_spec` now converts `notes` from a YAML list to the tuple the
+  dataclass holds, so a loaded spec compares equal to a Python-built one and
+  the dump/edit/reload round trip actually closes.
+
 ## [6.0.0a3] - 2026-08-01
 
 Step 1 of two: rules and the plumbing to reach them. Formats follow in a4.
