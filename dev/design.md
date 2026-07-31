@@ -24,8 +24,13 @@ The hinge is a versioned **JSON IR** (intermediate representation — the "table
 
 ## Decisions made (user, 2026-07-30)
 
-- **Naming**: develop under working name `greatest_tables`; decide the PyPI name at publish time.
-  greater-tables 5.x stays frozen so blog/Quarto keep building.
+- **Naming — DECIDED 2026-07-31 (v1.9.0)**: the package, import, and distribution name are
+  `greater_tables`/`greater-tables`; it will publish as **greater-tables 6.0** (same PyPI
+  project; 5.3 stays pinnable forever — that is what the major version is for), with a
+  `6.0.0rc1` pre-release once aggregate_api adoption settles so the server can pin it
+  explicitly while plain installs keep resolving to 5.3. The repo folder keeps the
+  development codename `greatest-tables`, so editable-path deps and the V:\dev venv
+  junction are untouched.
 - **JS walker lives in this repo** — IR schema and renderer version in lockstep; ships as
   ES module + iife and as Python package data.
 - **Compat**: thin `GT(df, ...)` constructor-compatible facade (caption/formatters/ratio_cols etc.,

@@ -9,7 +9,7 @@ and decide whether the change is additive-advisory (fine) or content-bearing
 import json
 from pathlib import Path
 
-from greatest_tables import TableDoc
+from greater_tables import TableDoc
 
 SCHEMA = Path(__file__).parent.parent / 'schema' / 'ir-v1.json'
 

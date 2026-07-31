@@ -10,8 +10,8 @@ classes(sorted), text}. Byte-compared against tests/golden/transcript.
 import json
 from html.parser import HTMLParser
 
-from greatest_tables import Cell, TableDoc
-from greatest_tables.render.html import render_html
+from greater_tables import Cell, TableDoc
+from greater_tables.render.html import render_html
 
 _SECTION = {'thead': 'head', 'tbody': 'body', 'tfoot': 'foot'}
 

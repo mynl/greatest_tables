@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from greatest_tables import TableDoc
+from greater_tables import TableDoc
 
 from transcribe import transcribe
 

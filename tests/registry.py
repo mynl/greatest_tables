@@ -6,7 +6,7 @@ tiny hand-built synthetics. Nothing real, per the data firewall.
 
 import pandas as pd
 
-from greatest_tables import Fabricator, TableSpec
+from greater_tables import Fabricator, TableSpec
 
 
 def fixtures() -> dict[str, tuple[object, TableSpec]]:

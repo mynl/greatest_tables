@@ -3,8 +3,8 @@
 import pandas as pd
 import pytest
 
-from greatest_tables import TableSpec, build
-from greatest_tables.render.html import render_html, reset_css_once
+from greater_tables import TableSpec, build
+from greater_tables.render.html import render_html, reset_css_once
 
 from registry import fixtures
 

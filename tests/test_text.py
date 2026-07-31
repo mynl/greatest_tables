@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from greatest_tables import build, render_text
+from greater_tables import build, render_text
 
 from exemplars import EXEMPLARS
 from registry import fixtures

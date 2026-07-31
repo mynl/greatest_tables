@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from greatest_tables import TableSpec, build, canonical_json
+from greater_tables import TableSpec, build, canonical_json
 
 from registry import fixtures
 

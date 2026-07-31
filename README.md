@@ -1,4 +1,4 @@
-# greatest_tables
+# greater_tables (GT2)
 
 Semantic table engine. A pandas DataFrame (or CSV or markdown table) goes in; a
 versioned, JSON-serializable **table document** (the IR) comes out; renderers turn
@@ -9,10 +9,12 @@ The IR is the contract: Python owns *semantics* (dtypes, format inference, multi
 hierarchy, spans, break depths); each renderer owns *geometry and style*. Nothing in
 the IR names a width, a rule weight, a font, or a CSS property.
 
-Successor to [greater_tables](https://pypi.org/project/greater-tables/) (which stays
-frozen at 5.x); working name `greatest_tables`, publish name TBD. Interactive grids
-remain the job of the sibling `csv-grid` project — this package hands tables to it,
-it does not compete with it.
+Ground-up rewrite of [greater_tables](https://pypi.org/project/greater-tables/)
+(5.x stays frozen and pinnable on PyPI; this publishes as `greater-tables` 6.0,
+same import name — `from greater_tables import GT` keeps working). The repo
+folder keeps its development codename `greatest-tables`. Interactive grids
+remain the job of the sibling `csv-grid` project — this package hands tables
+to it, it does not compete with it.
 
 ## Layout
 

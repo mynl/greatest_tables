@@ -5,9 +5,9 @@ IR surface (stubs, spans, break depths, flags, raw values incl. meaningful
 null, math/html cells). Engine-generated goldens arrive with [engine].
 """
 
-from greatest_tables import Cell, Column, FormatSpec, HeadCell, Row, TableDoc, stamp
+from greater_tables import Cell, Column, FormatSpec, HeadCell, Row, TableDoc, stamp
 
-GENERATOR = 'greatest_tables tests'
+GENERATOR = 'greater_tables tests'
 
 
 def loss_dev() -> TableDoc:

@@ -19,7 +19,7 @@ def canonical_json(doc: TableDoc, *, include_hash: bool = True) -> bytes:
     """Serialize a document to canonical UTF-8 JSON bytes.
 
     Sorted keys, compact separators, NFC strings (applied by
-    :func:`greatest_tables.ir.canonical_dict`), no NaN/Infinity — a raw value
+    :func:`greater_tables.ir.canonical_dict`), no NaN/Infinity — a raw value
     that is not JSON-representable is an engine bug, surfaced here.
 
     Parameters

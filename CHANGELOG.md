@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.9.0] - 2026-07-31
+
+### Changed
+
+- **Package renamed `greatest_tables` → `greater_tables`** (import and
+  distribution name; the repo folder keeps the `greatest-tables` codename, so
+  editable-path consumers and the V:\dev venv junction are untouched). Done
+  now, before any adoption code exists, because the publish decision is:
+  **greater-tables 6.0 on the existing PyPI project** — 5.3 stays pinnable
+  (semver's whole job), blog imports keep working verbatim via the facade,
+  and a `6.0.0rc1` pre-release will unblock the server deploy (explicit pin
+  only; plain installs still resolve to 5.3) once aggregate_api adoption
+  settles. aggregate_api's spec/brief updated + `dev/note-gt2-rename.md`
+  dropped for their agent.
+- `dev/compare_gt5.py` reworked for the name collision this creates: 5.3 now
+  runs in an isolated `uv run --no-project` child (`_compare_gt5_old.py`),
+  DataFrames crossing as pickles with pandas/numpy pinned to the parent's
+  versions (parquet cannot carry MultiIndex columns). pyarrow added to the
+  dev group.
+
 ## [1.8.0] - 2026-07-31
 
 ### Added

@@ -14,7 +14,7 @@ Two access paths with different strictness:
 
 Canonical serialization lives in :func:`canonical_dict`: deterministic field
 presence (defaults omitted), NFC-normalized strings, and the bare-string cell
-shorthand. :mod:`greatest_tables.engine.hashing` turns that dict into
+shorthand. :mod:`greater_tables.engine.hashing` turns that dict into
 canonical bytes and the content hash.
 """
 
@@ -142,7 +142,7 @@ class Column(BaseModel):
 class TableDoc(BaseModel):
     """The table document — the versioned IR a semantic engine emits.
 
-    ``hash`` is stamped by :func:`greatest_tables.engine.hashing.stamp`
+    ``hash`` is stamped by :func:`greater_tables.engine.hashing.stamp`
     (sha256 over canonical bytes, ``hash`` and ``generator`` excluded).
     """
 

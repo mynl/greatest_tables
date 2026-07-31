@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from greatest_tables import Etcher, TableDoc, render_tikz
+from greater_tables import Etcher, TableDoc, render_tikz
 
 from exemplars import EXEMPLARS
 

@@ -4,7 +4,7 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-from greatest_tables import Fabricator, quick_fab
+from greater_tables import Fabricator, quick_fab
 
 
 def test_seeded_runs_identical():

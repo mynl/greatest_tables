@@ -5,8 +5,8 @@ import warnings
 import pandas as pd
 import pytest
 
-from greatest_tables import Fabricator, render_text
-from greatest_tables.compat import GT
+from greater_tables import Fabricator, render_text
+from greater_tables.compat import GT
 
 
 @pytest.fixture()

@@ -1,4 +1,4 @@
-"""greatest_tables: semantic table engine with a versioned table-document IR.
+"""greater_tables: semantic table engine with a versioned table-document IR.
 
 Python owns semantics (dtypes, format inference, hierarchy, spans); renderers
 own geometry and style. No import side effects — importing this package does

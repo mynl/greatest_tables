@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from greatest_tables.render import css
+from greater_tables.render import css
 
-ASSET = (Path(__file__).parent.parent / 'src' / 'greatest_tables' / 'assets'
+ASSET = (Path(__file__).parent.parent / 'src' / 'greater_tables' / 'assets'
          / 'gt.css')
 
 # the class vocabulary both renderers stamp — every name must be styled

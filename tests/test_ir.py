@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from greatest_tables import (
+from greater_tables import (
     Cell, Column, HeadCell, Row, TableDoc, canonical_json, doc_hash, stamp,
 )
 

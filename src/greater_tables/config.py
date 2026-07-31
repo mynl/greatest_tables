@@ -28,7 +28,7 @@ def write_template(path: str | Path) -> Path:
     """Write a commented template of the configurable TableSpec fields."""
     path = Path(path)
     lines = [
-        '# greatest_tables TableSpec — uncomment and edit; see spec.py docs',
+        '# greater_tables TableSpec — uncomment and edit; see spec.py docs',
         '# caption: My table',
         '# label: tbl-my-table',
         '# notes: [Amounts in USD thousands.]',

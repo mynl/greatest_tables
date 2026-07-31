@@ -85,7 +85,7 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     style = style or HouseStyle()
     ncols = len(doc.columns)
     if ncols == 0:
-        return '% greatest_tables: empty table\n'
+        return '% greater_tables: empty table\n'
     name = f'gt{doc.hash or "x"}'
     n_head = len(doc.head)
     n_stub = doc.n_stub_levels

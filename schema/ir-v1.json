@@ -416,7 +416,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "The table document \u2014 the versioned IR a semantic engine emits.\n\n``hash`` is stamped by :func:`greatest_tables.engine.hashing.stamp`\n(sha256 over canonical bytes, ``hash`` and ``generator`` excluded).",
+  "description": "The table document \u2014 the versioned IR a semantic engine emits.\n\n``hash`` is stamped by :func:`greater_tables.engine.hashing.stamp`\n(sha256 over canonical bytes, ``hash`` and ``generator`` excluded).",
   "properties": {
     "body": {
       "items": {

@@ -7,7 +7,7 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-from greatest_tables import Fabricator, TableSpec, build, canonical_json
+from greater_tables import Fabricator, TableSpec, build, canonical_json
 
 from registry import fixtures
 

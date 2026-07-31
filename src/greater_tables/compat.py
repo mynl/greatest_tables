@@ -56,7 +56,7 @@ class GT:
                 kwargs[key] = value
             else:
                 warnings.warn(f'GT: ignoring unknown option {key!r} '
-                              '(gone in greatest_tables)', stacklevel=2)
+                              '(gone in greater_tables)', stacklevel=2)
         merged = {f.name: getattr(base, f.name) for f in _dc_fields(TableSpec)}
         merged.update({k: v for k, v in kwargs.items() if v is not None})
         self.spec = TableSpec(**merged)

@@ -172,7 +172,7 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
         head=tuple(head),
         body=tuple(body),
     )
-    return stamp(doc, f'greatest_tables {__version__}')
+    return stamp(doc, f'greater_tables {__version__}')
 
 
 # --------------------------------------------------------------- ingestion

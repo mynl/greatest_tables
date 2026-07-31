@@ -1,6 +1,6 @@
 /* gt-render.js — table-document (IR) walker: JSON → DOM.
  *
- * Zero dependencies, vanilla ES module. Renders the greatest_tables IR
+ * Zero dependencies, vanilla ES module. Renders the greater_tables IR
  * (schema/ir-v1.json) into a <div class="gt"> + <table>, stamping the same
  * gt-* semantic classes as the Python HTML renderer — that vocabulary is a
  * tested contract (DOM-transcript conformance goldens).
@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.8.0';
+export const GT_RENDER_VERSION = '1.9.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1

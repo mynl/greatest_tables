@@ -1,7 +1,7 @@
 """Format sugar parsing, column-statistics inference, and application.
 
 The resolution ladder (user > semantic tag > dtype) produces
-:class:`~greatest_tables.ir.FormatSpec` *data objects* — never closures, so
+:class:`~greater_tables.ir.FormatSpec` *data objects* — never closures, so
 the greater_tables late-binding formatter bug cannot recur. Application is a
 pure function of (value, spec).
 

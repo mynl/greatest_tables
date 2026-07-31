@@ -2,7 +2,7 @@
  *
  *   node js/build.mjs
  *
- * Emits src/greatest_tables/assets/gt-render.esm.js and .iife.js (global
+ * Emits src/greater_tables/assets/gt-render.esm.js and .iife.js (global
  * GtRender). The iife exists for script-tag/RequireJS-hostile pages, the
  * same reason csv-grid ships one.
  */
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ENTRY = join(HERE, 'src', 'gt-render.js');
-const ASSETS = join(HERE, '..', 'src', 'greatest_tables', 'assets');
+const ASSETS = join(HERE, '..', 'src', 'greater_tables', 'assets');
 
 const common = {
     entryPoints: [ENTRY],

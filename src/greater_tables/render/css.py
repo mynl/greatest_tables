@@ -121,7 +121,7 @@ RULES: dict[str, dict[str, str]] = {
 
 def css_text() -> str:
     """Serialize RULES to the stylesheet, deterministically."""
-    lines = ['/* generated from greatest_tables.render.css — do not edit */']
+    lines = ['/* generated from greater_tables.render.css — do not edit */']
     for selector, props in RULES.items():
         body = ' '.join(f'{k}: {v};' for k, v in props.items())
         lines.append(f'{selector} {{ {body} }}')
@@ -130,7 +130,7 @@ def css_text() -> str:
 
 def asset_path() -> Path:
     """Path of the committed stylesheet inside the package."""
-    return Path(str(files('greatest_tables').joinpath('assets', 'gt.css')))
+    return Path(str(files('greater_tables').joinpath('assets', 'gt.css')))
 
 
 def write_asset() -> Path:

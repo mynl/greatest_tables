@@ -105,7 +105,7 @@ class Fabricator:
         self.rng.shuffle(roots)
         self._metric_namer = cycle(roots)
 
-        data = files('greatest_tables').joinpath('data')
+        data = files('greater_tables').joinpath('data')
         word_list = data.joinpath('words-12.md').read_text(
             encoding='utf-8').split('\n')
         shuffled = word_list[:]
