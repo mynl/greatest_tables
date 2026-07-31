@@ -39,6 +39,9 @@ TIKZ_PREAMBLE = r'\newcommand{\I}{\vphantom{lp}}'
 
 _MAX_BREAK = 2
 _MAX_VBREAK = 1
+# header cells render bold (stubs bold-italic): widen their width estimate
+# so long headers don't collide across the column gap (GT bold_adjustment)
+_BOLD_ADJUSTMENT = 1.15
 
 _TEX_SPECIALS = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%',
                  '$': r'\$', '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
@@ -102,7 +105,8 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
             tex = _cell_tex(hc)
             if hc.colspan == 1:
                 cells[col] = tex + (r'\I' if hc.text else '')
-                wmax[col] = max(wmax[col], _display_width(hc))
+                wmax[col] = max(wmax[col],
+                                _display_width(hc) * _BOLD_ADJUSTMENT)
             elif hc.text:
                 overlays.append((2 + level, col, hc.colspan, tex))
             col += hc.colspan

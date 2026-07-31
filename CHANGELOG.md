@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.6.1] - 2026-07-31
+
+### Added
+
+- `dev/make_example_qmd.py`: generates a Quarto example file (blog-pattern
+  blocks ending in `GT(df, ...)`) with a self-contained TikZ preamble; renders
+  to HTML and PDF (`pdf-engine: tectonic`). Verified end-to-end: 10 tables,
+  both formats. Requires `QUARTO_PYTHON` pointing at the project venv until
+  the package is published; venv dev group gains ipykernel/nbformat/nbclient.
+
+### Fixed
+
+- Math auto-detection rejects `$...\$` values whose inner text ends with a
+  backslash — the "closing" delimiter is escaped, so treating them as math
+  produced unterminated `$` in TeX and broken `\(...\\)` in MathJax. Found by
+  a malformed Fabricator TeX entry during PDF rendering; now plain text.
+- TikZ header width estimates apply a bold adjustment (×1.15) so long bold
+  headers no longer collide across the column gap (the 5.x bold_adjustment,
+  now applied where 5.x didn't).
+
 ## [1.6.0] - 2026-07-31
 
 ### Added

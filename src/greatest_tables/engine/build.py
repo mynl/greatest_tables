@@ -285,7 +285,10 @@ def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
     math_flag = False
     if (spec.math == 'auto' and isinstance(value, str) and not html):
         m = _MATH_RE.match(value)
-        if m:
+        # a trailing backslash would escape the closing delimiter downstream
+        # ($...\$ in TeX, \(...\\) in MathJax) — not well-formed math, keep
+        # as plain text
+        if m and not m.group(1).endswith('\\'):
             text, math_flag = m.group(1), True
     flags = tuple(dict.fromkeys(
         (('neg',) if _is_negative(value, dtype) else ()) + tuple(extra)))
