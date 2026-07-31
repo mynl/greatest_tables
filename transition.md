@@ -10,7 +10,7 @@ signature. The import name is unchanged `from greater_tables import GT` and the 
 | Marker | Meaning |
 |---|---|
 | **TableSpec** | Semantics that ride with the table. `TableSpec(...)` → `build(df, spec)`, or the same keyword on the `GT` facade. YAML-loadable via `load_spec`. |
-| **HouseStyle** | Renderer opinions for TikZ — rule weights, geometry. Never enters the IR. `render_tikz(doc, style=HouseStyle(...))`. |
+| **HouseStyle** | Renderer opinions — rule depth, weights, TikZ geometry. Never enters the IR. Pass it to any renderer or to the facade: `GT(df, style=HouseStyle(...))`, `render_html(doc, style=...)`, `render_text(doc, style)`, `render_tikz(doc, style)`; YAML via `load_style(path)`. |
 | **CSS** | A custom property on the `.gt` wrapper, set in your own stylesheet or a theme block. Defaults live in `render/css.py::VARIABLES`. |
 | **engine** | No longer a knob: the engine decides per column from dtype and column statistics. Override per column with `TableSpec.formats`. |
 | **gone** | Deleted, with no replacement. The "Notes" column says what to do instead, if anything. |
@@ -64,7 +64,7 @@ row flags) are computed by the engine and each renderer maps them to weights.
 | `table_hbaserule_width` | `1` | Rule under the header block | **HouseStyle** `.head_rule` / **CSS** `--gt-rule-head` | |
 | `table_vrule_width` | `1` | Vertical rule between index and body | **HouseStyle** `.stub_rule` / **CSS** `--gt-rule-stub` | |
 | `hrule_widths` | `(0, 0, 0)` | Three weights for MultiIndex row-group rules | **HouseStyle** `.hrule_widths` `(0.5, 0.25, 0.25)` / **CSS** `--gt-rule-0/1/2` | Now driven by row `break_depth` — the shallowest stub level that changed — instead of being drawn at every level unconditionally. |
-| `vrule_widths` | `(0, 0, 0)` | Three weights for column-group verticals | **HouseStyle** `.vrule_widths` `(0.25, 0.25, 0.25)` / **CSS** — the `.gt-vbreak-0/1` classes draw `border-left: var(--gt-rule-0/1)`, so they share the row-rule properties | Driven by column `break_depth`. |
+| `vrule_widths` | `(0, 0, 0)` | Three weights for column-group verticals | **HouseStyle** `.vrule_widths` `(0.25, 0.25, 0.25)` / **CSS** `--gt-vrule-0/1` | Driven by column `break_depth`; `HouseStyle.max_vrule_depth` caps how deep, `None` turns them off. |
 
 ### Structure
 
@@ -147,7 +147,7 @@ widths — because TeX has no browser to ask.
 | `TableSpec.cell_flags` | Same per cell. The `neg` flag is stamped automatically. |
 | `TableSpec.math` | `'auto'` detects `$…$` string cells as math; `'off'` disables. |
 | `TableSpec.include_raw` | Ship machine values alongside formatted text, for clients. Data columns only — see `dev/done/note-from-aggregate-api-include-raw.md`. |
-| `HouseStyle.max_rule_depth` | How many hierarchy levels get a rule at all. |
+| `HouseStyle.max_rule_depth` | How deep the hierarchy is ruled. `'auto'` (default) rules every break except the innermost stub level — no rules on a single-level index, depth 0 only on two levels, depths 0 and 1 on three. An int is literal, so `0` on a single-level index rules every row whose stub changed; `None` draws no internal rules. `max_vrule_depth` is the same for column-group verticals. The walker takes the same values as `opts.maxRuleDepth`. |
 | `HouseStyle.total_rule`, `.spanner_rule` | Weights for the rule above a total row and under a column-group label. |
 | `HouseStyle.tikz_prose_max_em` | Wrap cap for prose columns in TikZ. |
 

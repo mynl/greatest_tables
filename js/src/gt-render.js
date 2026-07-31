@@ -16,14 +16,46 @@
  *   opts.fit        'equal-risk' | 'coverage' — optional width pass for
  *                   constrained containers (forces single-line ellipsis)
  *   opts.document   Document to use (tests/SSR); defaults to global document
+ *   opts.maxRuleDepth   'auto' (default) | int | null — how deep hierarchy
+ *                   breaks are ruled. Style, so it is NOT in the document:
+ *                   a server passes it alongside, with the theme
+ *   opts.maxVruleDepth  same for column-group verticals (default 1)
  */
 
-export const GT_RENDER_VERSION = '6.0.0a2';
+export const GT_RENDER_VERSION = '6.0.0a3';
 export const IR_VERSION_SUPPORTED = 1;
 
-// row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
-const MAX_BREAK = 2;
-const MAX_VBREAK = 1;
+/* Rule policy — a line-for-line port of src/greater_tables/render/policy.py.
+ * Both return a weight SLOT (index into gt-break-{n} / gt-vbreak-{n} and the
+ * matching --gt-rule-{n} / --gt-vrule-{n} property), or null for no rule.
+ * Keep in lockstep with the Python module; the transcript goldens enforce it. */
+export const N_RULE_SLOTS = 3;
+export const N_VRULE_SLOTS = 2;
+
+export function ruleSlot(breakDepth, nStubLevels, maxRuleDepth = 'auto') {
+    if (breakDepth === undefined || breakDepth === null
+        || maxRuleDepth === null) return null;
+    let cap;
+    if (typeof maxRuleDepth === 'string') {
+        if (maxRuleDepth !== 'auto') {
+            throw new Error(`maxRuleDepth must be 'auto', an integer, or null; `
+                            + `got ${JSON.stringify(maxRuleDepth)}`);
+        }
+        // 'auto' also drops the innermost level: a change there is "next row"
+        cap = Math.min(N_RULE_SLOTS - 1, nStubLevels - 2);
+    } else {
+        cap = Number(maxRuleDepth);      // literal: not clamped to the slots
+    }
+    if (breakDepth > cap) return null;
+    return Math.min(breakDepth, N_RULE_SLOTS - 1);
+}
+
+export function vruleSlot(breakDepth, maxVruleDepth = 1) {
+    if (breakDepth === undefined || breakDepth === null
+        || maxVruleDepth === null) return null;
+    if (breakDepth > Number(maxVruleDepth)) return null;
+    return Math.min(breakDepth, N_VRULE_SLOTS - 1);
+}
 
 const CELL_FLAG_CLASS = { neg: 'gt-neg', emphasis: 'gt-emph', muted: 'gt-muted' };
 const ROW_FLAG_CLASS = { total: 'gt-total', subtotal: 'gt-subtotal',
@@ -42,6 +74,9 @@ export function renderTable(doc, opts = {}) {
     const d = opts.document ||
         (typeof document !== 'undefined' ? document : null);
     if (!d) throw new Error('no document available — pass opts.document');
+    // resolved once: an explicit null (no rules) must differ from "not passed"
+    const maxRuleDepth = opts.maxRuleDepth === undefined ? 'auto' : opts.maxRuleDepth;
+    const maxVruleDepth = opts.maxVruleDepth === undefined ? 1 : opts.maxVruleDepth;
 
     const cols = doc.columns;
     const el = d.createElement('div');
@@ -70,7 +105,8 @@ export function renderTable(doc, opts = {}) {
                 const th = d.createElement('th');
                 const colspan = hc.colspan || 1;
                 if (colspan > 1) th.setAttribute('colspan', String(colspan));
-                th.className = headClasses(doc, col, colspan, leaf, hc).join(' ');
+                th.className = headClasses(doc, col, colspan, leaf, hc,
+                                           maxVruleDepth).join(' ');
                 fillCell(d, th, hc, opts);
                 tr.appendChild(th);
                 col += colspan;
@@ -84,11 +120,12 @@ export function renderTable(doc, opts = {}) {
     const resolved = [];        // text matrix for click payloads and toCSV
     const rawRes = [];          // raw-value matrix (null where absent)
     const tbody = d.createElement('tbody');
-    renderSection(d, tbody, doc, doc.body, resolved, rawRes, opts);
+    const depths = { maxRuleDepth, maxVruleDepth };
+    renderSection(d, tbody, doc, doc.body, resolved, rawRes, opts, depths);
     table.appendChild(tbody);
     if (doc.foot.length) {
         const tfoot = d.createElement('tfoot');
-        renderSection(d, tfoot, doc, doc.foot, [], [], opts);
+        renderSection(d, tfoot, doc, doc.foot, [], [], opts, depths);
         table.appendChild(tfoot);
     }
 
@@ -150,14 +187,14 @@ export function renderTable(doc, opts = {}) {
     };
 }
 
-function renderSection(d, parent, doc, rows, resolved, rawRes, opts) {
+function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
     const ncols = doc.columns.length;
     const pending = new Array(ncols).fill(0);   // rows still covered per column
     const carry = new Array(ncols).fill('');    // text carried down rowspans
     rows.forEach((row, r) => {
         const tr = d.createElement('tr');
         tr.setAttribute('data-r', String(r));
-        const trCls = rowClasses(doc, row).join(' ');
+        const trCls = rowClasses(doc, row, r === 0, depths.maxRuleDepth).join(' ');
         if (trCls) tr.className = trCls;
         const texts = carry.slice();
         const raws = new Array(ncols).fill(null);
@@ -172,7 +209,8 @@ function renderSection(d, parent, doc, rows, resolved, rawRes, opts) {
             td.setAttribute('data-c', String(col));
             if (colspan > 1) td.setAttribute('colspan', String(colspan));
             if (rowspan > 1) td.setAttribute('rowspan', String(rowspan));
-            td.className = bodyClasses(doc, col, colspan, cell).join(' ');
+            td.className = bodyClasses(doc, col, colspan, cell,
+                                       depths.maxVruleDepth).join(' ');
             fillCell(d, td, cell, opts);
             tr.appendChild(td);
             for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
@@ -209,19 +247,17 @@ function fillCell(d, node, cell, opts) {
     }
 }
 
-function columnClasses(col) {
+function columnClasses(col, maxVruleDepth) {
     // canonical JSON omits defaulted fields: role/wrap may be absent (= data,
     // no-wrap). Stub columns never carry break_depth, so no role guard needed.
     const cls = [`gt-${col.align}`, col.role === 'stub' ? 'gt-stub' : 'gt-data',
                  col.wrap ? 'gt-wrap' : 'gt-nowrap'];
-    if (col.break_depth !== undefined && col.break_depth !== null
-        && col.break_depth <= MAX_VBREAK) {
-        cls.push(`gt-vbreak-${col.break_depth}`);
-    }
+    const slot = vruleSlot(col.break_depth, maxVruleDepth);
+    if (slot !== null) cls.push(`gt-vbreak-${slot}`);
     return cls;
 }
 
-function headClasses(doc, col, colspan, leaf, hc) {
+function headClasses(doc, col, colspan, leaf, hc, maxVruleDepth) {
     const cls = [];
     const first = doc.columns[col];
     const nStub = doc.n_stub_levels;
@@ -233,17 +269,16 @@ function headClasses(doc, col, colspan, leaf, hc) {
     if (!leaf && hc.text) cls.push('gt-spanner');   // cmidrule under groups
     if (nStub > 0 && col + colspan === nStub) cls.push('gt-stub-end');
     const bd = first && first.break_depth;
-    if (col >= nStub && bd !== undefined && bd !== null && bd <= MAX_VBREAK) {
-        cls.push(`gt-vbreak-${bd}`);
-    }
+    const vslot = col >= nStub ? vruleSlot(bd, maxVruleDepth) : null;
+    if (vslot !== null) cls.push(`gt-vbreak-${vslot}`);
     for (const f of hc.flags || []) {
         if (CELL_FLAG_CLASS[f]) cls.push(CELL_FLAG_CLASS[f]);
     }
     return cls;
 }
 
-function bodyClasses(doc, col, colspan, cell) {
-    const cls = columnClasses(doc.columns[col]);
+function bodyClasses(doc, col, colspan, cell, maxVruleDepth) {
+    const cls = columnClasses(doc.columns[col], maxVruleDepth);
     const lastStub = doc.n_stub_levels > 0 && col + colspan === doc.n_stub_levels;
     if (lastStub) cls.push('gt-stub-end');
     for (const f of cell.flags || []) {
@@ -252,13 +287,11 @@ function bodyClasses(doc, col, colspan, cell) {
     return cls;
 }
 
-function rowClasses(doc, row) {
+function rowClasses(doc, row, isFirst, maxRuleDepth) {
     const cls = [];
-    const d = row.break_depth;
-    if (d !== undefined && d !== null
-        && d <= Math.min(MAX_BREAK, doc.n_stub_levels - 2)) {
-        cls.push(`gt-break-${d}`);
-    }
+    const slot = isFirst ? null
+        : ruleSlot(row.break_depth, doc.n_stub_levels, maxRuleDepth);
+    if (slot !== null) cls.push(`gt-break-${slot}`);
     for (const f of row.flags || []) {
         if (ROW_FLAG_CLASS[f]) cls.push(ROW_FLAG_CLASS[f]);
     }

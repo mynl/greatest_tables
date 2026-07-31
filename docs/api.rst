@@ -54,6 +54,8 @@ Renderers
 
 .. automodule:: greater_tables.render.html
 
+.. automodule:: greater_tables.render.policy
+
 .. automodule:: greater_tables.render.css
 
 .. automodule:: greater_tables.render.notebook

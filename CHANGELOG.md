@@ -3,6 +3,65 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a3] - 2026-08-01
+
+Step 1 of two: rules and the plumbing to reach them. Formats follow in a4.
+
+### Added
+
+- **`render/policy.py`** — `rule_slot()` and `vrule_slot()`, the single
+  implementation of "which structural breaks get a rule, and with what
+  weight", called by the HTML, TikZ and text renderers and ported line for
+  line into the walker. The comparison used to be written out four times.
+- **`HouseStyle.max_rule_depth` now does something.** It was declared,
+  documented as the knob for this, and read by nothing. `'auto'` (default)
+  is the previous behavior — every break except the innermost stub level, so
+  no rules on a single-level index, depth 0 only on two levels, depths 0 and
+  1 on three. An **int is literal**: `max_rule_depth=0` on a single-level
+  index rules every row whose stub changed, which was previously unsayable.
+  `None` draws no internal rules at all. `max_vrule_depth` is the sibling for
+  column-group verticals.
+- **`style=` reaches the renderers.** `render_html`, `render_text`,
+  `mimebundle` and `GT(...)` all take a `HouseStyle` now; previously it was
+  reachable only through `render_tikz`, so every field on it was dead on the
+  HTML path. Passing a `HouseStyle` field name to `GT` as a bare keyword now
+  warns with the fix (`style=HouseStyle(tikz_scale=...)`) instead of the
+  generic "unknown option".
+- **`config.load_style(path)`** — `HouseStyle` had no YAML form, so half the
+  house rules were file-able and half Python-only. A separate file from
+  `load_spec`'s, because semantics and renderer opinions are separate things.
+- Walker: `opts.maxRuleDepth` / `opts.maxVruleDepth`, plus exported
+  `ruleSlot`/`vruleSlot`. Style is not in the document by design, so a server
+  passes these alongside it, with the theme.
+- `--gt-vrule-0/1` CSS custom properties. Column-group verticals borrowed
+  `--gt-rule-0/1`, so softening or removing one changed the other; same
+  default values, so nothing looks different.
+- **`deep-stub` fixture** (5 stub levels) — the depth at which a fixed cap and
+  the `n_stub_levels - 2` policy disagree, and the fixture that would have
+  caught the bug below. `tests/test_rules.py` checks all four renderers agree
+  with the policy across 1-5 stub levels × 5 policies, and compares Python
+  against the walker **live** under non-default policies (the committed
+  transcripts only ever cover the default).
+
+### Fixed
+
+- **The text oracle drew rules the other three renderers suppressed.**
+  `render/text.py` gated on `depth <= n_stub_levels - 2` while HTML, TikZ and
+  the walker used `min(2, n_stub_levels - 2)`, so from five stub levels up the
+  conformance oracle disagreed with everything it exists to check. Now
+  impossible: there is one implementation.
+- The first-row guard differed per renderer (text skipped row 0 per section,
+  TikZ per body+foot concatenated, HTML and the walker not at all). No
+  engine-built document can expose it — `break_depths` returns None for row 0
+  — but a hand-authored or foreign one can, and conformance would not have
+  caught it because HTML and the walker were wrong together.
+
+### Notes
+
+Nothing changes at default settings: no golden IR, text, TikZ or transcript
+file moved. The only regenerated artifacts are `assets/gt.css` (new
+properties), the walker build, and the demo pages.
+
 ## [6.0.0a2] - 2026-07-31
 
 ### Changed

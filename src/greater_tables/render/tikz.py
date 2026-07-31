@@ -27,6 +27,7 @@ import re
 
 from ..ir import Cell, HeadCell, TableDoc
 from ..spec import HouseStyle
+from .policy import rule_slot, vrule_slot
 from .textlength import text_display_len
 
 __all__ = ['TIKZ_PREAMBLE', 'W2TIKZ', 'render_tikz']
@@ -37,8 +38,6 @@ W2TIKZ = {0: None, 0.25: 'ultra thin', 0.5: 'very thin', 0.75: 'thin',
 
 TIKZ_PREAMBLE = r'\newcommand{\I}{\vphantom{lp}}'
 
-_MAX_BREAK = 2
-_MAX_VBREAK = 1
 # header cells render bold (stubs bold-italic): widen their width estimate
 # so long headers don't collide across the column gap (GT bold_adjustment)
 _BOLD_ADJUSTMENT = 1.15
@@ -223,13 +222,16 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     base = _style_for(style.head_rule)
     if base and body_rows:
         hpath(base, body_start, 1, ygap)
+    n_body = len(doc.body)
     for r, row in enumerate(body_rows):
-        if r == 0:
+        if r == 0 or r == n_body:          # first row of body / of foot
             continue
         rules = []
         d = row.break_depth
-        if d is not None and d <= min(_MAX_BREAK, n_stub - 2):
-            rules.append((_style_for(style.hrule_widths[d]), d + 1))
+        slot = rule_slot(d, n_stub, style.max_rule_depth)
+        if slot is not None:
+            # weight from the slot, start column from the raw depth
+            rules.append((_style_for(style.hrule_widths[slot]), d + 1))
         if 'total' in row.flags or 'subtotal' in row.flags:
             rules.append((_style_for(style.total_rule), 1))
         for style_name, start_col in rules:
@@ -260,10 +262,11 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
           f'([xshift={gap}em]{name}-1-{n_stub}.south east) -- '
           f'([xshift={gap}em]{name}-1-{n_stub}.south east |- {name}.south);')
     for j, column in enumerate(doc.columns):
-        d = column.break_depth
-        if column.role != 'data' or d is None or d > _MAX_VBREAK:
+        slot = (vrule_slot(column.break_depth, style.max_vrule_depth)
+                if column.role == 'data' else None)
+        if slot is None:
             continue
-        vstyle = _style_for(style.vrule_widths[d])
+        vstyle = _style_for(style.vrule_widths[slot])
         if not vstyle:
             continue
         # full height, table top to bottom — matching the HTML gt-vbreak

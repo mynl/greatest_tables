@@ -9,10 +9,13 @@
  * Run from the repo root:
  *   node js/transcript.mjs --write            regenerate committed goldens
  *   node js/transcript.mjs --out DIR          write to DIR (used by pytest)
+ *   node js/transcript.mjs --max-rule-depth V  policy override: auto|none|int
  *
  * The walker runs with defaults: no katex (math renders as \(tex\) source),
  * allowHtml off (html cells render as their source text) — both sides of the
- * conformance contract record source, not rendered markup.
+ * conformance contract record source, not rendered markup. The committed
+ * goldens are always the default policy; --max-rule-depth exists so pytest
+ * can compare the two implementations live under a non-default one.
  */
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -26,9 +29,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const IR_DIR = join(ROOT, 'tests', 'golden', 'ir');
 const OUT_DEFAULT = join(ROOT, 'tests', 'golden', 'transcript');
 
-function transcribe(doc) {
+function transcribe(doc, maxRuleDepth) {
     const { document } = parseHTML('<!doctype html><html><body></body></html>');
-    const { el } = renderTable(doc, { document });
+    const { el } = renderTable(doc, { document, maxRuleDepth });
     const lines = [];
     const meta = {
         caption: typeof doc.caption === 'object' && doc.caption !== null
@@ -63,12 +66,17 @@ const outIdx = process.argv.indexOf('--out');
 const outDir = outIdx >= 0 ? process.argv[outIdx + 1] : OUT_DEFAULT;
 mkdirSync(outDir, { recursive: true });
 
+const depthIdx = process.argv.indexOf('--max-rule-depth');
+const depthArg = depthIdx >= 0 ? process.argv[depthIdx + 1] : 'auto';
+const maxRuleDepth = depthArg === 'auto' ? 'auto'
+    : depthArg === 'none' ? null : Number(depthArg);
+
 let count = 0;
 for (const file of readdirSync(IR_DIR).sort()) {
     if (!file.endsWith('.json')) continue;
     const doc = JSON.parse(readFileSync(join(IR_DIR, file), 'utf-8'));
     const name = basename(file, '.json');
-    writeFileSync(join(outDir, `${name}.jsonl`), transcribe(doc),
+    writeFileSync(join(outDir, `${name}.jsonl`), transcribe(doc, maxRuleDepth),
                   { encoding: 'utf-8' });
     count += 1;
 }

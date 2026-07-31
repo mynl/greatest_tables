@@ -24,13 +24,11 @@ import html as _html
 import re
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..spec import HouseStyle
 from . import css as _css
+from .policy import rule_slot, vrule_slot
 
 __all__ = ['render_html', 'reset_css_once']
-
-# row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
-_MAX_BREAK = 2
-_MAX_VBREAK = 1
 
 _CELL_FLAG_CLASS = {'neg': 'gt-neg', 'emphasis': 'gt-emph', 'muted': 'gt-muted'}
 _ROW_FLAG_CLASS = {'total': 'gt-total', 'subtotal': 'gt-subtotal',
@@ -46,7 +44,8 @@ def reset_css_once() -> None:
 
 
 def render_html(doc: TableDoc, *, css: str = 'embed',
-                inline_css: bool = False, allow_html: bool = True) -> str:
+                inline_css: bool = False, allow_html: bool = True,
+                style: HouseStyle | None = None) -> str:
     """Render a table document to an HTML fragment.
 
     Parameters
@@ -60,8 +59,15 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
         implies ``css='none'``.
     allow_html
         Honor cell ``html: true``. Off ⇒ such cells render as escaped source.
+    style
+        House style. ``max_rule_depth`` and ``max_vrule_depth`` are the only
+        fields this renderer reads — they decide which breaks get a
+        ``gt-break-{slot}`` / ``gt-vbreak-{slot}`` class. Rule *weights* are
+        CSS custom properties (``--gt-rule-{slot}``, ``--gt-vrule-{slot}``),
+        set in a stylesheet, not here.
     """
     global _css_emitted
+    style = style or HouseStyle()
     ncols = len(doc.columns)
     sty = _Styler(inline_css)
     out: list[str] = []
@@ -93,7 +99,8 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
             col = 0
             for hc in row:
                 colspan = hc.colspan
-                cls = _head_classes(doc, col, colspan, leaf, hc)
+                cls = _head_classes(doc, col, colspan, leaf, hc,
+                                    style.max_vrule_depth)
                 cls, content = _cell_content(hc, cls, allow_html)
                 span = f' colspan="{colspan}"' if colspan > 1 else ''
                 cells.append(f'<th{span} class="{" ".join(cls)}"'
@@ -103,11 +110,11 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
         out.append('</thead>')
 
     out.append('<tbody>')
-    out.extend(_section(doc, doc.body, sty, allow_html))
+    out.extend(_section(doc, doc.body, sty, allow_html, style))
     out.append('</tbody>')
     if doc.foot:
         out.append('<tfoot>')
-        out.extend(_section(doc, doc.foot, sty, allow_html))
+        out.extend(_section(doc, doc.foot, sty, allow_html, style))
         out.append('</tfoot>')
     out.append('</table>')
 
@@ -119,12 +126,12 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
 
 
 def _section(doc: TableDoc, rows: tuple[Row, ...], sty: _Styler,
-             allow_html: bool) -> list[str]:
+             allow_html: bool, style: HouseStyle) -> list[str]:
     ncols = len(doc.columns)
     pending = [0] * ncols
     out: list[str] = []
     for r, row in enumerate(rows):
-        row_cls = _row_classes(doc, row)
+        row_cls = _row_classes(doc, row, r == 0, style.max_rule_depth)
         cls_attr = f' class="{" ".join(row_cls)}"' if row_cls else ''
         cells = []
         col = 0
@@ -134,7 +141,8 @@ def _section(doc: TableDoc, rows: tuple[Row, ...], sty: _Styler,
                 col += 1
             if col >= ncols:
                 break
-            cls = _body_classes(doc, col, cell.colspan, cell)
+            cls = _body_classes(doc, col, cell.colspan, cell,
+                                style.max_vrule_depth)
             cls, content = _cell_content(cell, cls, allow_html)
             span = ''
             if cell.colspan > 1:
@@ -170,18 +178,18 @@ def _esc(text: str) -> str:
 
 # ---- class stamping: direct ports of gt-render.js — keep in lockstep
 
-def _column_classes(doc: TableDoc, col: int) -> list[str]:
+def _column_classes(doc: TableDoc, col: int, max_vrule_depth) -> list[str]:
     c = doc.columns[col]
     cls = [f'gt-{c.align}', 'gt-stub' if c.role == 'stub' else 'gt-data',
            'gt-wrap' if c.wrap else 'gt-nowrap']
-    if (c.role == 'data' and c.break_depth is not None
-            and c.break_depth <= _MAX_VBREAK):
-        cls.append(f'gt-vbreak-{c.break_depth}')
+    slot = vrule_slot(c.break_depth, max_vrule_depth) if c.role == 'data' else None
+    if slot is not None:
+        cls.append(f'gt-vbreak-{slot}')
     return cls
 
 
 def _head_classes(doc: TableDoc, col: int, colspan: int, leaf: bool,
-                  hc: HeadCell) -> list[str]:
+                  hc: HeadCell, max_vrule_depth) -> list[str]:
     cls: list[str] = []
     first = doc.columns[col] if col < len(doc.columns) else None
     n_stub = doc.n_stub_levels
@@ -199,25 +207,29 @@ def _head_classes(doc: TableDoc, col: int, colspan: int, leaf: bool,
     if n_stub > 0 and col + colspan == n_stub:
         cls.append('gt-stub-end')
     bd = first.break_depth if first else None
-    if col >= n_stub and bd is not None and bd <= _MAX_VBREAK:
-        cls.append(f'gt-vbreak-{bd}')
+    slot = vrule_slot(bd, max_vrule_depth) if col >= n_stub else None
+    if slot is not None:
+        cls.append(f'gt-vbreak-{slot}')
     cls.extend(_CELL_FLAG_CLASS[f] for f in hc.flags if f in _CELL_FLAG_CLASS)
     return cls
 
 
-def _body_classes(doc: TableDoc, col: int, colspan: int, cell: Cell) -> list[str]:
-    cls = _column_classes(doc, col)
+def _body_classes(doc: TableDoc, col: int, colspan: int, cell: Cell,
+                  max_vrule_depth) -> list[str]:
+    cls = _column_classes(doc, col, max_vrule_depth)
     if doc.n_stub_levels > 0 and col + colspan == doc.n_stub_levels:
         cls.append('gt-stub-end')
     cls.extend(_CELL_FLAG_CLASS[f] for f in cell.flags if f in _CELL_FLAG_CLASS)
     return cls
 
 
-def _row_classes(doc: TableDoc, row: Row) -> list[str]:
+def _row_classes(doc: TableDoc, row: Row, is_first: bool,
+                 max_rule_depth) -> list[str]:
     cls: list[str] = []
-    d = row.break_depth
-    if d is not None and d <= min(_MAX_BREAK, doc.n_stub_levels - 2):
-        cls.append(f'gt-break-{d}')
+    slot = None if is_first else rule_slot(row.break_depth, doc.n_stub_levels,
+                                           max_rule_depth)
+    if slot is not None:
+        cls.append(f'gt-break-{slot}')
     cls.extend(_ROW_FLAG_CLASS[f] for f in row.flags if f in _ROW_FLAG_CLASS)
     return cls
 

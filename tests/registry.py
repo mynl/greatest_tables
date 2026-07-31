@@ -78,6 +78,17 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
         8, 'flv',
         metric_name_spec=['normal scale', 'log wide', 'extreme range']),
         TableSpec())
+    # 5 stub levels: the only depth where a fixed depth-2 cap and the
+    # n_stub_levels-2 policy disagree — this is the fixture that exposes a
+    # renderer drifting from render.policy. Hand-built because Fabricator's
+    # simplify=True drops singleton outer levels at small row counts.
+    fx['deep-stub'] = (
+        pd.DataFrame(
+            {'v': range(32)},
+            index=pd.MultiIndex.from_product(
+                [list('AB'), list('cd'), list('ef'), list('gh'), list('ij')],
+                names=[f'L{k}' for k in range(5)])),
+        TableSpec())
     fx['markdown'] = (
         ': Simple table {#tbl-md}\n\n'
         '| item | count |\n|:-----|------:|\n| apples | 3 |\n| pears | 12 |\n',

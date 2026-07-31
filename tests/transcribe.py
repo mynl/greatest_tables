@@ -10,7 +10,7 @@ classes(sorted), text}. Byte-compared against tests/golden/transcript.
 import json
 from html.parser import HTMLParser
 
-from greater_tables import Cell, TableDoc
+from greater_tables import Cell, HouseStyle, TableDoc
 from greater_tables.render.html import render_html
 
 _SECTION = {'thead': 'head', 'tbody': 'body', 'tfoot': 'foot'}
@@ -60,13 +60,18 @@ class _Walk(HTMLParser):
             self.text.append(data)
 
 
-def transcribe(doc: TableDoc) -> str:
-    """Transcript of the Python HTML rendering, walker-harness format."""
+def transcribe(doc: TableDoc, style: HouseStyle | None = None) -> str:
+    """Transcript of the Python HTML rendering, walker-harness format.
+
+    ``style`` mirrors ``js/transcript.mjs --max-rule-depth``: the committed
+    goldens use the default policy, and the tests compare both
+    implementations live under non-default ones.
+    """
     caption = doc.caption.text if isinstance(doc.caption, Cell) else doc.caption
     meta = {'caption': caption, 'label': doc.label, 'hash': doc.hash,
             'notes': list(doc.notes)}
     walker = _Walk()
-    walker.feed(render_html(doc, css='none', allow_html=False))
+    walker.feed(render_html(doc, css='none', allow_html=False, style=style))
     lines = [json.dumps(meta, ensure_ascii=False, separators=(',', ':'))]
     order = {'head': 0, 'body': 1, 'foot': 2}
     for rec in sorted(walker.records, key=lambda x: order[x['s']]):

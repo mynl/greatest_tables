@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Hashable
+from typing import Any, Hashable, Literal
 
 from .ir import FormatSpec
 
@@ -105,9 +105,25 @@ class HouseStyle:
     styles via ``render.tikz.W2TIKZ`` (0 = don't draw, 0.25 = ultra thin …
     3 = ultra thick). HTML equivalents live as CSS custom properties in
     ``render.css.VARIABLES``.
+
+    Parameters
+    ----------
+    max_rule_depth
+        How deep the hierarchy is ruled. ``'auto'`` (default) rules every
+        break except the innermost stub level — a change there is just "next
+        row", so ruling it draws a line between every row; that gives no
+        rules on a single-level index, depth 0 only on two levels, depths 0
+        and 1 on three. An **int is literal**: ``0`` rules only outermost
+        changes, and on a single-level index it rules every row whose stub
+        changed. None draws no internal rules at all.
+    max_vrule_depth
+        The same for column-group verticals (None = none). Only
+        ``render.policy.N_VRULE_SLOTS`` weights exist, so deeper breaks reuse
+        the lightest.
     """
 
-    max_rule_depth: int = 2
+    max_rule_depth: int | Literal['auto'] | None = 'auto'
+    max_vrule_depth: int | None = 1
     # --- TikZ geometry (em) and container
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0

@@ -38,9 +38,10 @@ def mimebundle(doc: TableDoc, *, css: str = 'embed',
         Include ``text/latex``: True/False forces; None (default) includes
         it only under Quarto.
     style
-        HouseStyle for the TikZ rendering.
+        HouseStyle, forwarded to both renderers (HTML reads only the rule
+        depth caps; TikZ reads everything).
     """
-    bundle = {'text/html': render_html(doc, css=css)}
+    bundle = {'text/html': render_html(doc, css=css, style=style)}
     if tikz or (tikz is None and in_quarto()):
         bundle['text/latex'] = render_tikz(doc, style)
     return bundle

@@ -5,14 +5,17 @@ missing from the IR, which is the point: it keeps the IR honest. Output is
 deterministic monospace text with box-drawing rules.
 
 Semantics made visible: break depths draw partial horizontal rules starting
-at the changed stub column (depth ≤ n_stub_levels − 2, the shared renderer
-policy); rowspan/colspan cells span; row flags appear in a right gutter;
-math cells render as ``$tex$``; emphasis/muted cells as ``*text*``/``~text~``.
+at the changed stub column (which depths qualify is ``render.policy``, shared
+with every other renderer); rowspan/colspan cells span; row flags appear in a
+right gutter; math cells render as ``$tex$``; emphasis/muted cells as
+``*text*``/``~text~``.
 """
 
 from __future__ import annotations
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..spec import HouseStyle
+from .policy import rule_slot
 
 __all__ = ['render_text']
 
@@ -20,8 +23,13 @@ GAP = 2            # spaces between columns
 STUB_GAP = 3       # ' │ ' between stub block and data block
 
 
-def render_text(doc: TableDoc) -> str:
-    """Render a table document to monospace text."""
+def render_text(doc: TableDoc, style: HouseStyle | None = None) -> str:
+    """Render a table document to monospace text.
+
+    ``style.max_rule_depth`` is the only field this renderer reads — text has
+    no way to express a rule *weight*, so every drawn break looks the same.
+    """
+    style = style or HouseStyle()
     ncols = len(doc.columns)
     lines: list[str] = []
     if doc.caption:
@@ -49,10 +57,12 @@ def render_text(doc: TableDoc) -> str:
                 lines.append(rule)
     if doc.head:
         lines.append('━' * total)
-    lines.extend(_section_lines(doc, doc.body, body_grid, widths, gaps))
+    lines.extend(_section_lines(doc, doc.body, body_grid, widths, gaps,
+                                style.max_rule_depth))
     if doc.foot:
         lines.append('━' * total)
-        lines.extend(_section_lines(doc, doc.foot, foot_grid, widths, gaps))
+        lines.extend(_section_lines(doc, doc.foot, foot_grid, widths, gaps,
+                                    style.max_rule_depth))
     lines.append('━' * total)
     for note in doc.notes:
         lines.append(f'Note: {note}')
@@ -184,13 +194,16 @@ def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int) -> str:
 
 
 def _section_lines(doc: TableDoc, rows: tuple[Row, ...], grid, widths,
-                   gaps) -> list[str]:
+                   gaps, max_rule_depth) -> list[str]:
     lines: list[str] = []
     total = sum(widths) + sum(gaps)
     for r, row in enumerate(rows):
         depth = row.break_depth
-        if (r > 0 and depth is not None
-                and depth <= doc.n_stub_levels - 2):
+        slot = None if r == 0 else rule_slot(depth, doc.n_stub_levels,
+                                             max_rule_depth)
+        if slot is not None:
+            # indent to the changed stub column — the depth, not the weight
+            # slot, drives geometry (they differ once a cap exceeds the slots)
             offset = sum(widths[:depth]) + sum(gaps[:depth + 1])
             lines.append(' ' * offset + '─' * (total - offset))
         parts: list[str] = []
