@@ -3,6 +3,41 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a2] - 2026-07-31
+
+### Changed
+
+- **`requires-python` drops to `>=3.11`** (was 3.13), with matching
+  classifiers. Reported by aggregate_api, whose own floor the 3.13 pin had
+  forced up from 3.11; 5.3 shipped `>=3.10`, so a 3.13 floor on a published
+  6.0 was pure adoption tax. Verified rather than assumed: the full suite
+  runs green on 3.11, 3.12 and 3.13, with byte-identical golden files.
+- **`include_raw` on stub columns: closed as won't-fix.** `include_raw`
+  means data columns in every form, and no form reaches the stub — an
+  explicit list naming the index level does nothing (verified). A client
+  that must sort on an index level should `df.reset_index()` before
+  `build`, which is the honest shape anyway: a sorted grid has no index
+  hierarchy left to respect. `TableSpec.include_raw`'s docstring now says
+  so, which also settles the "reads broader than it behaves" complaint.
+- `dev/` tidied further: the three working scripts moved to `dev/tools/`
+  (paths inside them and the one reference in `docs/migration.rst` updated),
+  the resolved aggregate_api report filed under `dev/done`, and
+  `dev/pending.md` rewritten to carry only what is actually open.
+
+### Fixed
+
+- **TikZ widths are now identical across Python versions.**
+  `render/textlength.py` held its glyph metrics as float ems and summed
+  them with `sum()`. CPython 3.12 gave `sum()` Neumaier compensated
+  summation, so `'apples'` totalled 2.5549999999999997 on 3.11 and 2.555 on
+  3.13 — one ULP apart, but on opposite sides of the 2 dp rounding the TikZ
+  renderer applies, which moved a committed column width by 0.01em and made
+  a golden `.tex` file fail on 3.11. Metrics are now integer milli-ems
+  accumulated as integers and converted to ems once at the end, which is
+  exact on every interpreter. Found only because the 3.11 floor change was
+  verified by actually running the suite there. No golden file changed on
+  3.13; the goldens are now interpreter-independent.
+
 ## [6.0.0a1] - 2026-07-31
 
 First pre-release of the rewrite. **The version line switches here** from the

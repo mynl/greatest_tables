@@ -10,8 +10,16 @@ note's hard rule 4.
 > names the dtype and the columns `include_raw='data'` actually covers.
 > `include_raw='data'` keeps its meaning, and the documented pairing works.
 > Drop the `include_raw=list(df.columns)` workaround when convenient.
-> The **stub** half (suggestion 2 / `include_raw='all'`, so a numeric index
-> sorts numerically) is still open — see `dev/pending.md`.
+>
+> **The stub half is closed as won't-fix** (author's call, 2026-07-31).
+> `include_raw` keeps meaning *data* columns; there will be no `'all'`.
+> Note that no form of it reaches the stub today — an explicit list naming
+> the index level does nothing, verified — so the route for a numeric index
+> that must sort numerically in csv-grid is **`df.reset_index()` before
+> `build`**, which turns the level into an ordinary data column that
+> `include_raw='data'` then covers. That is the honest shape of the thing
+> anyway: a sorted grid has no index hierarchy left to respect, which is the
+> same reason `irToGridInput` drops rowspans and flags.
 
 ## The gap
 

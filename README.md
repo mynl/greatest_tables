@@ -4,7 +4,7 @@
 ![](https://img.shields.io/pypi/v/greater-tables)
 ![](https://img.shields.io/readthedocs/greater-tables)
 
-**Greater Tables** produces high-quality static display tables — for journal
+**Greater Tables** produces high-quality static display tables for journal
 articles, books, formal reports, and printed financial statements. A pandas
 DataFrame (or CSV, or markdown table) goes in; a clean, typographically sound
 table comes out in HTML, LaTeX (via TikZ), or plain text. No sparklines, no
@@ -15,9 +15,9 @@ from greater_tables import GT
 GT(df)
 ```
 
-This is **GT2**, the ground-up rewrite that publishes as `greater-tables` 6.0.
+This project is a ground-up rewrite that publishes as `greater-tables` 6.0.
 Between the DataFrame and the page sits a versioned, JSON-serializable
-**table document** — the IR. Python owns *semantics* (dtypes, format
+**table document**, the intermediate representation (IR). Python owns *semantics* (dtypes, format
 inference, multi-index hierarchy, spans, break depths); each renderer owns
 *geometry and style*. Nothing in the IR names a width, a rule weight, a font,
 or a CSS property, so the HTML renderer, the TikZ renderer, the text oracle,
@@ -30,7 +30,7 @@ tested against each other.
 pip install greater-tables
 ```
 
-6.0 is not on PyPI yet — until it is, `pip install greater-tables` gives you
+6.0 is not on PyPI yet, until it is, `pip install greater-tables` gives you
 the frozen 5.3 engine. Install this rewrite from source
 (`pip install git+https://github.com/mynl/greatest_tables`), and pin
 `greater-tables<6` anywhere you want to stay on 5.x. The import name never
@@ -61,7 +61,7 @@ Open `demo.html` for every golden fixture rendered client-side by the walker.
 
 ## What 6.0 changes
 
-- **A table document, not a string.** `build(df, spec) → TableDoc` — validated
+- **A table document, not a string.** `build(df, spec) → TableDoc`, validated
   pydantic models, canonical JSON, deterministic 12-hex content hash (no time
   salt), JSON Schema committed at `schema/ir-v1.json`. Cacheable, diffable,
   golden-testable, and an ETag for free.
@@ -72,14 +72,14 @@ Open `demo.html` for every golden fixture rendered client-side by the walker.
 - **Semantics stay in Python, style stays in the renderer.** One document-level
   stylesheet generated from a `RULES` dict (or inlined for HTMX/email), a
   `gt-*` class vocabulary, per-table scalars as CSS custom properties.
-- **No import side effects** — importing the package no longer touches pandas
+- **No import side effects**, importing the package no longer touches pandas
   options or warnings filters. No 50-row raise, either: `max_rows` truncates
   with a note.
 - **Compat facade.** `GT(df, caption=..., ratio_cols=..., formatters=...)`
   works as before and renders through the new engine, lazily and cached (5.x
   computed TikZ eagerly even on the HTML path). Exotic 5.x config knobs warn
   and are ignored.
-- Interactive grids remain the job of the sibling `csv-grid` project —
+- Interactive grids remain the job of the sibling `csv-grid` project,
   `irToGridInput(doc)` hands a table to it whole. This package does not sort,
   filter, or virtualize, by design.
 
@@ -89,7 +89,7 @@ and issue archive stay at
 
 ## Documentation
 
-[ReadtheDocs](https://greater-tables.readthedocs.io/en/latest/) — design, IR
+[ReadtheDocs](https://greater-tables.readthedocs.io/en/latest/) covers design, IR
 reference, migration notes, API.
 
 ## Source
@@ -124,7 +124,7 @@ dev/                   plan docs; moved to dev/done when complete
 
 ## Status
 
-**6.0.0a1** — all seven design steps are complete: the engine, IR, JS walker,
+**6.0.0a1**: all seven design steps are complete: the engine, IR, JS walker,
 Python HTML renderer, and TikZ renderer are conformance-tested against each
 other, and the first consumer (aggregate_api's SPA) renders tables
 client-side from the IR. Pre-release while that adoption settles; further

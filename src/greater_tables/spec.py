@@ -59,6 +59,9 @@ class TableSpec:
     include_raw
         Carry raw values in body cells: False (default), True/'data'
         (numeric/date/bool data columns), or an explicit column list.
+        **Data columns only** in every form — stub (index) columns never
+        carry raw values, so a client that must sort on an index level
+        wants ``df.reset_index()`` before ``build``.
     max_rows
         Truncate longer tables, appending a note. None = unlimited.
     sparsify, sparsify_columns

@@ -107,6 +107,6 @@ DataFrame — it strips away all styling and shows only decisions::
    print(GT(df, caption='Check'))     # 6.0
    # vs. 5.x: print(GT(df, caption='Check')) in a pinned environment
 
-``dev/compare_gt5.py`` in the repository does this side by side, running 5.3
+``dev/tools/compare_gt5.py`` in the repository does this side by side, running 5.3
 in an isolated interpreter (the two versions share an import name, so they
 cannot coexist in one process) and emitting an HTML comparison sheet.
