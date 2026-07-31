@@ -1,12 +1,12 @@
 {
   "name": "gt-render",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "description": "JS walker for the greater_tables table-document IR",
   "type": "module",
   "exports": {
-    ".": "./src/greatest_tables/assets/gt-render.esm.js",
-    "./iife": "./src/greatest_tables/assets/gt-render.iife.js"
+    ".": "./src/greater_tables/assets/gt-render.esm.js",
+    "./iife": "./src/greater_tables/assets/gt-render.iife.js"
   },
   "scripts": {
     "build": "node js/build.mjs",

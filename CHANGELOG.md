@@ -3,6 +3,51 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.10.0] - 2026-07-31
+
+### Added
+
+- **LICENSE** — MIT, the same text and holder as greater_tables 5.3, years
+  extended to 2025-2026. `pyproject.toml` declares it PEP 639 style
+  (`license = "MIT"` + `license-files`), matching 5.3's metadata.
+- **Sphinx documentation** in `docs/`, consistent with the 5.x docs (Read the
+  Docs theme, autodoc, copy button) minus the extensions deprecated upstream
+  (`sphinx-panels`, `recommonmark`, `sphinx-rtd-dark-mode`), plus napoleon
+  for the numpy docstrings and intersphinx to python/pandas/numpy. Pages:
+  quickstart, design (why the IR exists, engine, renderers, walker,
+  verification), IR v1 reference, migration from 5.x (what carries over, what
+  died and where it went), API reference, and the CHANGELOG included via
+  myst. Builds clean under `-W --keep-going`. `docs/_static` artwork is
+  copied from 5.x as a placeholder pending new art.
+- **`.readthedocs.yaml`** and a `docs` optional-dependency extra
+  (`uv sync --extra docs`). Creating the RTD project itself is pending — see
+  `dev/pending.md`; the agreed slug is `greater-tables`, so docs live at
+  https://greater-tables.readthedocs.io (matching the PyPI name, not the repo
+  codename).
+- **`dev/pending.md`** — open items that are not step plans: RTD setup,
+  artwork, the 6.0 publish sequence, the `requires-python` floor, stub raw
+  values, CI.
+
+### Changed
+
+- **PyPI metadata completed** to match 5.3's shape: author email, keywords,
+  classifiers, and `[project.urls]` (Homepage/Documentation/Source
+  Code/Changelog/Issues) pointing at `mynl/greatest_tables` and the new RTD
+  slug. Explicit sdist include list. README rewritten as the PyPI long
+  description: what the package is, how to install it, what 6.0 changes
+  versus 5.x, the name story, and the pin (`greater-tables<6`) for anyone
+  staying on the frozen engine.
+
+### Fixed
+
+- Leftovers from the 1.9.0 rename: `.gitignore` still un-ignored
+  `src/greatest_tables/data/*.csv` (so a *new* package data CSV would have
+  been silently ignored), `package.json` `exports` pointed at the old asset
+  paths, and README, `dev/design.md`, `dev/plan-aggregate-api.md`, and the
+  aggregate_api handoff spec still told readers to `import greatest_tables`.
+  Repo, folder, and GitHub keep the `greatest-tables` codename by design;
+  only import and distribution names moved.
+
 ## [1.9.0] - 2026-07-31
 
 ### Changed

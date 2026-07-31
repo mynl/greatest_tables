@@ -6,7 +6,7 @@ Step 4 of `design.md`. Work happens in the aggregate_api repo (its own conventio
 
 1. IR endpoint: `?format=ir` (or Accept-negotiated) beside existing FrameResponse routes,
    `include_raw='data'`; serializers stop `.`-join-flattening the MultiIndex on this path —
-   greatest_tables receives the real DataFrame server-side.
+   greater_tables receives the real DataFrame server-side.
 2. Serve `gt-render.esm.js` from the installed package via `importlib.resources` (walker and
    IR emitter cannot version-skew).
 3. Static toggle renders via `renderTable(doc)` — replaces the `{rows, html}` innerHTML blob

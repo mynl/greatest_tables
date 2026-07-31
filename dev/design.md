@@ -1,4 +1,4 @@
-# greatest_tables (GT2) — Unified Table Toolkit Design
+# greater_tables (GT2) — Unified Table Toolkit Design
 
 Approved 2026-07-30. Master reference for all step plan docs (`plan-*.md`).
 
@@ -53,7 +53,7 @@ The hinge is a versioned **JSON IR** (intermediate representation — the "table
 ## Architecture
 
 ```
-                    Python: greatest_tables
+                    Python: greater_tables
   df / csv / markdown ──► engine ──► TableDoc (pydantic ⇄ canonical JSON, ir_version 1)
                                         │
               ┌─────────────┬───────────┼──────────────┬─────────────┐
@@ -77,7 +77,7 @@ The hinge is a versioned **JSON IR** (intermediate representation — the "table
 ## The IR (v1) — summary
 
 Top-level: `ir_version, generator, hash, caption, label, notes, n_stub_levels, n_head_levels,
-columns[], head[][], body[], foot[]` (`generator` e.g. `"greatest_tables 1.0.0"`, informative,
+columns[], head[][], body[], foot[]` (`generator` e.g. `"greater_tables 1.9.0"`, informative,
 excluded from hash). Key rules:
 
 - **Column**: `key` ("c0"… positional), `name` (full header path as list — kills lossy `.`-join
@@ -111,7 +111,7 @@ excluded from hash). Key rules:
 pyproject.toml         # hatchling backend; uv venv symlinked to V:\dev; py >= 3.13
 README.md  CHANGELOG.md
 dev/                   # plan-*.md working docs → dev/done when complete
-src/greatest_tables/
+src/greater_tables/
   ir.py                # pydantic TableDoc/Column/Row/Cell/HeadCell/FormatSpec (frozen)
   spec.py              # TableSpec (user semantics) + HouseStyle (renderer opinions) — the
                        # split of today's 48-field Configurator

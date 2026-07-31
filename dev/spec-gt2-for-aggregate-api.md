@@ -1,7 +1,9 @@
-# Spec: greatest_tables IR adoption in aggregate_api
+# Spec: greater_tables IR adoption in aggregate_api
 
-Handoff spec for the aggregate_api agent. Written by the greatest_tables
-side 2026-07-30 (GT2 v1.5.0); mirrored at
+Handoff spec for the aggregate_api agent. Written by the greater_tables
+side 2026-07-30 (GT2 v1.5.0), names refreshed 2026-07-31 (v1.10.0) after the
+package rename `greatest_tables` → `greater_tables` — the repo folder keeps
+the `greatest-tables` codename, so paths below are unchanged. Mirrored at
 `T:/worktrees/aggregate_api/dev/plan-gt2-ir-adoption.md`. Everything the SPA
 needs ships in the installed package — this work is entirely in the
 aggregate_api repo. Schedule alongside your other work as you see fit; the
@@ -14,7 +16,7 @@ flag `?tables=gt`: a server route returns `{rows, html}` blobs
 (`src/aggregate_api/tables.py`, `routes/objects.py` `/frame/{which}.html`),
 injected via innerHTML, with row emphasis added by a BeautifulSoup post-pass
 stamping `<tr>` classes positionally. That evaluation concludes now:
-**greatest_tables** (GT2, `c:/s/ai/greatest-tables`) replaces the whole path
+**greater_tables** (GT2, `c:/s/ai/greatest-tables`) replaces the whole path
 with a semantic JSON IR ("table document") rendered client-side by a bundled
 zero-dependency walker. csv-grid keeps the interactive/large-table role
 unchanged.
@@ -29,13 +31,13 @@ greatest-tables repo.
 
 - `pip`/uv dependency: unpublished — use an editable path source, the same
   pattern fiscus uses for csv-grid:
-  `[tool.uv.sources] greatest-tables = { path = "c:/s/ai/greatest-tables", editable = true }`.
+  `[tool.uv.sources] greater-tables = { path = "c:/s/ai/greatest-tables", editable = true }`.
   Remove the old `greater-tables>=5.3` dependency.
-- `from greatest_tables import build, TableSpec, canonical_json`:
+- `from greater_tables import build, TableSpec, canonical_json`:
   `doc = build(df, spec)` → validated, hash-stamped `TableDoc`;
   `canonical_json(doc)` → deterministic UTF-8 JSON bytes (same df + spec ⇒
   same bytes; `doc.hash` is a 12-hex content hash — use it as the ETag).
-- Package assets via `importlib.resources.files('greatest_tables') /
+- Package assets via `importlib.resources.files('greater_tables') /
   'assets'`: `gt-render.esm.js`, `gt-render.iife.js`, `gt.css`. Serving
   these from the installed package guarantees the walker can never version-
   skew against the IR the same process emits.
@@ -50,9 +52,9 @@ greatest-tables repo.
 
 ## Deliverables
 
-### [dependency] swap greater-tables for greatest-tables
+### [dependency] point greater-tables at GT2
 Editable path source as above; delete nothing else yet. Import smoke test:
-`python -c "import greatest_tables"` must emit no warnings (GT 5.x's
+`python -c "import greater_tables"` must emit no warnings (GT 5.x's
 import-time Pandas4Warning/warnings-filter pollution is gone — if you see
 warnings, report upstream).
 
@@ -87,7 +89,7 @@ call). Same `include_raw='data'` spec.
 ### [serve-walker] static assets from the package
 Routes (or StaticFiles mount) serving `gt-render.esm.js` and `gt.css` out of
 `importlib.resources`. Cache-bust by GT2 version
-(`greatest_tables.__version__`) or `?v=` param.
+(`greater_tables.__version__`) or `?v=` param.
 
 ### [spa-toggle] static view renders the IR client-side
 - Import `gt.css` into the SPA bundle (or link the served copy).
@@ -123,8 +125,9 @@ if the walker now covers it. Record the eval conclusion in your TODO/notes.
 
 ## Non-goals
 
-- No IR input into csv-grid (a later `irToGridInput` adapter in gt-render
-  covers that if ever needed).
+- No IR input into csv-grid — but note the `irToGridInput(doc)` adapter
+  shipped in GT2 1.8.0, so one IR fetch can now feed both the static walker
+  and the interactive grid (requires `include_raw='data'`).
 - No walker feature growth (sort/filter/virtualization stay out).
 - fiscus is unaffected.
 

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]        # >=1.27: PEP 639 license expression support
 build-backend = "hatchling.build"
 
 [project]
@@ -8,13 +8,47 @@ dynamic = ["version"]
 description = "Semantic table engine: DataFrame in, versioned table-document IR out, rendered to HTML, TikZ, text, or client-side JS."
 readme = "README.md"
 requires-python = ">=3.13"
-license = { text = "MIT" }
-authors = [{ name = "Stephen Mildenhall" }]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Stephen J Mildenhall", email = "mynl@me.com" }]
+keywords = [
+    "tables", "dataframe", "pandas", "html", "latex", "tikz", "quarto",
+    "jupyter", "typography", "reporting",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Jupyter",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
 dependencies = [
     "numpy>=2.0",
     "pandas>=2.2",
     "pydantic>=2.7",
     "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mynl/greatest_tables"
+Documentation = "https://greater-tables.readthedocs.io/en/latest/"
+"Source Code" = "https://github.com/mynl/greatest_tables"
+Changelog = "https://greater-tables.readthedocs.io/en/latest/versions.html"
+Issues = "https://github.com/mynl/greatest_tables/issues"
+
+# Read the Docs installs the package plus this extra (see .readthedocs.yaml);
+# day-to-day development uses the uv dependency group below.
+[project.optional-dependencies]
+docs = [
+    "sphinx>=8.0",
+    "sphinx-rtd-theme>=3.0",
+    "sphinx-copybutton>=0.5",
+    "myst-parser>=4.0",
 ]
 
 [dependency-groups]
@@ -31,6 +65,12 @@ path = "src/greater_tables/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/greater_tables"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src", "tests", "schema", "js", "docs",
+    "README.md", "CHANGELOG.md", "LICENSE", "package.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
