@@ -242,15 +242,16 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
           f'([yshift={-ygap}em]{name}-1-{ncols + 1}.south east |- '
           f'{name}.south);')
 
-    # ---- spanner rules: cmidrule(lr)-style trimmed underline per group label
+    # ---- spanner rules: full-width underline per group label, extended by
+    # the half-gap each side so adjacent groups meet at the group vertical
     sp = _style_for(style.spanner_rule)
     if sp:
         for level, c0, span in spanners:
             row = 2 + level
             a = f'{name}-{row}-{c0 + 1}.south west'
             b = f'{name}-{row}-{c0 + span}.south east'
-            w(f'\\path[draw, {sp}] ([xshift=0.3em, yshift={-ygap}em]{a}) -- '
-              f'([xshift=-0.3em, yshift={-ygap}em]{b});')
+            w(f'\\path[draw, {sp}] ([xshift={-gap}em, yshift={-ygap}em]{a}) '
+              f'-- ([xshift={gap}em, yshift={-ygap}em]{b});')
 
     # ---- vertical rules
     stub = _style_for(style.stub_rule)
@@ -265,11 +266,11 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
         vstyle = _style_for(style.vrule_widths[d])
         if not vstyle:
             continue
-        # start under the parent header level that changes at this boundary
-        top_row = min(2 + d, 1 + n_head) if n_head else 1
-        anchor = f'{name}-{top_row}-{j + 1}.south west'
-        w(f'\\path[draw, {vstyle}] ([xshift={-gap}em, yshift={-ygap}em]'
-          f'{anchor}) -- ([xshift={-gap}em]{anchor} |- {name}.south);')
+        # full height, table top to bottom — matching the HTML gt-vbreak
+        # border which runs through the header rows
+        anchor = f'{name}-1-{j + 1}.north west'
+        w(f'\\path[draw, {vstyle}] ([xshift={-gap}em]{anchor}) -- '
+          f'([xshift={-gap}em]{anchor} |- {name}.south);')
 
     if style.tikz_post_process:
         w(style.tikz_post_process)

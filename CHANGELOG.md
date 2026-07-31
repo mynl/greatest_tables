@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.7.1] - 2026-07-31
+
+### Fixed
+
+- Spanner rules now run **full width, edge to edge**: HTML swaps the inset
+  background-gradient for a plain `border-bottom` (`--gt-rule-spanner`);
+  TikZ extends each rule by the half column-gap on both sides. Adjacent
+  groups' rules meet exactly at the group vertical, which separates them —
+  the cmidrule-style side trims from 1.7.0 read as gaps, per review.
+- TikZ column-group verticals now run the full table height (top frame to
+  bottom), matching the HTML `gt-vbreak` border which passes through the
+  header rows; previously they started below the parent header level.
+
 ## [1.7.0] - 2026-07-31
 
 ### Added

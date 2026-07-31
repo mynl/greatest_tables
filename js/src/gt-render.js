@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.7.0';
+export const GT_RENDER_VERSION = '1.7.1';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1

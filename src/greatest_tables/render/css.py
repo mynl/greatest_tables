@@ -45,7 +45,7 @@ VARIABLES: dict[str, str] = {
     '--gt-rule-2': '0.2pt solid',
     '--gt-rule-stub': '0.5pt solid',
     '--gt-rule-total': '0.7pt solid',
-    '--gt-spanner-size': '0.05em',
+    '--gt-rule-spanner': '0.35pt solid',
     '--gt-neg-color': 'inherit',
     '--gt-caption-align': 'left',
 }
@@ -76,14 +76,9 @@ RULES: dict[str, dict[str, str]] = {
     },
     '.gt.gt th': {'font-weight': '600'},
     '.gt.gt thead tr:last-child th': {'border-bottom': 'var(--gt-rule-head)'},
-    # cmidrule-style trimmed underline spanning a group label's columns —
-    # a border would merge with adjacent groups' and lose the span extent
-    '.gt.gt th.gt-spanner': {
-        'background-image': 'linear-gradient(currentColor, currentColor)',
-        'background-size': 'calc(100% - 2*var(--gt-pad-h)) var(--gt-spanner-size)',
-        'background-position': 'bottom center',
-        'background-repeat': 'no-repeat',
-    },
+    # full-width underline beneath a group label, spanning its columns
+    # edge-to-edge; adjacent groups' rules meet at the gt-vbreak vertical
+    '.gt.gt th.gt-spanner': {'border-bottom': 'var(--gt-rule-spanner)'},
     '.gt.gt .gt-l': {'text-align': 'left'},
     '.gt.gt .gt-r': {
         'text-align': 'right',
