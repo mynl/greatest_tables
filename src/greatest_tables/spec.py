@@ -118,5 +118,6 @@ class HouseStyle:
     head_rule: float = 1.0              # under the header block
     stub_rule: float = 1.0              # stub/body vertical divider
     total_rule: float = 0.75            # above rows flagged total
+    spanner_rule: float = 0.5           # cmidrule under column-group labels
     hrule_widths: tuple[float, float, float] = (0.5, 0.25, 0.25)
     vrule_widths: tuple[float, float, float] = (0.25, 0.25, 0.25)

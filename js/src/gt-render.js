@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.6.1';
+export const GT_RENDER_VERSION = '1.7.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
@@ -230,6 +230,7 @@ function headClasses(doc, col, colspan, leaf, hc) {
     else if (first) cls.push(`gt-${first.align}`);
     else cls.push('gt-l');
     cls.push(first && col < nStub ? 'gt-stub' : 'gt-data');
+    if (!leaf && hc.text) cls.push('gt-spanner');   // cmidrule under groups
     if (nStub > 0 && col + colspan === nStub) cls.push('gt-stub-end');
     const bd = first && first.break_depth;
     if (col >= nStub && bd !== undefined && bd !== null && bd <= MAX_VBREAK) {

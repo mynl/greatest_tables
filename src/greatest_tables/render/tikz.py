@@ -97,12 +97,16 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     # matrix rows: 1 spacer + n_head + body(+foot); tikz indices are 1-based
     grid: list[list[str]] = [[''] * ncols]           # spacer row
     overlays: list[tuple[int, int, int, str]] = []   # (tikz row, c0, span, tex)
+    spanners: list[tuple[int, int, int]] = []        # (level, c0, span)
     wmax = [2.0] * ncols
     for level, hrow in enumerate(doc.head):
         cells = [''] * ncols
+        leaf = level == n_head - 1
         col = 0
         for hc in hrow:
             tex = _cell_tex(hc)
+            if not leaf and hc.text:
+                spanners.append((level, col, hc.colspan))
             if hc.colspan == 1:
                 cells[col] = tex + (r'\I' if hc.text else '')
                 wmax[col] = max(wmax[col],
@@ -237,6 +241,16 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
           f'([yshift={-ygap}em]{name}-1-1.south west |- {name}.south) -- '
           f'([yshift={-ygap}em]{name}-1-{ncols + 1}.south east |- '
           f'{name}.south);')
+
+    # ---- spanner rules: cmidrule(lr)-style trimmed underline per group label
+    sp = _style_for(style.spanner_rule)
+    if sp:
+        for level, c0, span in spanners:
+            row = 2 + level
+            a = f'{name}-{row}-{c0 + 1}.south west'
+            b = f'{name}-{row}-{c0 + span}.south east'
+            w(f'\\path[draw, {sp}] ([xshift=0.3em, yshift={-ygap}em]{a}) -- '
+              f'([xshift=-0.3em, yshift={-ygap}em]{b});')
 
     # ---- vertical rules
     stub = _style_for(style.stub_rule)

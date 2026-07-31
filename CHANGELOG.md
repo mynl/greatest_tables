@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.7.0] - 2026-07-31
+
+### Added
+
+- **Spanner rules** in all three renderers: a trimmed rule under every
+  labeled column-group header, spanning exactly its columns (the booktabs
+  `\cmidrule(lr)` pattern; 5.x never drew these in the live TikZ path).
+  HTML/walker stamp `gt-spanner` (underline via inset background gradient —
+  a border would merge with adjacent groups and lose the span extent; size
+  rides as `--gt-spanner-size`); TikZ draws trimmed `\path` segments
+  (`HouseStyle.spanner_rule`, default 0.5); the text oracle draws `─` runs
+  under each label with gaps between groups.
+
+### Fixed
+
+- Example qmd HTML: math cells rendered as literal `\(...\)` because the
+  document had no markdown math, so Quarto never loaded MathJax. The
+  generator now includes inline math in the intro (and pins
+  `html-math-method: mathjax`); the stale-file SyntaxWarnings were already
+  fixed in 1.6.1 — regenerate with `dev/make_example_qmd.py`.
+
 ## [1.6.1] - 2026-07-31
 
 ### Added

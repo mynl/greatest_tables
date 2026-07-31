@@ -1,7 +1,7 @@
 {"caption":"Loss development by year","label":"tbl-loss-dev","hash":"85bf09640692","notes":["Amounts in USD thousands."]}
 {"s":"head","r":0,"c":0,"tag":"th","colspan":2,"classes":["gt-c","gt-stub","gt-stub-end"],"text":""}
-{"s":"head","r":0,"c":2,"tag":"th","colspan":2,"classes":["gt-c","gt-data"],"text":"Group A"}
-{"s":"head","r":0,"c":4,"tag":"th","classes":["gt-c","gt-data","gt-vbreak-0"],"text":"Group B"}
+{"s":"head","r":0,"c":2,"tag":"th","colspan":2,"classes":["gt-c","gt-data","gt-spanner"],"text":"Group A"}
+{"s":"head","r":0,"c":4,"tag":"th","classes":["gt-c","gt-data","gt-spanner","gt-vbreak-0"],"text":"Group B"}
 {"s":"head","r":1,"c":0,"tag":"th","classes":["gt-l","gt-stub"],"text":"Year"}
 {"s":"head","r":1,"c":1,"tag":"th","classes":["gt-l","gt-stub","gt-stub-end"],"text":"Sub"}
 {"s":"head","r":1,"c":2,"tag":"th","classes":["gt-data","gt-r"],"text":"Paid"}

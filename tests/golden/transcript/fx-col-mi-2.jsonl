@@ -1,7 +1,7 @@
 {"caption":null,"label":null,"hash":"2ee31a6ccd55","notes":[]}
 {"s":"head","r":0,"c":0,"tag":"th","classes":["gt-c","gt-stub","gt-stub-end"],"text":""}
-{"s":"head","r":0,"c":1,"tag":"th","colspan":2,"classes":["gt-c","gt-data"],"text":"handicapping"}
-{"s":"head","r":0,"c":3,"tag":"th","colspan":2,"classes":["gt-c","gt-data","gt-vbreak-0"],"text":"vulnerability"}
+{"s":"head","r":0,"c":1,"tag":"th","colspan":2,"classes":["gt-c","gt-data","gt-spanner"],"text":"handicapping"}
+{"s":"head","r":0,"c":3,"tag":"th","colspan":2,"classes":["gt-c","gt-data","gt-spanner","gt-vbreak-0"],"text":"vulnerability"}
 {"s":"head","r":1,"c":0,"tag":"th","classes":["gt-l","gt-stub","gt-stub-end"],"text":"i_0"}
 {"s":"head","r":1,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"return"}
 {"s":"head","r":1,"c":2,"tag":"th","classes":["gt-data","gt-r"],"text":"decay"}

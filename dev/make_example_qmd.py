@@ -80,6 +80,7 @@ format:
     code-tools: true
     code-fold: true
     embed-resources: true
+    html-math-method: mathjax
   pdf:
     documentclass: article
     papersize: a4
@@ -96,7 +97,9 @@ format:
 ---
 
 Fabricator-generated showcase for the greatest_tables engine: each block is
-the blog pattern — a python cell ending in `GT(df, ...)`.
+the blog pattern — a python cell ending in `GT(df, ...)`. Math cells such as
+$\\psi(u) = \\Pr(U_t < 0)$ typeset via MathJax in HTML (this sentence's
+inline math makes Quarto load it) and natively in PDF.
 
 ```{{python}}
 #| echo: true

@@ -1,5 +1,5 @@
 // js/src/gt-render.js
-var GT_RENDER_VERSION = "1.6.1";
+var GT_RENDER_VERSION = "1.7.0";
 var IR_VERSION_SUPPORTED = 1;
 var MAX_BREAK = 2;
 var MAX_VBREAK = 1;
@@ -200,6 +200,7 @@ function headClasses(doc, col, colspan, leaf, hc) {
   else if (first) cls.push(`gt-${first.align}`);
   else cls.push("gt-l");
   cls.push(first && col < nStub ? "gt-stub" : "gt-data");
+  if (!leaf && hc.text) cls.push("gt-spanner");
   if (nStub > 0 && col + colspan === nStub) cls.push("gt-stub-end");
   const bd = first && first.break_depth;
   if (col >= nStub && bd !== void 0 && bd !== null && bd <= MAX_VBREAK) {

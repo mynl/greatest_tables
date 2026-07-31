@@ -194,6 +194,8 @@ def _head_classes(doc: TableDoc, col: int, colspan: int, leaf: bool,
     else:
         cls.append('gt-l')
     cls.append('gt-stub' if first and col < n_stub else 'gt-data')
+    if not leaf and hc.text:
+        cls.append('gt-spanner')                 # cmidrule under groups
     if n_stub > 0 and col + colspan == n_stub:
         cls.append('gt-stub-end')
     bd = first.break_depth if first else None

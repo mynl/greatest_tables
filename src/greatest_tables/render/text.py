@@ -43,6 +43,10 @@ def render_text(doc: TableDoc) -> str:
     for level, row in enumerate(doc.head):
         leaf = level == len(doc.head) - 1
         lines.append(_head_line(row, doc, widths, gaps, leaf))
+        if not leaf:
+            rule = _spanner_line(row, widths, gaps, total)
+            if rule.strip():
+                lines.append(rule)
     if doc.head:
         lines.append('━' * total)
     lines.extend(_section_lines(doc, doc.body, body_grid, widths, gaps))
@@ -160,6 +164,23 @@ def _head_line(row: tuple[HeadCell, ...], doc: TableDoc, widths, gaps,
 
 def _gap_str(gap: int) -> str:
     return ' │ ' if gap == STUB_GAP else ' ' * gap
+
+
+def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int) -> str:
+    """Underline runs beneath labeled group cells (cmidrule analogue)."""
+    chars = [' '] * total
+    col = 0
+    offset = 0
+    for hc in row:
+        span_w = (sum(widths[col:col + hc.colspan])
+                  + sum(gaps[col + 1:col + hc.colspan]))
+        if hc.text:
+            for k in range(offset, min(total, offset + span_w)):
+                chars[k] = '─'
+        offset += span_w + (gaps[col + hc.colspan]
+                            if col + hc.colspan < len(widths) else 0)
+        col += hc.colspan
+    return ''.join(chars).rstrip()
 
 
 def _section_lines(doc: TableDoc, rows: tuple[Row, ...], grid, widths,

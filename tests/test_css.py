@@ -13,6 +13,7 @@ VOCAB = [
     'gt-nowrap', 'gt-wrap', 'gt-break-0', 'gt-break-1', 'gt-break-2',
     'gt-vbreak-0', 'gt-vbreak-1', 'gt-total', 'gt-subtotal', 'gt-emph',
     'gt-muted', 'gt-neg', 'gt-math', 'gt-caption', 'gt-notes', 'gt-fit',
+    'gt-spanner',
 ]
 
 
