@@ -21,3 +21,6 @@ uv.lock
 *.ipynb
 # regenerate-at-will review artifact (dev/compare_gt5.py)
 compare-gt5.html
+
+# conversation archive stays personal
+TRANSCRIPT.md
