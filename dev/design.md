@@ -31,6 +31,15 @@ The hinge is a versioned **JSON IR** (intermediate representation — the "table
   explicitly while plain installs keep resolving to 5.3. The repo folder keeps the
   development codename `greatest-tables`, so editable-path deps and the V:\dev venv
   junction are untouched.
+
+  **GitHub arrangement (decided)**: the old repo (greater_tables project) stays up
+  holding 5.3, archived with a README banner ("frozen at 5.3; ground-up rewrite lives
+  at <est repo>, publishes as greater-tables ≥6.0, same import name — pin `<6` for this
+  engine"). This repo pushes to GitHub as the est-named repo and carries 6.0-forward;
+  its README already explains the name story. PyPI "points" via per-release metadata:
+  add `[project.urls]` (Homepage/Repository → the est repo) when pushing to GitHub —
+  the 5.3 release page keeps pointing at the old repo, which is correct, and 6.0's
+  page points at the new one. Repo name ≠ package name is fine and common.
 - **JS walker lives in this repo** — IR schema and renderer version in lockstep; ships as
   ES module + iife and as Python package data.
 - **Compat**: thin `GT(df, ...)` constructor-compatible facade (caption/formatters/ratio_cols etc.,
