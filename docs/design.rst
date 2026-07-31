@@ -124,9 +124,10 @@ passed — injection-safe by default.
 
 The walker does **not** sort, filter, or virtualize, and never will: a table
 you want to sort is an interactive grid, which is the sibling ``csv-grid``
-project's job. ``irToGridInput(doc)`` hands a document to it whole (requires
-``include_raw='data'``), so one fetch feeds both the static walker and the
-interactive grid. An optional ``fit`` pass runs canvas ``measureText`` plus a
+project's job. ``irToGridInput(doc)`` hands a document to it whole — build
+with ``include_raw='data'`` so the numeric, date and bool columns carry their
+values; string columns need nothing, since their text *is* their value — so
+one fetch feeds both the static walker and the interactive grid. An optional ``fit`` pass runs canvas ``measureText`` plus a
 width solver for constrained containers; the default is natural browser
 layout, the same policy as the Python renderer.
 

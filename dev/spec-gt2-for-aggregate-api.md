@@ -127,7 +127,8 @@ if the walker now covers it. Record the eval conclusion in your TODO/notes.
 
 - No IR input into csv-grid — but note the `irToGridInput(doc)` adapter
   shipped in GT2 1.8.0, so one IR fetch can now feed both the static walker
-  and the interactive grid (requires `include_raw='data'`).
+  and the interactive grid (build with `include_raw='data'`; string columns
+  need no raw as of 1.11.0 — their text is their value).
 - No walker feature growth (sort/filter/virtualization stay out).
 - fiscus is unaffected.
 

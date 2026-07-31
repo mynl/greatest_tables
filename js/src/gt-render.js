@@ -18,7 +18,7 @@
  *   opts.document   Document to use (tests/SSR); defaults to global document
  */
 
-export const GT_RENDER_VERSION = '1.10.0';
+export const GT_RENDER_VERSION = '1.11.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 // row rules: gt-break-{d} for d ≤ min(2, stubs-2); column rules: d ≤ 1
@@ -279,10 +279,15 @@ function csvEscape(s) {
  * flags don't survive because they can't coexist with sort/filter — a
  * sorted table has no runs to span. Stubs un-sparsify (values repeat down
  * their rowspan), multi-level names join with ' / ', and data cells emit
- * their raw values — which is why every data column must carry raw
- * (build with include_raw='data'); parsing formatted text back would be
- * the re-inference this adapter exists to avoid. Foot rows are excluded
- * (a sortable grid has no business sorting a totals row). */
+ * their raw values — which is why every *formatted* data column must carry
+ * raw (build with include_raw='data'); parsing formatted text back would be
+ * the re-inference this adapter exists to avoid. String columns are the
+ * exception: their text is their value, so they need no raw and fall
+ * through as-is. Foot rows are excluded (a sortable grid has no business
+ * sorting a totals row). */
+
+/* Column dtypes whose formatted text *is* the value — nothing to recover. */
+const TEXT_IS_VALUE = new Set(['string', 'object']);
 
 export function irToGridInput(doc) {
     if (doc.ir_version !== IR_VERSION_SUPPORTED) {
@@ -291,11 +296,13 @@ export function irToGridInput(doc) {
     }
     const cols = doc.columns;
     for (const c of cols) {
-        if ((c.role || 'data') === 'data' && !c.raw) {
+        if ((c.role || 'data') === 'data' && !c.raw
+            && !TEXT_IS_VALUE.has(c.dtype)) {
             throw new Error(
-                `irToGridInput requires raw values on every data column ` +
-                `(missing on ${c.key} "${c.name.join(' / ')}") — ` +
-                `build the document with include_raw='data'`);
+                `irToGridInput requires raw values on every non-string data ` +
+                `column (missing on ${c.key} "${c.name.join(' / ')}", dtype ` +
+                `${c.dtype}) — build the document with include_raw='data', ` +
+                `which covers numeric, date and bool columns`);
         }
     }
     const ncols = cols.length;

@@ -3,6 +3,33 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [1.11.0] - 2026-07-31
+
+### Fixed
+
+- **`irToGridInput` no longer throws on string data columns.** It required
+  raw values on *every* data column, but `include_raw='data'` only covers
+  numeric, date and bool ones — so any frame with a string column outside the
+  stub failed, built exactly as documented (3 of aggregate_api's 12 frames;
+  reported in `dev/note-from-aggregate-api-include-raw.md`). A string's
+  formatted text *is* its value, so `string`/`object` columns now fall
+  through as text and raw is required only where there is something to
+  recover. The throw names the offending dtype and what `include_raw='data'`
+  actually covers, instead of advising what the caller already did. The stub
+  half of that report — no raw on index columns, so a numeric index sorts
+  lexically in csv-grid — is still open, see `dev/pending.md`.
+
+### Changed
+
+- **Engine goldens no longer carry `generator`**, so a version bump stops
+  rewriting all 22 of them and burying real IR changes in the churn (verified:
+  a faked 9.9.9 bump now changes nothing under `tests/golden`, `demo.html`,
+  `demo2.html`, or `schema/`). `generator` is informative and already excluded
+  from the content hash. `tests/registry.golden_bytes` is the one place that
+  defines the golden byte form, used by both `make_goldens.py` and
+  `test_engine.py`; the hand-authored exemplars keep their fixed test
+  generator, so the field itself stays covered.
+
 ## [1.10.0] - 2026-07-31
 
 ### Added

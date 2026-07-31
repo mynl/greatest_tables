@@ -19,7 +19,7 @@ from greater_tables import (
 from greater_tables.render.css import write_asset
 
 from exemplars import EXEMPLARS
-from registry import fixtures
+from registry import fixtures, golden_bytes
 
 ROOT = Path(__file__).parent.parent
 
@@ -40,7 +40,7 @@ def main() -> None:
 
     for name, (data, spec) in fixtures().items():
         doc = build(data, spec)
-        (golden_ir / f'fx-{name}.json').write_bytes(canonical_json(doc))
+        (golden_ir / f'fx-{name}.json').write_bytes(golden_bytes(doc))
         (golden_text / f'{name}.txt').write_text(
             render_text(doc), encoding='utf-8', newline='\n')
         (golden_tikz / f'fx-{name}.tex').write_text(

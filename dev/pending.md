@@ -47,27 +47,17 @@ published 6.0 with a 3.13 floor is a real adoption tax. Proposal: drop to
 before changing the metadata (and add the matching classifiers). Steve's
 call — it is a published-metadata decision, not a code one.
 
-## [raw-coverage] `include_raw` vs `irToGridInput` — two reported gaps
+## [raw-coverage] `include_raw` — stub columns still carry no raw
 
-Both from the aggregate_api adoption; the first is filed in full as
-`dev/note-from-aggregate-api-include-raw.md`.
+From the aggregate_api adoption. The string-column half is **done in
+1.11.0** (the adapter falls back to `cell.text` for string dtypes — see
+`dev/note-from-aggregate-api-include-raw.md`). What remains:
 
-1. **String data columns throw.** `include_raw='data'` resolves to numeric,
-   date and bool data columns, but `irToGridInput` demands raw on *every*
-   data column and throws on the first string one — so the documented pairing
-   fails on any frame with a string column outside the stub (3 of their 12
-   frames). Their workaround is the explicit list form. Preferred fix, and I
-   agree with it: have the adapter fall back to `cell.text` for a string
-   column, since a string's formatted text *is* its value and there is
-   nothing to re-infer. Also make the error name a fix that is not what the
-   caller already did.
-2. **Stub columns carry no raw at all**, so a numeric index reaches the grid
-   as text and sorts lexically (10, 2, 200). Wanted: `include_raw='all'`, or
-   extend `'data'` to cover stubs.
-
-Worth deciding both at once, since they are the same knob. Note also that
-`include_raw=True` currently behaves as `'data'` while the `TableSpec`
-docstring reads broader — fix the docstring or the behavior.
+**Stub columns carry no raw at all**, so a numeric index reaches csv-grid as
+text and sorts lexically (10, 2, 200). Wanted: `include_raw='all'`, or extend
+`'data'` to cover stubs. Note also that `include_raw=True` currently behaves
+as `'data'` while the `TableSpec` docstring reads broader — fix the docstring
+or the behavior at the same time.
 
 ## [ci] GitHub Actions
 

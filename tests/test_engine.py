@@ -9,7 +9,7 @@ import pytest
 
 from greater_tables import Fabricator, TableSpec, build, canonical_json
 
-from registry import fixtures
+from registry import fixtures, golden_bytes
 
 GOLDEN_IR = Path(__file__).parent / 'golden' / 'ir'
 FIX = fixtures()
@@ -18,7 +18,7 @@ FIX = fixtures()
 @pytest.mark.parametrize('name', sorted(FIX))
 def test_ir_golden(name):
     data, spec = FIX[name]
-    assert canonical_json(build(data, spec)) == \
+    assert golden_bytes(build(data, spec)) == \
         (GOLDEN_IR / f'fx-{name}.json').read_bytes()
 
 

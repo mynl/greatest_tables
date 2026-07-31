@@ -2,11 +2,27 @@
 
 All frames are Fabricator-generated (fixed seeds — fully deterministic) or
 tiny hand-built synthetics. Nothing real, per the data firewall.
+
+Also home to :func:`golden_bytes`, the byte form the engine-built goldens are
+written and compared in.
 """
 
 import pandas as pd
 
-from greater_tables import Fabricator, TableSpec
+from greater_tables import Fabricator, TableSpec, canonical_json
+from greater_tables.ir import TableDoc
+
+
+def golden_bytes(doc: TableDoc) -> bytes:
+    """Canonical bytes for golden comparison, with ``generator`` stripped.
+
+    ``generator`` carries the package version. It is informative, excluded
+    from the content hash, and identical across every fixture — so leaving it
+    in would rewrite all 20-odd engine goldens on each version bump and bury
+    real IR changes in the churn. The hand-authored exemplars keep theirs
+    (a fixed test string), so the field itself stays covered.
+    """
+    return canonical_json(doc.model_copy(update={'generator': None}))
 
 
 def fixtures() -> dict[str, tuple[object, TableSpec]]:

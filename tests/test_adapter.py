@@ -52,6 +52,29 @@ def test_requires_raw(tmp_path):
     assert "include_raw='data'" in result.stderr
 
 
+def test_string_columns_pass_through_text(tmp_path):
+    """A string data column needs no raw — its text is its value.
+
+    include_raw='data' covers numeric/date/bool only, so a frame with a
+    string column outside the stub must still round-trip (reported from the
+    aggregate_api adoption; see dev/note-from-aggregate-api-include-raw.md).
+    """
+    import pandas as pd
+    df = pd.DataFrame({'name': ['alpha', 'beta', None],
+                       'kind': ['x', 'y', 'z'],
+                       'value': [1.5, -2.0, 3.25]})
+    doc = build(df, TableSpec(include_raw='data'))
+    assert not any(c.raw for c in doc.columns if c.dtype == 'string')
+    result = _run(canonical_json(doc), tmp_path)
+    assert result.returncode == 0, result.stderr
+    grid = json.loads(result.stdout)
+    n_stub = doc.n_stub_levels
+    assert [r[n_stub] for r in grid['records']] == ['alpha', 'beta', '']
+    assert [r[n_stub + 1] for r in grid['records']] == ['x', 'y', 'z']
+    # numeric neighbours still arrive raw, not as formatted text
+    assert all(isinstance(r[n_stub + 2], (int, float)) for r in grid['records'])
+
+
 def test_null_raw_becomes_empty(tmp_path):
     import pandas as pd
     df = pd.DataFrame({'v': [1.5, None, -2.0]})

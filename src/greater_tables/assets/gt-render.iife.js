@@ -29,7 +29,7 @@ var GtRender = (() => {
     renderTable: () => renderTable,
     solveWidths: () => solveWidths
   });
-  var GT_RENDER_VERSION = "1.10.0";
+  var GT_RENDER_VERSION = "1.11.0";
   var IR_VERSION_SUPPORTED = 1;
   var MAX_BREAK = 2;
   var MAX_VBREAK = 1;
@@ -264,15 +264,16 @@ var GtRender = (() => {
   function csvEscape(s) {
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
+  var TEXT_IS_VALUE = /* @__PURE__ */ new Set(["string", "object"]);
   function irToGridInput(doc) {
     if (doc.ir_version !== IR_VERSION_SUPPORTED) {
       throw new Error(`irToGridInput supports ir_version ${IR_VERSION_SUPPORTED}, got ${doc.ir_version}`);
     }
     const cols = doc.columns;
     for (const c of cols) {
-      if ((c.role || "data") === "data" && !c.raw) {
+      if ((c.role || "data") === "data" && !c.raw && !TEXT_IS_VALUE.has(c.dtype)) {
         throw new Error(
-          `irToGridInput requires raw values on every data column (missing on ${c.key} "${c.name.join(" / ")}") \u2014 build the document with include_raw='data'`
+          `irToGridInput requires raw values on every non-string data column (missing on ${c.key} "${c.name.join(" / ")}", dtype ${c.dtype}) \u2014 build the document with include_raw='data', which covers numeric, date and bool columns`
         );
       }
     }

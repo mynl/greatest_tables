@@ -4,6 +4,15 @@ Reported 2026-07-31 from the aggregate_api side, during the a35 adoption
 (GT 1.9.0). Filed here rather than worked around there, per the handoff
 note's hard rule 4.
 
+> **Resolved in 1.11.0 — suggestion 1, as recommended.** `irToGridInput` now
+> requires raw only on data columns whose text is *not* their value: a
+> `string` (or `object`) dtype column falls through as text, and the throw
+> names the dtype and the columns `include_raw='data'` actually covers.
+> `include_raw='data'` keeps its meaning, and the documented pairing works.
+> Drop the `include_raw=list(df.columns)` workaround when convenient.
+> The **stub** half (suggestion 2 / `include_raw='all'`, so a numeric index
+> sorts numerically) is still open — see `dev/pending.md`.
+
 ## The gap
 
 Both the start-here note and the spec say the IR endpoint must build with
