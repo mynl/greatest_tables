@@ -66,6 +66,43 @@ RECIPES = [
     ('Dates and times',
      'Date columns center; datetimes keep minute precision.',
      "df = Fabricator(seed={s}).make(7, 'dt')"),
+    ('Three-level row index',
+     'Break rules at two depths; outer levels span long runs.',
+     "df = Fabricator(seed={s}).make(24, 'ff', index_levels=3)"),
+    ('Deep column header',
+     'Three header levels: two grouping levels over the metric row.',
+     "df = Fabricator(seed={s}).make(8, 'f', column_groups=4, "
+     'column_levels=2)'),
+    ('Deep both ways',
+     'Two-level rows against a three-level header.',
+     "df = Fabricator(seed={s}).make(10, 'f', index_levels=2, "
+     'column_groups=4, column_levels=2)'),
+    ('MultiIndex with totals',
+     'Hierarchy plus a flagged total row.',
+     "base = Fabricator(seed={s}).make(8, 'ff', index_levels=2)\n"
+     "total = base.sum().to_frame(('Total', '')).T\n"
+     'df = pd.concat([base, total])\n'
+     "spec = dict(row_flags={{-1: ('total',)}})"),
+    ('MultiIndex, wide floats',
+     'Grouped rows with SI-suffix engineering columns.',
+     "df = Fabricator(seed={s}).make(10, 'lv', index_levels=2)"),
+    ('MultiIndex, ratios',
+     'Grouped rows, ratio-tagged metrics.',
+     "df = Fabricator(seed={s}).make(10, 'rr', index_levels=2)\n"
+     "spec = dict(ratio_cols='all')"),
+    ('Big both hierarchies',
+     'Three-level rows and column groups together.',
+     "df = Fabricator(seed={s}).make(24, 'fi', index_levels=3, "
+     'column_groups=2)'),
+    ('MultiIndex, dates',
+     'Grouped rows of date and time columns.',
+     "df = Fabricator(seed={s}).make(10, 'dt', index_levels=2)"),
+    ('MultiIndex, prose',
+     'Grouped rows with wrapping text next to numbers.',
+     "df = Fabricator(seed={s}).make(8, 'w6f', index_levels=2)"),
+    ('Three column groups',
+     'Six data columns under three spanners.',
+     "df = Fabricator(seed={s}).make(8, 'ff', column_groups=3)"),
 ]
 
 HEADER = """---
