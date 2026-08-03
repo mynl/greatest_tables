@@ -22,7 +22,7 @@
  *   opts.maxVruleDepth  same for column-group verticals (default 1)
  */
 
-export const GT_RENDER_VERSION = '6.0.0a6';
+export const GT_RENDER_VERSION = '6.0.0a7';
 export const IR_VERSION_SUPPORTED = 1;
 
 /* Rule policy — a line-for-line port of src/greater_tables/render/policy.py.

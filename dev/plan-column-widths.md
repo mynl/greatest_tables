@@ -41,7 +41,28 @@ HTML, because the browser measures better than our glyph table ever will.
      Fixed against measured values; the estimator is now exact for newtx.
   3. **The estimate is font-specific** — exact against Times metrics, ~11%
      tight against Latin Modern. See the open question below.
-- Next: **[width-solver]**, then the **[tikz-budget]** spike.
+- **[width-solver] done** — `render/widths.py`, both modes ported, and
+  `tests/test_widths.py` holds it against the walker's copy through
+  `js/solver-check.mjs`: identical allocations on 10 shapes × 2 modes. Not
+  yet wired into any renderer.
+- **[tikz-budget] spike done — scaling is *not* uniform.** `tikz_scale` is a
+  node option, so it scales node contents while the matrix `column sep` stays
+  put. Measured over six scales on `fx-both-mi`, width is exactly linear:
+
+      width(s) = s·T + S       T = Σ text widths + 2·tikz_column_sep
+                               S = ncols·tikz_column_sep   (+ rule overhang)
+
+  Predicted against measured at s = 0.9/0.8/0.7/0.6: exact to 0.1pt. `T`
+  reconciles to the emitted geometry — the `2·csep` is column 1's
+  `inner xsep`, which scales because it is a node option. `S` came out about
+  0.65em above the bare gaps; that residual is rule overhang beyond the matrix
+  bounding box, and wants checking across fixtures rather than being assumed
+  constant.
+
+  The ladder is therefore predictable, using the split model rather than
+  uniform scaling: the scale needed for budget `B` is `(B − S) / T`, rounded
+  **down** to a ladder step. A budget below `S` cannot be met at any scale.
+- Next: **[tikz-budget]** proper, then **[html-maxwidth]**.
 
 ## Open question raised by [header-relax]
 

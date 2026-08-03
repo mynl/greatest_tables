@@ -3,6 +3,45 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a7] - 2026-08-03
+
+Step 2 of `dev/plan-column-widths.md`: the allocator, plus the measurement
+that unblocks the TikZ budget. **No renderer consumes this yet** — behavior
+is unchanged in every output format.
+
+### Added
+
+- **`render/widths.py`** — column-width allocation under a total-width
+  budget, ported from the csv-grid solver the JS walker already carries.
+  `solve_widths(samples, floors, budget, mode)` returns an `Allocation`
+  (widths plus `natural` / `solved` / `over`). Two modes: `equal-risk`, which
+  bisects for the one quantile every column is measured at so all columns
+  carry the same overflow probability, and `coverage`, which water-fills
+  along each column's concave envelope to fit the most cells outright.
+  Integers in, integers out, unit-agnostic — milli-ems for TikZ, characters
+  for the text renderer later. The budget is text width only; separations are
+  the caller's geometry.
+
+  The port differs from csv-grid in one respect, and it is the caller's
+  world, not the math: csv-grid narrows a column by **truncating**, so its
+  floor is a minimum readable width; a typeset table narrows by **wrapping**,
+  so the floor is the widest unbreakable token. Same solver, different floors.
+- **`js/solver-check.mjs`** and `tests/test_widths.py` — the Python port and
+  the walker's copy must allocate identically, checked on 10 column shapes ×
+  both modes. Alongside the existing csv-grid drift check, the three copies
+  of this algorithm are now pinned to each other.
+
+### Notes
+
+- **`tikz_scale` does not scale a table uniformly**, which the plan had
+  assumed it might. It is a node option, so node contents scale while the
+  matrix `column sep` does not. Measured across six scales, width is exactly
+  linear — `width(s) = s·T + S`, with `T` = Σ text widths + 2 × column sep
+  (column 1's `inner xsep`, which scales) and `S` = ncols × column sep.
+  Predictions matched measurement to 0.1pt at every step, so an
+  autoscale ladder can pick its step in advance; it just has to use this
+  model rather than assuming `width(s) = s · width(1)`.
+
 ## [6.0.0a6] - 2026-08-03
 
 Fallout from rendering `6.0.0a5` through Quarto rather than only through
