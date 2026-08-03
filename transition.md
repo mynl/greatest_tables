@@ -5,6 +5,69 @@ Every 5.x option, what it did, and where it went. Compiled from 5.3's
 text as the source for "what it did") and `core.py`'s `GT.__init__`
 signature. The import name is unchanged `from greater_tables import GT` and the common call still works; this is for the options that moved.
 
+---
+Everything on `HouseStyle`, and who actually reads it:
+
+| field                | default              | read by            | controls                                                       |
+| -------------------- | -------------------- | ------------------ | -------------------------------------------------------------- |
+| `max_rule_depth`     | `'auto'`             | **all four**       | which stub depths get a horizontal rule                        |
+| `max_vrule_depth`    | `1`                  | HTML, TikZ, walker | which column-group depths get a vertical                       |
+| `max_prose_width_em` | `18.0`               | HTML, TikZ         | how wide one *wrapping* column may get (HTML: `--gt-prose-max`) |
+| `max_table_width_em` | `None`               | HTML, TikZ         | total width to aim for (HTML: `--gt-max-width`)                |
+| `hrule_widths`       | `(0.5, 0.25, 0.25)`  | TikZ               | weight per depth slot (HTML: `--gt-rule-0/1/2`)                |
+| `vrule_widths`       | `(0.25, 0.25, 0.25)` | TikZ               | weight per vrule slot (HTML: `--gt-vrule-0/1`) — `[2]` is dead |
+| `frame_rule`         | `1.0`                | TikZ               | table top and bottom (`--gt-rule-frame`)                       |
+| `head_rule`          | `1.0`                | TikZ               | under the header block (`--gt-rule-head`)                      |
+| `stub_rule`          | `1.0`                | TikZ               | the stub/body vertical divider (`--gt-rule-stub`)              |
+| `total_rule`         | `0.75`               | TikZ               | above rows flagged `total` (`--gt-rule-total`)                 |
+| `spanner_rule`       | `0.5`                | TikZ               | cmidrule under a column-group label (`--gt-rule-spanner`)      |
+| `tikz_scale`         | `1.0`                | TikZ               | `scale=` on the matrix nodes — **not** the whole picture        |
+| `tikz_column_sep`    | `1.0`                | TikZ               | column gap, em                                                 |
+| `tikz_row_sep`       | `0.25`               | TikZ               | row gap, em                                                    |
+| `tikz_container_env` | `'table'`            | TikZ               | `table` / `figure` / `sidewaysfigure`                          |
+| `tikz_latex`         | `None`               | TikZ               | float placement, e.g. `'ht'`                                   |
+| `tikz_post_process`  | `''`                 | TikZ               | TeX injected into the environment                              |
+
+Weight scale: `0` don't draw · `0.25` ultra thin · `0.5` very thin · `0.75` thin · `1` semithick · `1.5` thick · `2` very thick · `3` ultra thick.
+
+So the honest summary is: **four fields are portable, the other thirteen are TikZ.** HTML's equivalents are CSS custom properties, and it has four more with no `HouseStyle` counterpart at all — `--gt-pad-v`, `--gt-pad-h`, `--gt-neg-color`, `--gt-caption-align`.
+
+`tikz_scale` deserves its footnote. It rides on the matrix *nodes*, so node contents scale and the matrix column separations do not — a table at `scale=0.5` is about 0.60 of its full width, not half. Measured, the emitted width is exactly
+
+```
+width(s) = s · (sum of column widths + 2 × tikz_column_sep) + ncols × tikz_column_sep + ~0.7em
+```
+
+which is the model `max_table_width_em` uses to pick an autoscale step. The `~0.7em` is the rules overhanging the matrix bounding box; it is flat in both column count and table width.
+
+## Vertical rules
+
+There are only two kinds of vertical in a GT2 table, and GT2 never draws a grid line between every column.
+
+**1. The stub/body divider.** Always present when there's a stub — the `│` in text, `gt-stub-end` in HTML, `stub_rule` in TikZ. Not depth-driven, no on/off switch beyond setting its weight to `0` (TikZ) or `--gt-rule-stub: none` (HTML).
+
+**2. Column-group verticals** — the `max_vrule_depth` family. Same two-part split as the horizontals:
+
+```python
+GT(df, style=HouseStyle(max_vrule_depth=0))     # outermost group boundaries only
+GT(df, style=HouseStyle(max_vrule_depth=None))  # none at all
+```
+
+weight from `vrule_widths` (TikZ) or `--gt-vrule-0/1` (HTML). Those got their own properties in a3 precisely so you can do this:
+
+```html
+<style>.gt { --gt-vrule-0: none; --gt-vrule-1: none; }</style>
+```
+
+— verticals off, row rules untouched. Before a3 they shared `--gt-rule-0/1`, so you couldn't have one without the other.
+
+**The constraint worth knowing:** these need a **MultiIndex on the columns**. The engine reports a boundary only at depth ≤ `n_levels − 2`, so a flat column header produces no verticals whatever you set `max_vrule_depth` to. That's the asymmetry with rows — `max_rule_depth=0` on a single-level index rules every changed row, but there's no vertical equivalent, because the filter sits in the engine rather than the render policy. And only two slots exist, so a third-level group boundary reuses the lighter weight.
+
+**Text has no group verticals at all** — only the stub divider. If you're using `render_text` as the check, verticals are the one thing it won't show you.
+
+
+---
+
 ## How to read the "GT2 home" column
 
 | Marker | Meaning |
@@ -100,25 +163,51 @@ row flags) are computed by the engine and each renderer maps them to weights.
 | 5.x option | Default | What it did | GT2 home | Notes |
 |---|---|---|---|---|
 | `cast_to_floats` | `True` | Cast non-int, non-date columns to float where possible | **gone** | The engine trusts the dtypes it is given — 5.3 had already backed away from this for PyArrow. |
-| `max_str_length` | `-1` | Truncate stringified objects | **gone** | No truncation; long prose wraps at `--gt-prose-max` (30em). |
+| `max_str_length` | `-1` | Truncate stringified objects | **gone** | No truncation: cutting content out of a display table is the wrong trade. Long prose wraps at `max_prose_width_em` / `--gt-prose-max` (18em). |
 | `large_ok` | `False` | Allow rendering tables over the limit | **gone** | Replaced by `TableSpec.max_rows`. |
 | `large_warning` | `50` | **Raise** above this many rows | **TableSpec** `.max_rows` (default `200`) | ⚠️ It no longer raises: it truncates and appends a note saying so. `max_rows=None` for unlimited. |
 | `debug` | `False` | Extra reporting; internal id in the caption | **gone** | `doc.hash` is a stable 12-hex content id, also emitted as `data-gt-hash` on the wrapper. Logging is standard `logging`. |
 
-### Width machinery — all gone
+### Width machinery — rebuilt, smaller
 
-5.x negotiated column widths in Python for every backend. GT2 does not: the
-HTML renderer emits **no widths at all** and lets the browser measure, the JS
-walker can optionally run a canvas-measured solver, and only TikZ estimates
-widths — because TeX has no browser to ask.
+5.x negotiated column widths in Python for every backend. GT2 does not, and
+the division of labor is the point: **TikZ estimates**, because TeX has no
+browser to ask; **HTML states a limit and lets the browser measure**, because
+it measures the real font and we can only guess at it; the **JS walker** can
+run a canvas-measured solver for a constrained container.
+
+`max_table_width_em` (6.0.0a8) is the heir to `max_table_inch_width`, in ems
+rather than inches — every other geometry field is ems, and inches mean
+nothing without a font size. **It is a target, not a guarantee.** Columns that
+cannot wrap — numbers, dates, anything tagged or listed in
+`TableSpec.unbreakable` — keep their natural width whatever the budget says.
+What the budget narrows is the prose, and:
+
+- **TikZ** allocates with one shared quantile, so every prose column carries
+  the same chance of wrapping, then distributes the remainder proportionally
+  so the budget is met rather than merely respected. If even the floors do not
+  fit, `tikz_scale` steps down a coarse ladder (1.0, 0.95 … 0.6) and says so
+  through `logging`; past 0.6 it warns and suggests `sidewaysfigure` instead
+  of shrinking into illegibility. A prose column is never narrowed past its
+  widest single word — TeX will not hyphenate inside one.
+- **HTML** emits `--gt-max-width` and stops there. `gt-nowrap` already pins
+  the columns that must not be narrowed, so the browser narrows exactly the
+  prose ones. No solver runs on that path and none should.
+
+One caveat with teeth: the TikZ estimate is **Times metrics**, exact against
+`newtxtext` (what `Etcher` compiles with) and about 11% tight against Latin
+Modern, the LaTeX default a plain Quarto PDF uses — where a long heading may
+hyphenate. Load a Times-metric serif alongside the tables, or expect slightly
+tight columns. Use `newtxtext` alone; `newtxmath` collides with Quarto's math
+setup.
 
 | 5.x option | Default | What it did | GT2 home | Notes |
 |---|---|---|---|---|
 | `equal` | `False` | Force equal column widths | **gone** | |
-| `max_table_inch_width` | `8.0` | Target table width in inches | **gone** | TikZ caps prose columns at `HouseStyle.tikz_prose_max_em` (18em); HTML uses `--gt-prose-max`. |
-| `table_width_mode` | `'explicit'` | explicit / natural / breakable / minimum | **gone** | The browser's `table-layout: auto` is "natural"; `renderTable(doc, {fit})` is the constrained-container case. |
-| `table_width_header_adjust` | `0.1` | Share of width given to headers | **gone** | |
-| `table_width_header_relax` | `10.0` | Extra characters allowed per heading | **gone** | |
+| `max_table_inch_width` | `8.0` | Target table width in inches | **HouseStyle** `.max_table_width_em` | Ems, not inches: at 11pt, 8in is about 52em. Advisory — see above. |
+| `table_width_mode` | `'explicit'` | explicit / natural / breakable / minimum | **partly** `.max_table_width_em` | "natural" is the default (no budget) and the browser's `table-layout: auto`; "explicit" is a budget; `renderTable(doc, {fit})` is the measured client-side case. No mode switch survives — you set a number or you don't. |
+| `table_width_header_adjust` | `0.1` | Share of width given to headers | **gone** | Headers no longer compete for width: a heading floors its column at its widest *word* and wraps, so there is nothing to apportion. |
+| `table_width_header_relax` | `10.0` | Extra characters allowed per heading | **gone** | Same reason. |
 | `table_font_pt_size` | `11` | Point size, used for width estimation | **Etcher** `font_size=11` | Survives only where it is real: the standalone LaTeX document Etcher compiles. |
 | `header_alignment` | `'few'` | few / center | **gone** | Was marked `NYI!! TODO` in 5.3 and never implemented. Header cells follow their column's alignment. |
 
@@ -149,7 +238,8 @@ widths — because TeX has no browser to ask.
 | `TableSpec.include_raw` | Ship machine values alongside formatted text, for clients. Data columns only — see `dev/done/note-from-aggregate-api-include-raw.md`. |
 | `HouseStyle.max_rule_depth` | How deep the hierarchy is ruled. `'auto'` (default) rules every break except the innermost stub level — no rules on a single-level index, depth 0 only on two levels, depths 0 and 1 on three. An int is literal, so `0` on a single-level index rules every row whose stub changed; `None` draws no internal rules. `max_vrule_depth` is the same for column-group verticals. The walker takes the same values as `opts.maxRuleDepth`. |
 | `HouseStyle.total_rule`, `.spanner_rule` | Weights for the rule above a total row and under a column-group label. |
-| `HouseStyle.tikz_prose_max_em` | Wrap cap for prose columns in TikZ. |
+| `HouseStyle.max_prose_width_em` | How wide one wrapping column may get (18em). TikZ reads it; HTML emits it as `--gt-prose-max`. |
+| `HouseStyle.max_table_width_em` | Total table width to aim for — advisory, since unbreakable columns hold their natural width. TikZ narrows prose then autoscales; HTML hands it to the browser as `--gt-max-width`. |
 
 ## Porting recipes
 

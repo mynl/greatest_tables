@@ -128,7 +128,7 @@ _DEMO2 = [
      None, None),
     ('fx-wrap-low', "Long text, low variance ('s' generator)",
      'Uniform 14-word sentences. gt-wrap prose columns wrap at '
-     '--gt-prose-max (30em default); numeric columns stay gt-nowrap.',
+     '--gt-prose-max (18em default); numeric columns stay gt-nowrap.',
      None, None),
     ('fx-wrap-high', "Long text, high variance ('w' generator)",
      'Negative-binomial word counts — a few very long cells among short '
