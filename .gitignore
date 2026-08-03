@@ -21,8 +21,12 @@ docs/_build/
 
 .ipynb_checkpoints/
 *.ipynb
-# regenerate-at-will review artifact (dev/compare_gt5.py)
+# regenerate-at-will review artifacts (dev/compare_gt5.py, dev/check-widths.qmd)
 compare-gt5.html
+dev/check-widths.pdf
+dev/check-widths.html
+dev/check-widths.tex
+dev/check-widths_files/
 
 # conversation archive stays personal
 TRANSCRIPT.md

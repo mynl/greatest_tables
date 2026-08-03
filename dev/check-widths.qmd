@@ -1,0 +1,143 @@
+---
+title: "Column widths — visual review"
+subtitle: "Companion to dev/plan-column-widths.md; judge the PDF, not the HTML"
+date: today
+number-sections: false
+format:
+  pdf:
+    documentclass: article
+    papersize: a4
+    fontsize: 10pt
+    keep-tex: true
+    geometry: margin=1in
+    toc: false
+    pdf-engine: tectonic
+    include-in-header:
+      text: |
+        \usepackage{newtxtext}
+        \usepackage{tikz}
+        \usetikzlibrary{arrows,calc,positioning,matrix,shapes.geometric,backgrounds,fit}
+        \newcommand{\I}{\vphantom{lp}}
+  html:
+    theme: cosmo
+    embed-resources: true
+    code-fold: true
+---
+
+The visual half of `dev/plan-column-widths.md` — the tests assert the numbers,
+this shows what they look like. One section per behavior, each with what to
+look for. Sections accrue as the plan proceeds; nothing here is discarded, so
+a later change that breaks an earlier section is visible immediately.
+
+**Judge the PDF.** The HTML renderer emits no widths at all by design — the
+browser measures — so none of this applies to it.
+
+Render with the project venv:
+
+```powershell
+$env:QUARTO_PYTHON = "$PWD/.venv/Scripts/python.exe"
+quarto render dev/check-widths.qmd --to pdf
+```
+
+Note the preamble loads `newtxtext`. The width estimator is Times metrics, so
+it is exact against newtx (what `Etcher` uses) and about 11% tight against
+Latin Modern, the LaTeX default a plain Quarto PDF would use. Drop that line
+and section 1's headings start hyphenating — which is itself worth seeing
+once. Use `newtxtext` alone: `newtxmath` collides with Quarto's math setup
+(`\arrowvert already defined`).
+
+```{python}
+#| echo: false
+import pandas as pd
+from greater_tables import GT, Fabricator, __version__
+print(f'greater_tables {__version__}')
+```
+
+## 1. A long heading no longer stretches its column
+
+Before: the column was as wide as `Cumulative Incurred Loss` set on one line
+(about 12em). Now the heading wraps and the column is as wide as its widest
+word, `Cumulative` (about 5.4em).
+
+**Look for:** three narrow columns of numbers with wrapped headings above
+them — not three very wide columns with one-line headings.
+
+```{python}
+df = pd.DataFrame({
+    'Cumulative Incurred Loss': [1234.5, 2345.6, 3456.7],
+    'Cumulative Paid Loss': [1000.0, 2000.0, 3000.0],
+    'Case Outstanding Reserve': [234.5, 345.6, 456.7],
+}, index=pd.Index([2022, 2023, 2024], name='Accident Year'))
+GT(df, caption='Long headings over narrow numeric columns')
+```
+
+## 2. Cells that fit no longer wrap anyway
+
+The bug: a column set to exactly its content's natural width still broke the
+line, because TikZ's `align=left` is *balanced* ragged. `Sub 1` came out as
+`Sub` over `1`. Now `align=flush left`.
+
+**Look for:** `Sub 1` and `Sub 2` each on **one line** in the stub.
+
+```{python}
+df = pd.DataFrame({
+    'Paid': [1234.5, float('nan'), 1234.5],
+    'Incurred': [-89.0, 12.3, -76.7],
+}, index=pd.MultiIndex.from_tuples(
+    [(2020, 'Sub 1'), (2020, 'Sub 2'), ('Total', '')],
+    names=['Year', 'Sub']))
+GT(df, caption='Stub values that exactly fit their column')
+```
+
+## 3. Glyph widths: em dash, percent, micro, hyphen
+
+`—` was estimated at 0.6em against a true 1.0em, `%` at 0.6 against 0.833,
+`µ` at 0.6 against 0.5, and `-` at 0.5 against 0.333. So missing-value
+columns and ratio columns were under-reserved (text crowding the neighbor)
+and date columns over-reserved (a visible gap).
+
+**Look for:** the `—` markers sitting clear of the next column; percentages
+not touching their neighbor; dates with no odd trailing gap.
+
+```{python}
+df = pd.DataFrame({
+    'loss ratio': [0.458, 0.612, float('nan'), 0.397],
+    'missing': [float('nan'), 1.5, float('nan'), 2.5],
+    'as of': pd.to_datetime(['2024-01-15', '2024-06-30',
+                             '2025-01-15', '2025-06-30']),
+    'tiny': [1.2e-6, 3.4e-6, 5.6e-6, 7.8e-6],
+}, index=['alpha', 'beta', 'gamma', 'delta'])
+GT(df, ratio_cols=['loss ratio'], caption='Em dash, percent, SI micro, dates')
+```
+
+## 4. Spanning labels are measured at all
+
+A group label sits as an overlaid node with no text width, so it cannot wrap.
+Previously it contributed nothing to the width calculation and simply
+overflowed its group; now it widens the last column it covers.
+
+**Look for:** the long group label fitting inside its two columns, not
+spilling over the rules on either side.
+
+```{python}
+df = Fabricator(seed=42).make(6, 'ff', column_groups=2)
+df.columns = pd.MultiIndex.from_tuples([
+    ('A Notably Long Group Label', 'paid'),
+    ('A Notably Long Group Label', 'incurred'),
+    ('Short', 'paid'),
+    ('Short', 'incurred'),
+][:len(df.columns)])
+GT(df, caption='A group label wider than the columns beneath it')
+```
+
+## 5. Prose still wraps at the cap (regression check)
+
+Unchanged behavior, included so you can confirm nothing regressed: prose
+columns wrap at `HouseStyle.tikz_prose_max_em` (18em), numbers never wrap.
+
+```{python}
+df = Fabricator(seed=115).make(5, 'w10w4f',
+                               metric_name_spec=['variable length text',
+                                                 'short variable', 'amount'])
+GT(df, caption='Long prose beside numeric columns')
+```
