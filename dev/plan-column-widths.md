@@ -62,7 +62,19 @@ HTML, because the browser measures better than our glyph table ever will.
   The ladder is therefore predictable, using the split model rather than
   uniform scaling: the scale needed for budget `B` is `(B − S) / T`, rounded
   **down** to a ladder step. A budget below `S` cannot be met at any scale.
-- Next: **[tikz-budget]** proper, then **[html-maxwidth]**.
+- **[tikz-budget] done** and **[html-maxwidth] done** — `6.0.0a8`. The plan
+  is complete; `dev/check-widths.qmd` sections 6–8 show the result.
+  Two departures from the plan as written, both forced by measurement:
+  1. `max_prose_width_em` unified at **18em, not 30** — 18em is about 65
+     characters, the comfortable measure for prose, and it keeps print tight.
+     It narrows HTML prose columns from their old 30em. **Confirm or revert.**
+  2. Equal risk alone was not enough. A column whose cells *all* overrun the
+     prose cap has every quantile land on the cap, so the bisection cannot
+     move it and the table ignored its budget. A proportional shrink/grow
+     pass now follows the quantile pass; equal risk sets the shape, the
+     second pass makes it meet the budget exactly.
+- Open, carried forward: the **font-metric factor** (below), and
+  `transition.md`'s width section, now out of date.
 
 ## Open question raised by [header-relax]
 

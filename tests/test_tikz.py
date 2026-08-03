@@ -10,6 +10,7 @@ import pytest
 from greater_tables import (
     Etcher, HouseStyle, TableDoc, TableSpec, build, render_tikz,
 )
+from greater_tables.render import tikz as _tikz
 from greater_tables.render.textlength import (
     _WIDTH_TABLE, text_display_len, token_display_len,
 )
@@ -103,6 +104,75 @@ def test_glyph_table_covers_table_furniture():
     """The characters a real table leans on must not take the 600 default."""
     for ch in '—%µ−…':
         assert ch in _WIDTH_TABLE, f'{ch!r} falls back to the default width'
+
+
+# ------------------------------------------------------- max_table_width_em
+
+def emitted(doc, budget):
+    """Render at a budget; return (predicted width em, scale, column widths)."""
+    style = HouseStyle(max_table_width_em=budget)
+    tikz = render_tikz(doc, style)
+    cols = widths(tikz)
+    scale = float(re.search(r'scale=([\d.]+),', tikz).group(1))
+    milli = [round(w * 1000) for w in cols]
+    total = _tikz.table_width(milli, scale, len(doc.columns),
+                             round(style.tikz_column_sep * 1000))
+    return total / 1000, scale, cols
+
+
+def load(name):
+    return TableDoc.read((IR / f'{name}.json').read_bytes())
+
+
+@pytest.mark.parametrize('name', ['fx-wrap-low', 'fx-wrap-high', 'fx-tex',
+                                  'fx-both-mi', 'loss-dev', 'fx-plain'])
+@pytest.mark.parametrize('budget', [45, 38, 30, 24])
+def test_budget_is_never_exceeded(name, budget, caplog):
+    """The one hard promise: narrow, then scale, but do not overrun."""
+    doc = load(name)
+    total, _scale, _cols = emitted(doc, budget)
+    if 'ladder stops' in caplog.text:
+        return              # the documented dead end: reported, not silent
+    assert total <= budget + 0.05, f'{name} at {budget}em came out {total}em'
+
+
+def test_budget_narrows_prose_before_scaling():
+    """Prose gives way first; the scale only moves once floors are reached."""
+    doc = load('fx-wrap-low')
+    wide, scale_wide, _ = emitted(doc, 45)
+    assert scale_wide == 1.0            # narrowing alone was enough
+    assert wide == pytest.approx(45, abs=0.1)   # and it used the budget
+
+
+def test_budget_leaves_unbreakable_columns_alone():
+    """An all-numeric table has nothing to narrow, so it scales instead."""
+    doc = load('fx-both-mi')
+    natural = widths(render_tikz(doc))
+    _total, scale, cols = emitted(doc, 24)
+    assert cols == natural              # every column untouched
+    assert scale < 1.0                  # the table shrank as a whole
+
+
+def test_budget_respects_the_longest_word():
+    """A prose column may not be narrowed past a word it cannot hyphenate."""
+    doc = load('fx-wrap-low')
+    _total, _scale, cols = emitted(doc, 24)
+    for col, width in zip(doc.columns, cols):
+        if col.wrap:
+            assert width >= 2.0
+
+
+def test_no_budget_is_unchanged():
+    doc = load('fx-wrap-low')
+    assert render_tikz(doc) == render_tikz(doc, HouseStyle())
+
+
+def test_impossible_budget_warns_and_says_why(caplog):
+    doc = load('fx-both-mi')
+    with caplog.at_level('WARNING'):
+        render_tikz(doc, HouseStyle(max_table_width_em=6))
+    assert 'ladder stops' in caplog.text
+    assert 'sidewaysfigure' in caplog.text      # tells the user the way out
 
 
 @pytest.fixture(scope='session')

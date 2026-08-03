@@ -3,6 +3,60 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a8] - 2026-08-03
+
+Steps 3 and 4 of `dev/plan-column-widths.md`. 5.x's `max_table_inch_width`
+finally has an heir, and it works in TikZ and HTML by the means each medium
+actually has.
+
+### Added
+
+- **`HouseStyle.max_table_width_em`** (default None) — a total width to aim
+  for. **A target, not a guarantee**, and the docstring leads with that:
+  columns that cannot wrap hold their natural width whatever the budget says.
+  What the budget can do is narrow the prose columns, and then:
+  - **TikZ** solves them with `render.widths` — one shared quantile, so every
+    prose column carries the same chance of wrapping — and fills or gives back
+    the remainder proportionally so the budget is met, not merely respected.
+    When even the floors do not fit, `tikz_scale` steps down a coarse ladder
+    (1.0, 0.95 … 0.6) picked with the measured `width(s) = s·T + S` model, and
+    says so through `logging`. Past 0.6 it warns, names the shortfall, and
+    suggests `sidewaysfigure` rather than shrinking into illegibility.
+    Verified by compiling: every fixture lands at or under its budget, within
+    0.1em wherever narrowing was possible.
+  - **HTML** emits `--gt-max-width` and lets the browser do it. No solver runs
+    there and none should: `gt-nowrap` already pins the columns that must not
+    be narrowed, so the browser narrows exactly the prose ones — with the real
+    font, not our estimate of it.
+- `render.tikz.table_width` — the emitted-width model in one place, shared by
+  the autoscale arithmetic and the tests.
+
+### Changed
+
+- **`HouseStyle.tikz_prose_max_em` is renamed `max_prose_width_em`** — it
+  reads as a sibling of `max_table_width_em` now, and it is no longer
+  TikZ-only: HTML emits it as `--gt-prose-max`. One field, both renderers.
+- **`--gt-prose-max` defaults to 18em, was 30em**, so the two renderers agree
+  on one number. 18em is also the better number on its own merits — roughly
+  65 characters, the measure prose is comfortable at, where 30em is nearer
+  110. **HTML tables with prose columns will render narrower.** The markup is
+  unchanged, so no DOM golden moved; put `.gt { --gt-prose-max: 30em }` in
+  your stylesheet for the old look.
+- A prose column's floor is now its widest single word, and the cap is a hard
+  ceiling that only an unhyphenatable word may beat.
+
+### Notes
+
+- Equal risk cannot narrow a column whose cells *all* overrun the prose cap:
+  every quantile lands on the cap, so the bisection has nothing to bite on.
+  Such a column is wrapping whatever happens and narrowing it only costs
+  height, so the remaining slack is taken proportionally instead. Without
+  this, a table of long prose ignored its budget entirely and went straight
+  to scaling.
+- `transition.md`'s "Width machinery — all gone" section is now out of date —
+  `max_table_inch_width` and `table_width_mode` have partial heirs. Left
+  alone deliberately: that file has uncommitted edits.
+
 ## [6.0.0a7] - 2026-08-03
 
 Step 2 of `dev/plan-column-widths.md`: the allocator, plus the measurement

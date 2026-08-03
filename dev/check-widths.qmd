@@ -130,10 +130,11 @@ df.columns = pd.MultiIndex.from_tuples([
 GT(df, caption='A group label wider than the columns beneath it')
 ```
 
-## 5. Prose still wraps at the cap (regression check)
+## 5. Prose wraps at the per-column cap (regression check)
 
-Unchanged behavior, included so you can confirm nothing regressed: prose
-columns wrap at `HouseStyle.tikz_prose_max_em` (18em), numbers never wrap.
+Unchanged behavior, kept so you can confirm nothing regressed: a wrapping
+column stops at `HouseStyle.max_prose_width_em` (18em) however long its cells
+are, and numeric columns never wrap.
 
 ```{python}
 df = Fabricator(seed=115).make(5, 'w10w4f',
@@ -141,3 +142,56 @@ df = Fabricator(seed=115).make(5, 'w10w4f',
                                                  'short variable', 'amount'])
 GT(df, caption='Long prose beside numeric columns')
 ```
+
+## 6. A width budget narrows prose, in step
+
+`max_table_width_em` is a target for the whole table. Prose columns give way
+first, all together — one shared quantile, so no column is singled out — and
+numbers, dates and headers never move. Same table three times.
+
+**Look for:** the text columns getting narrower and taller down the page while
+the `amount` column stays put and the table's right edge marches left.
+
+```{python}
+#| output: asis
+from greater_tables import HouseStyle, build, TableSpec, render_tikz
+from IPython.display import display, Markdown
+
+wide = Fabricator(seed=115).make(4, 'w10w4f',
+                                 metric_name_spec=['variable length text',
+                                                   'short variable', 'amount'])
+doc = build(wide, TableSpec())
+for budget in (None, 38, 28):
+    label = 'no budget' if budget is None else f'max_table_width_em={budget}'
+    display(Markdown(f'**{label}**\n'))
+    print(render_tikz(doc, HouseStyle(max_table_width_em=budget,
+                                      tikz_container_env='figure')))
+```
+
+## 7. A table of numbers has nothing to give, so it scales
+
+Every column here is unbreakable, so no allocation can help. The budget then
+steps `tikz_scale` down a coarse ladder and logs what it did — advisory, as
+documented, never silent.
+
+**Look for:** the second table visibly smaller in font as well as narrower,
+rather than columns being squeezed.
+
+```{python}
+#| output: asis
+numbers = Fabricator(seed=105).make(8, 'fi', index_levels=2, column_groups=2)
+ndoc = build(numbers, TableSpec())
+for budget in (None, 22):
+    label = 'no budget' if budget is None else f'max_table_width_em={budget}'
+    display(Markdown(f'**{label}**\n'))
+    print(render_tikz(ndoc, HouseStyle(max_table_width_em=budget,
+                                       tikz_container_env='figure')))
+```
+
+## 8. The same budget in HTML
+
+Render this document `--to html` and the tables above carry
+`--gt-max-width` / `--gt-prose-max` on the wrapper. No solver runs there: the
+`gt-nowrap` class already pins the columns that must not be narrowed, so the
+browser narrows exactly the prose ones using real font metrics rather than
+our estimate.

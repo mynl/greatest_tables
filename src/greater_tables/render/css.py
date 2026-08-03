@@ -37,7 +37,13 @@ __all__ = ['RULES', 'VARIABLES', 'css_text', 'write_asset']
 VARIABLES: dict[str, str] = {
     '--gt-pad-v': '0.25em',
     '--gt-pad-h': '0.6em',
-    '--gt-prose-max': '30em',
+    # widths: the table's ceiling and one wrapping column's, the CSS side of
+    # HouseStyle.max_table_width_em and .max_prose_width_em. There are no
+    # per-column widths here by design — gt-nowrap pins the columns that must
+    # not be narrowed and the browser measures the rest, with better metrics
+    # than any estimate of ours.
+    '--gt-max-width': 'none',
+    '--gt-prose-max': '18em',
     '--gt-rule-frame': '1.2pt solid',
     '--gt-rule-head': '0.7pt solid',
     '--gt-rule-0': '0.5pt solid',
@@ -58,6 +64,7 @@ RULES: dict[str, dict[str, str]] = {
     '.gt': {
         **VARIABLES,
         'width': 'fit-content',
+        'max-width': 'var(--gt-max-width)',
         'line-height': '1.3',
     },
     '.gt.gt table': {

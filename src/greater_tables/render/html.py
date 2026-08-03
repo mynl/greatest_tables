@@ -69,7 +69,8 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
     global _css_emitted
     style = style or HouseStyle()
     ncols = len(doc.columns)
-    sty = _Styler(inline_css)
+    custom = _width_properties(style)
+    sty = _Styler(inline_css, custom)
     out: list[str] = []
 
     if not inline_css and css != 'none' and not (css == 'once' and _css_emitted):
@@ -236,27 +237,56 @@ def _row_classes(doc: TableDoc, row: Row, is_first: bool,
 
 # ---- inline styling (fiscus/HTMX/email path) — same RULES dict, flattened
 
+def _width_properties(style: HouseStyle) -> dict[str, str]:
+    """Per-table width custom properties, emitted only when they say
+    something the stylesheet does not already say.
+
+    This is the whole of the HTML width story. ``gt-nowrap`` already pins the
+    columns that must not be narrowed, so a table-level ``max-width`` leaves
+    the browser to narrow exactly the prose ones — measuring the real font
+    rather than estimating it, which is why no solver runs on this path.
+    """
+    custom: dict[str, str] = {}
+    if style.max_table_width_em is not None:
+        custom['--gt-max-width'] = f'{style.max_table_width_em:g}em'
+    prose = f'{style.max_prose_width_em:g}em'
+    if prose != _css.VARIABLES['--gt-prose-max']:
+        custom['--gt-prose-max'] = prose
+    return custom
+
+
 class _Styler:
     """Resolve RULES onto style attributes when ``inline_css`` is on.
 
     Understands exactly the selector shapes RULES uses; the vocabulary test
     plus conformance goldens keep this honest. Custom-property references are
-    substituted with their VARIABLES defaults (email clients know no vars).
+    substituted with their VARIABLES defaults (email clients know no vars),
+    or with this table's overrides where it has any.
+
+    Per-table custom properties ride on the wrapper in *both* modes — they
+    are this table's values, not the sheet's — so ``attr('.gt')`` returns a
+    style attribute even when ``inline_css`` is off.
     """
 
-    def __init__(self, active: bool):
+    def __init__(self, active: bool, custom: dict[str, str] | None = None):
         self.active = active
+        self.custom = custom or {}
 
     def attr(self, key: str) -> str:
-        if not self.active:
-            return ''
-        props = {
-            '.gt': {'line-height': _css.RULES['.gt']['line-height'],
-                    'width': 'fit-content'},
-            'table': _css.RULES['.gt.gt table'],
-            '.gt-caption': _css.RULES['.gt.gt .gt-caption'],
-            '.gt-notes': _css.RULES['.gt.gt .gt-notes'],
-        }.get(key, {})
+        props: dict[str, str] = {}
+        if self.active:
+            props = dict({
+                '.gt': {'line-height': _css.RULES['.gt']['line-height'],
+                        'width': 'fit-content'},
+                'table': _css.RULES['.gt.gt table'],
+                '.gt-caption': _css.RULES['.gt.gt .gt-caption'],
+                '.gt-notes': _css.RULES['.gt.gt .gt-notes'],
+            }.get(key, {}))
+            if key == '.gt' and '--gt-max-width' in self.custom:
+                # no custom properties in an email client: state it outright
+                props['max-width'] = self.custom['--gt-max-width']
+        if key == '.gt':
+            props = {**self.custom, **props}
         return self._style(props)
 
     def td(self, cls: list[str], row_cls: list[str]) -> str:
@@ -280,20 +310,26 @@ class _Styler:
             props.update(_css.RULES['.gt.gt thead tr:last-child th'])
         return self._style(props)
 
-    @staticmethod
-    def _style(props: dict[str, str]) -> str:
-        if not props:
-            return ''
-        body = ' '.join(f'{k}: {_resolve_vars(v)};' for k, v in props.items()
-                        if not k.startswith('--'))
+    def _style(self, props: dict[str, str]) -> str:
+        # an email client knows no custom properties, so inline mode drops the
+        # declarations and keeps only what they were resolved into
+        items = [(k, v) for k, v in props.items()
+                 if not (self.active and k.startswith('--'))]
+        body = ' '.join(f'{k}: {self._resolve(v)};' for k, v in items)
         return f' style="{body}"' if body else ''
+
+    def _resolve(self, value: str) -> str:
+        return _resolve_vars(value, self.custom) if self.active else value
 
 
 _VAR_RE = re.compile(r'var\((--[a-z-]+)(?:,\s*([^)]+))?\)')
 
 
-def _resolve_vars(value: str) -> str:
-    """Substitute var(--gt-x) references with their VARIABLES defaults."""
+def _resolve_vars(value: str, overrides: dict[str, str] | None = None) -> str:
+    """Substitute var(--gt-x) with this table's value, else the sheet default."""
     def sub(m: re.Match) -> str:
-        return _css.VARIABLES.get(m.group(1), m.group(2) or '')
+        name = m.group(1)
+        if overrides and name in overrides:
+            return overrides[name]
+        return _css.VARIABLES.get(name, m.group(2) or '')
     return _VAR_RE.sub(sub, value)

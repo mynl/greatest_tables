@@ -23,14 +23,19 @@ preamble.
 
 from __future__ import annotations
 
+import logging
 import re
+from collections.abc import Sequence
 
 from ..ir import Cell, HeadCell, TableDoc
 from ..spec import HouseStyle
 from .policy import rule_slot, vrule_slot
 from .textlength import display_milli, token_milli
+from .widths import solve_widths
 
 __all__ = ['TIKZ_PREAMBLE', 'W2TIKZ', 'render_tikz']
+
+logger = logging.getLogger(__name__)
 
 # greater_tables' float-weight → TikZ line-style scale (0 = do not draw)
 W2TIKZ = {0: None, 0.25: 'ultra thin', 0.5: 'very thin', 0.75: 'thin',
@@ -51,6 +56,20 @@ _MIN_COL = 2000                 # 2em floor on any column
 # document. 0.1em is invisible next to a column and costs under 1em across a
 # typical table.
 _WIDTH_PAD = 100
+
+# What a table measures beyond its columns, so a width budget can be split
+# into the part the solver spends and the part it cannot:
+#   width(scale) = scale * (sum(widths) + 2*csep) + ncols*csep + overhang
+# The 2*csep is column 1's inner xsep — a node option, so it scales; the matrix
+# column separations do not. Checked across every fixture against compiled page
+# widths: the residual is +0.68em on average, spread 0.56 to 0.72, flat in both
+# column count and table width, which is the rules overhanging the matrix
+# bounding box. Taking the top of that range keeps the estimate conservative.
+_RULE_OVERHANG = 700
+
+# Coarse on purpose: two tables in one document landing on the same step look
+# deliberate, where 0.87 and 0.91 look like a mistake.
+_SCALE_STEPS = (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6)
 
 # header cells render bold (stubs bold-italic) and the glyph table is roman,
 # so header estimates carry a widening factor (GT's bold_adjustment). Measured
@@ -110,6 +129,124 @@ def _bold(milli: int) -> int:
     return milli * _BOLD_PERCENT // 100
 
 
+def table_width(widths: Sequence[int], scale: float, ncols: int,
+                csep_milli: int) -> int:
+    """Emitted table width in milli-ems.
+
+    The model measured in 6.0.0a7: ``tikz_scale`` is a node option, so node
+    contents and column 1's ``inner xsep`` scale while the matrix column
+    separations do not. Checked against compiled page widths across the
+    fixtures, exact to about 0.1em.
+    """
+    scaled = round(scale * (sum(widths) + 2 * csep_milli))
+    return scaled + ncols * csep_milli + _RULE_OVERHANG
+
+
+def _shrink(widths: list[int], floors: list[int], budget: int) -> list[int]:
+    """Take ``sum(widths) - budget`` back, in proportion to each column's
+    slack above its floor. Integer throughout; the rounding remainder goes to
+    the roomiest columns, at most one unit each."""
+    slack = [w - f for w, f in zip(widths, floors)]
+    excess, total = sum(widths) - budget, sum(slack)
+    if excess <= 0 or total <= 0:
+        return list(widths)
+    if excess >= total:
+        return list(floors)
+    out = list(widths)
+    taken = 0
+    for j, s in enumerate(slack):
+        take = excess * s // total
+        out[j] -= take
+        taken += take
+    for j in sorted(range(len(out)), key=lambda j: -slack[j]):
+        if taken >= excess:
+            break
+        if out[j] > floors[j]:
+            out[j] -= 1
+            taken += 1
+    return out
+
+
+def _grow(widths: list[int], naturals: list[int], budget: int) -> list[int]:
+    """Spend what the quantile pass left over, in proportion to how far each
+    column still is from its natural width. Equal risk is discrete — it lands
+    on whichever quantile happens to fit — so it routinely leaves room unused,
+    and unused room is just extra wrapping."""
+    room = [n - w for w, n in zip(widths, naturals)]
+    spare, total = budget - sum(widths), sum(room)
+    if spare <= 0 or total <= 0:
+        return list(widths)
+    if spare >= total:
+        return list(naturals)
+    out = list(widths)
+    given = 0
+    for j, r in enumerate(room):
+        add = spare * r // total
+        out[j] += add
+        given += add
+    for j in sorted(range(len(out)), key=lambda j: -room[j]):
+        if given >= spare:
+            break
+        if out[j] < naturals[j]:
+            out[j] += 1
+            given += 1
+    return out
+
+
+def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
+                samples: list[list[int]], prose_cap: int,
+                csep_milli: int) -> tuple[list[int], float]:
+    """Narrow prose columns to meet ``max_table_width_em``; scale if it can't.
+
+    Returns the column widths and the scale to emit. The budget splits into
+    a part the solver can spend (column text, plus column 1's inner xsep,
+    both of which scale) and a part it cannot (the matrix separations and the
+    rules' overhang) — see ``_RULE_OVERHANG``.
+    """
+    ncols = len(naturals)
+    budget = round(style.max_table_width_em * _EM)
+    unscaled = ncols * csep_milli + _RULE_OVERHANG
+    inner = 2 * csep_milli               # column 1's inner xsep; scales
+    # samples carry the same cap and pad the naturals do, so the solver's
+    # idea of a column's natural width matches the one computed above
+    text_budget = budget - unscaled - inner
+    capped = [[min(x + _WIDTH_PAD, prose_cap) for x in s] for s in samples]
+    widths = list(solve_widths(capped, floors, text_budget).widths)
+    if sum(widths) > text_budget:
+        # Equal risk has nothing left to say about a column whose cells *all*
+        # overrun the prose cap: every quantile lands on the cap, so the
+        # bisection cannot move it. Such a column is wrapping whatever we do
+        # and narrowing it only costs height, so take the remaining slack
+        # proportionally — the widest prose gives up the most.
+        widths = _shrink(widths, floors, text_budget)
+    elif sum(widths) < text_budget:
+        widths = _grow(widths, naturals, text_budget)
+    if sum(widths) <= text_budget:
+        return widths, style.tikz_scale
+
+    # nothing left to narrow: shrink the scaled part until the whole fits
+    scaled = sum(widths) + inner
+    needed = (budget - unscaled) / scaled if scaled > 0 else 1.0
+    step = next((s for s in _SCALE_STEPS if s <= needed), _SCALE_STEPS[-1])
+    scale = min(style.tikz_scale, step)
+    full = table_width(widths, 1.0, ncols, csep_milli) / _EM
+    total = table_width(widths, scale, ncols, csep_milli) / _EM
+    if needed < _SCALE_STEPS[-1]:
+        logger.warning(
+            'table wants %.1fem of columns that cannot be narrowed against a '
+            'max_table_width_em of %.1f; that needs scale %.2f and the ladder '
+            'stops at %.2f, so it overruns at %.1fem. Shorten the headings, '
+            'drop a column, or set tikz_container_env="sidewaysfigure".',
+            full, style.max_table_width_em, needed, _SCALE_STEPS[-1], total)
+    else:
+        logger.warning(
+            'table does not fit max_table_width_em=%.1f at full size — its '
+            'columns that cannot be narrowed want %.1fem — so tikz_scale '
+            'drops to %.2f for a final %.1fem.',
+            style.max_table_width_em, full, scale, total)
+    return widths, scale
+
+
 def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     """Render a table document to a TikZ table (LaTeX source)."""
     style = style or HouseStyle()
@@ -131,6 +268,8 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     spans: list[tuple[int, int, int]] = []           # (c0, span, milli needed)
     wmax = [_MIN_COL] * ncols                        # body width, one line
     hmax = [0] * ncols                               # header floor
+    tokmax = [0] * ncols                             # widest body word
+    samples: list[list[int]] = [[] for _ in range(ncols)]   # every cell width
     for level, hrow in enumerate(doc.head):
         cells = [''] * ncols
         leaf = level == n_head - 1
@@ -168,7 +307,10 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
             tex = _cell_tex(cell, row.flags)
             if cell.colspan == 1:
                 cells[col] = tex
-                wmax[col] = max(wmax[col], _display_milli(cell))
+                width = _display_milli(cell)
+                samples[col].append(width)
+                wmax[col] = max(wmax[col], width)
+                tokmax[col] = max(tokmax[col], _token_milli(cell))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
                 spans.append((col, cell.colspan, _display_milli(cell)))
@@ -185,17 +327,39 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     # ---- column geometry: milli-em text widths (TextLength) + source padding
     # the body sets the natural width (capped for prose columns); the header
     # only floors it, having been measured a word at a time above
-    prose_cap = round(style.tikz_prose_max_em * _EM)
-    widths = [max(min(w + _WIDTH_PAD, prose_cap) if c.wrap else w + _WIDTH_PAD,
-                  h + _WIDTH_PAD, _MIN_COL)
-              for w, h, c in zip(wmax, hmax, doc.columns)]
-    # a spanning label cannot wrap: widen the last column it covers if the
-    # span — including the column separations it crosses — cannot hold it
+    prose_cap = round(style.max_prose_width_em * _EM)
     csep_milli = round(csep * _EM)
-    for c0, span, need in spans:
-        have = sum(widths[c0:c0 + span]) + (span - 1) * csep_milli
-        if need + _WIDTH_PAD > have:
-            widths[c0 + span - 1] += need + _WIDTH_PAD - have
+
+    def sized(measure: int, header: int) -> int:
+        return max(measure + _WIDTH_PAD, header + _WIDTH_PAD, _MIN_COL)
+
+    naturals = [sized(w, h) for w, h in zip(wmax, hmax)]
+    # how narrow a column may go: prose down to its widest single word, since
+    # TeX will not hyphenate inside one; anything unbreakable, not at all
+    floors = [sized(t, h) if c.wrap else n
+              for t, h, n, c in zip(tokmax, hmax, naturals, doc.columns)]
+    # the prose cap is a ceiling, not a target — but a single word beats it,
+    # because the alternative is an overfull box
+    naturals = [max(min(n, prose_cap), f) if c.wrap else n
+                for n, f, c in zip(naturals, floors, doc.columns)]
+
+    def apply_spans(widths: list[int]) -> None:
+        """A spanning label carries no text width and so cannot wrap: widen
+        the last column it covers when the span — including the separations
+        it crosses — cannot hold it."""
+        for c0, span, need in spans:
+            have = sum(widths[c0:c0 + span]) + (span - 1) * csep_milli
+            if need + _WIDTH_PAD > have:
+                widths[c0 + span - 1] += need + _WIDTH_PAD - have
+
+    apply_spans(naturals)
+    apply_spans(floors)
+    if style.max_table_width_em is None:
+        widths, scale = naturals, style.tikz_scale
+    else:
+        widths, scale = _fit_budget(style, naturals, floors, samples,
+                                    prose_cap, csep_milli)
+        apply_spans(widths)
     colw = [max((len(grid[r][j]) for r in range(n_rows)), default=1)
             for j in range(ncols)]
     pad = {'l': '<', 'r': '>', 'c': '^'}
@@ -227,7 +391,7 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     w(f'        row sep={rsep}em,')
     w(f'        column sep={csep}em,')
     w('        nodes in empty cells,')
-    w(f'        nodes={{rectangle, scale={style.tikz_scale}, text badly ragged}},')
+    w(f'        nodes={{rectangle, scale={scale}, text badly ragged}},')
     w('\trow 1/.style={nodes={text=black, anchor=north, inner ysep=0, '
       'text height=0, text depth=0}},')
     for i in range(2, n_head + 2):

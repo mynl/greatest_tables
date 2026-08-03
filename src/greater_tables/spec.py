@@ -156,10 +156,30 @@ class HouseStyle:
         The same for column-group verticals (None = none). Only
         ``render.policy.N_VRULE_SLOTS`` weights exist, so deeper breaks reuse
         the lightest.
+    max_prose_width_em
+        How wide a single *wrapping* column may get. TikZ reads it directly;
+        HTML emits it as ``--gt-prose-max``. One column, not the table — the
+        table is ``max_table_width_em``.
+    max_table_width_em
+        Total table width to aim for, in ems, or None (default) for no
+        target. **A target, not a guarantee**: columns that must not wrap —
+        numbers, dates, anything tagged or listed in ``TableSpec.unbreakable``
+        — hold their natural width whatever the budget says, so a table of
+        nothing but numbers can exceed it. What the budget can do is narrow
+        the prose columns, which it does with one shared quantile so every
+        one of them carries the same chance of wrapping
+        (``render.widths``). When even the floors do not fit, TikZ steps
+        ``tikz_scale`` down a fixed ladder and says so through ``logging``;
+        HTML hands the number to the browser as a CSS ``max-width`` and lets
+        it measure. Ems because every other geometry field here is ems: at
+        11pt, 8 inches is about 52em.
     """
 
     max_rule_depth: int | Literal['auto'] | None = 'auto'
     max_vrule_depth: int | None = 1
+    # --- widths, shared by every renderer that has an opinion about them
+    max_prose_width_em: float = 18.0
+    max_table_width_em: float | None = None
     # --- TikZ geometry (em) and container
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0
@@ -167,7 +187,6 @@ class HouseStyle:
     tikz_container_env: str = 'table'   # 'table' | 'figure' | 'sidewaysfigure'
     tikz_latex: str | None = None       # placement, e.g. 'ht'
     tikz_post_process: str = ''
-    tikz_prose_max_em: float = 18.0     # wrap columns cap (TikZ text width)
     # --- rule weights (w2tikz scale)
     frame_rule: float = 1.0             # top and bottom of table
     head_rule: float = 1.0              # under the header block

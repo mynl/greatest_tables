@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from greater_tables import TableSpec, build
+from greater_tables import HouseStyle, TableSpec, build
 from greater_tables.render.html import render_html, reset_css_once
 
 from registry import fixtures
@@ -66,3 +66,42 @@ def test_notes_rendered(doc_=None):
     doc = build(*FIX['truncated'])
     html = render_html(doc, css='none')
     assert 'gt-notes' in html and 'Showing first 5 of 12 rows.' in html
+
+
+# ------------------------------------------------------------- width budget
+# HTML runs no solver: gt-nowrap already pins the columns that must not be
+# narrowed, so a table max-width leaves the browser to narrow exactly the
+# prose ones — measuring the real font instead of estimating it.
+
+def test_no_width_properties_by_default():
+    """A table with nothing to say about width says nothing."""
+    html = render_html(build(*FIX['wrap-low']), css='none')
+    assert 'style=' not in html.split('>')[0]
+    assert '--gt-max-width' not in html
+
+
+def test_width_budget_rides_as_custom_properties():
+    doc = build(*FIX['wrap-low'])
+    html = render_html(doc, css='none',
+                       style=HouseStyle(max_table_width_em=40,
+                                        max_prose_width_em=12))
+    wrapper = html.split('>')[0]
+    assert '--gt-max-width: 40em;' in wrapper
+    assert '--gt-prose-max: 12em;' in wrapper
+
+
+def test_prose_default_is_not_restated():
+    """Say only what the stylesheet does not already say."""
+    html = render_html(build(*FIX['wrap-low']), css='none',
+                       style=HouseStyle(max_table_width_em=40))
+    assert '--gt-prose-max' not in html
+
+
+def test_inline_css_resolves_widths_to_literals():
+    """Email clients know no custom properties, so none may be relied on."""
+    html = render_html(build(*FIX['wrap-low']), css='none', inline_css=True,
+                       style=HouseStyle(max_table_width_em=40,
+                                        max_prose_width_em=12))
+    assert '--gt' not in html                     # no declarations survive
+    assert 'max-width: 40em;' in html.split('>')[0]
+    assert 'max-width: 12em;' in html             # this table's prose cap
