@@ -28,7 +28,7 @@ import re
 from ..ir import Cell, HeadCell, TableDoc
 from ..spec import HouseStyle
 from .policy import rule_slot, vrule_slot
-from .textlength import text_display_len
+from .textlength import display_milli, token_milli
 
 __all__ = ['TIKZ_PREAMBLE', 'W2TIKZ', 'render_tikz']
 
@@ -38,9 +38,14 @@ W2TIKZ = {0: None, 0.25: 'ultra thin', 0.5: 'very thin', 0.75: 'thin',
 
 TIKZ_PREAMBLE = r'\newcommand{\I}{\vphantom{lp}}'
 
+# widths are milli-ems everywhere below and divided only at emit time, so the
+# arithmetic is exact on every interpreter (see textlength's module docstring)
+_EM = 1000
+_MIN_COL = 2000                 # 2em floor on any column
+
 # header cells render bold (stubs bold-italic): widen their width estimate
 # so long headers don't collide across the column gap (GT bold_adjustment)
-_BOLD_ADJUSTMENT = 1.15
+_BOLD_PERCENT = 115
 
 _TEX_SPECIALS = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%',
                  '$': r'\$', '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
@@ -72,11 +77,25 @@ def _cell_tex(cell: Cell | HeadCell, row_flags: tuple = ()) -> str:
     return tex
 
 
-def _display_width(cell: Cell | HeadCell) -> float:
-    """Em width estimate of a cell's displayed content."""
-    text = f'${cell.text}$' if cell.math else _TAG_RE.sub('', cell.text) \
+def _measured(cell: Cell | HeadCell) -> str:
+    """The text whose width the renderer must reserve room for."""
+    return f'${cell.text}$' if cell.math else _TAG_RE.sub('', cell.text) \
         if cell.html else cell.text
-    return text_display_len(text)
+
+
+def _display_milli(cell: Cell | HeadCell) -> int:
+    """Milli-em width of a cell's content set on one line."""
+    return display_milli(_measured(cell))
+
+
+def _token_milli(cell: Cell | HeadCell) -> int:
+    """Milli-em width of a cell's widest unbreakable token."""
+    return token_milli(_measured(cell))
+
+
+def _bold(milli: int) -> int:
+    """Bold text sets wider than the roman glyph table reports."""
+    return milli * _BOLD_PERCENT // 100
 
 
 def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
@@ -97,7 +116,9 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     grid: list[list[str]] = [[''] * ncols]           # spacer row
     overlays: list[tuple[int, int, int, str]] = []   # (tikz row, c0, span, tex)
     spanners: list[tuple[int, int, int]] = []        # (level, c0, span)
-    wmax = [2.0] * ncols
+    spans: list[tuple[int, int, int]] = []           # (c0, span, milli needed)
+    wmax = [_MIN_COL] * ncols                        # body width, one line
+    hmax = [0] * ncols                               # header floor
     for level, hrow in enumerate(doc.head):
         cells = [''] * ncols
         leaf = level == n_head - 1
@@ -108,10 +129,15 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
                 spanners.append((level, col, hc.colspan))
             if hc.colspan == 1:
                 cells[col] = tex + (r'\I' if hc.text else '')
-                wmax[col] = max(wmax[col],
-                                _display_width(hc) * _BOLD_ADJUSTMENT)
+                # a header cell has a text width and wraps, so a long heading
+                # only floors its column at its widest word — it does not drag
+                # a column of six-em numbers out to the width of its title
+                hmax[col] = max(hmax[col], _bold(_token_milli(hc)))
             elif hc.text:
                 overlays.append((2 + level, col, hc.colspan, tex))
+                # an overlaid label carries no text width: it cannot wrap, so
+                # it constrains the whole group it spans
+                spans.append((col, hc.colspan, _bold(_display_milli(hc))))
             col += hc.colspan
         grid.append(cells)
 
@@ -130,9 +156,10 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
             tex = _cell_tex(cell, row.flags)
             if cell.colspan == 1:
                 cells[col] = tex
-                wmax[col] = max(wmax[col], _display_width(cell))
+                wmax[col] = max(wmax[col], _display_milli(cell))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
+                spans.append((col, cell.colspan, _display_milli(cell)))
             for cc in range(col, min(ncols, col + cell.colspan)):
                 if cell.rowspan > 1:
                     pending[cc] = cell.rowspan
@@ -143,13 +170,29 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
         grid.append(cells)
     n_rows = len(grid)
 
-    # ---- column geometry: em text widths (TextLength) + source padding
-    widths = [round(min(w, style.tikz_prose_max_em) if c.wrap else w, 2)
-              for w, c in zip(wmax, doc.columns)]
+    # ---- column geometry: milli-em text widths (TextLength) + source padding
+    # the body sets the natural width (capped for prose columns); the header
+    # only floors it, having been measured a word at a time above
+    prose_cap = round(style.tikz_prose_max_em * _EM)
+    widths = [max(min(w, prose_cap) if c.wrap else w, h, _MIN_COL)
+              for w, h, c in zip(wmax, hmax, doc.columns)]
+    # a spanning label cannot wrap: widen the last column it covers if the
+    # span — including the column separations it crosses — cannot hold it
+    csep_milli = round(csep * _EM)
+    for c0, span, need in spans:
+        have = sum(widths[c0:c0 + span]) + (span - 1) * csep_milli
+        if need > have:
+            widths[c0 + span - 1] += need - have
     colw = [max((len(grid[r][j]) for r in range(n_rows)), default=1)
             for j in range(ncols)]
     pad = {'l': '<', 'r': '>', 'c': '^'}
-    align_word = {'l': 'left', 'r': 'right', 'c': 'center'}
+    # the *flush* variants: TikZ's plain 'left'/'right'/'center' are balanced
+    # ragged, whose limited \rightskip stretch makes TeX break a line that
+    # fits its column exactly — measured, a cell then needs ~0.1em of slack
+    # per interword space. Flush is unlimited raggedness, so natural width
+    # means natural width, which is what every width estimate here assumes
+    # (and what the table-level 'text badly ragged' already asks for).
+    align_word = {'l': 'flush left', 'r': 'flush right', 'c': 'flush center'}
     aligns = [c.align for c in doc.columns]
 
     out: list[str] = []
@@ -177,14 +220,14 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     for i in range(2, n_head + 2):
         w(f'\trow {i}/.style={{nodes={{text=black, anchor=south, '
           'inner ysep=.2em, minimum height=1.3em, font=\\bfseries, '
-          'align=center}},')
+          'align=flush center}},')
         for j in range(1, 1 + n_stub):
             w(f'\trow {i} column {j}/.style='
-              '{nodes={font=\\bfseries\\itshape, align=left}},')
+              '{nodes={font=\\bfseries\\itshape, align=flush left}},')
     for j, (wd, al) in enumerate(zip(widths, aligns), start=1):
         extra = (f'inner xsep={csep}em, inner ysep=0, ' if j == 1 else 'nosep, ')
-        w(f'\tcolumn {j:>2d}/.style={{nodes={{align={align_word[al]:<6s}}}, '
-          f'{extra}text width={max(2.0, wd):.2f}em}},')
+        w(f'\tcolumn {j:>2d}/.style={{nodes={{align={align_word[al]:<12s}}}, '
+          f'{extra}text width={wd / _EM:.2f}em}},')
     w(f'\tcolumn {ncols + 1:>2d}/.style={{text height=0.9em, '
       'text depth=0.2em, nosep, text width=0em}')
     w('\t}]')

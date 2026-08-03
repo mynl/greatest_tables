@@ -3,6 +3,61 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a5] - 2026-08-03
+
+Step 1 of `dev/plan-column-widths.md`: make the TikZ width estimate
+trustworthy, which everything else in that plan rests on. No new API.
+
+### Fixed
+
+- **TikZ used TikZ's balanced-ragged alignment, which breaks lines that fit.**
+  Columns were emitted with `align=left/right/center`, whose limited
+  `\rightskip` stretch makes TeX wrap a cell set to exactly its own natural
+  width — measured, a cell needed roughly 0.1em of slack per interword space,
+  so `Sub 1` in a 2.31em column came out as `Sub` / `1`. The flush variants
+  (`align=flush left`, …) are unlimited raggedness and honor the estimate
+  exactly: across every multi-word string in the fixtures, required slack went
+  from 0.10–0.20em to **zero**. This is also what the table-level
+  `text badly ragged` was already asking for.
+- **30 characters were missing from the TextLength glyph table** and silently
+  took the 600 milli-em default. The three that matter most to a real table
+  were the most wrong: `—` (the missing-value marker, actually **1000**), `%`
+  (every ratio column, 833) and `µ` (every SI-suffixed column, 500). `-` was
+  also wrong, 500 against a measured 333, so date columns were over-reserved.
+  Values measured against newtx; the rest of the table was already exact
+  (median actual/estimate 1.000 over 596 fixture strings).
+
+### Changed
+
+- **A column header no longer stretches its column.** Header cells have a text
+  width and wrap, so a heading now floors its column at its **widest word**
+  rather than its full one-line width: `Cumulative Incurred Loss` over six-em
+  numbers took 12.0em and now takes 5.4em, wrapping instead. Header cells
+  spanning one column are all measured this way, at any level.
+- **Spanning labels are measured at all.** An overlaid group label or body
+  `colspan` cell carries no text width and cannot wrap, so it now widens the
+  last column it covers if the span — including the separations it crosses —
+  cannot hold it. Previously spans contributed nothing to width and overflowed
+  silently; the text renderer has always done this.
+- TikZ width arithmetic is integer milli-ems throughout, divided only at emit
+  time, extending the reproducibility discipline already documented in
+  `render/textlength.py` to the column geometry itself.
+
+### Added
+
+- `render.textlength.token_milli` / `token_display_len` — width of a string's
+  widest unbreakable token. TeX will not hyphenate inside a word, so this is
+  the floor for any wrapping column; `$...$` counts as one token.
+- `dev/tools/measure_glyphs.py` — compiles a probe that measures every glyph
+  in the table against real font metrics and reports what is missing or off.
+  Reports only; corrections are pasted in deliberately so the committed table
+  stays a reviewed artifact.
+
+### Notes
+
+- Every TikZ golden moved (alignment keyword on every column, plus the width
+  corrections). IR, text, DOM transcripts and CSS are byte-identical.
+
 ## [6.0.0a4] - 2026-08-01
 
 Step 2 of two: house rules for formats. 5.x's `default_*_str` settings come

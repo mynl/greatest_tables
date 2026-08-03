@@ -11,7 +11,14 @@ compensated summation, so 'apples' totalled 2.5549999999999997 on 3.11 and
 2.555 on 3.13 — one ULP apart, but on opposite sides of the 2 dp rounding
 the TikZ renderer applies, which moved a committed column width by 0.01em.
 Integer accumulation is exact on every version, so the TeX goldens are
-interpreter-independent.
+interpreter-independent. Callers doing width *arithmetic* (summing columns,
+allocating a budget) should therefore work in milli-ems throughout —
+:func:`display_milli` and :func:`token_milli` — and divide only to print.
+
+Two measures, because a column has two kinds of floor: :func:`display_milli`
+is the width the text wants on one line, :func:`token_milli` the width of its
+widest unbreakable token. TeX will not hyphenate inside a word, so a wrapping
+column narrower than its longest token gives an overfull hbox.
 """
 
 from __future__ import annotations
@@ -19,7 +26,8 @@ from __future__ import annotations
 import html
 import re
 
-__all__ = ['text_display_len']
+__all__ = ['display_milli', 'text_display_len', 'token_display_len',
+           'token_milli']
 
 TEX_SIMPLE_GLYPHS = {
     'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
@@ -50,7 +58,17 @@ _WIDTH_TABLE = {
     '.': 250, ',': 250, ':': 278, ';': 278, '(': 333, ')': 333,
     '[': 333, ']': 333, '’': 333, '"': 444, '!': 333, '?': 444,
     ' ': 250, '\xa0': 250, '|': 200, '‘': 333, '{': 480, '}': 480,
-    '-': 500,
+    '-': 333,
+    # measured against newtx (dev/tools/measure_glyphs.py). These were all
+    # missing before 6.0.0a5 and took the 600 default: '—' is the missing-value
+    # marker, '%' rides every ratio column and 'µ' every SI-suffixed one, so
+    # the three that matter most to a real table were also the most wrong.
+    '#': 500, '%': 833, '&': 778, '*': 500, '+': 564, '/': 278,
+    '<': 564, '=': 564, '>': 564, '@': 921, '_': 500,
+    '£': 500, '€': 500, '§': 500, '¶': 453, '†': 500, '‡': 500,
+    '°': 400, '±': 564, 'µ': 500, '×': 564, '÷': 564, '−': 564,
+    'ª': 276, 'º': 310, '•': 350, '–': 500, '—': 1000,
+    '…': 1000, '‰': 1000,
 }
 _DEFAULT_WIDTH = 600
 _MATH_RE = re.compile(r'(\$\$.*?\$\$)|(\$.*?\$)')
@@ -64,7 +82,12 @@ def _char(c: str) -> int:
 
 def text_display_len(s: str) -> float:
     """Estimate display width in ems: plain text, ``$math$``, HTML entities."""
-    return _milli_len(s) / _EM
+    return display_milli(s) / _EM
+
+
+def token_display_len(s: str) -> float:
+    """Em width of the widest unbreakable token — a wrap column's floor."""
+    return token_milli(s) / _EM
 
 
 def estimate_math_width(tex: str) -> float:
@@ -72,7 +95,7 @@ def estimate_math_width(tex: str) -> float:
     return _milli_math(tex) / _EM
 
 
-def _milli_len(s: str) -> int:
+def display_milli(s: str) -> int:
     """Display width in milli-ems — the exact, integer accumulation."""
     if not isinstance(s, str):
         s = str(s)
@@ -90,6 +113,29 @@ def _milli_len(s: str) -> int:
             decoded = html.unescape(_TAG_RE.sub('', part))
             total += sum(_char(c) for c in decoded)
     return total
+
+
+def token_milli(s: str) -> int:
+    """Widest whitespace-delimited token in milli-ems.
+
+    A ``$...$`` span counts as one token: math is set as a box and does not
+    break at spaces the way surrounding prose does.
+    """
+    if not isinstance(s, str):
+        s = str(s)
+    if '$' not in s and '<' not in s and '&' not in s:
+        return max((sum(_char(c) for c in tok) for tok in s.split()), default=0)
+    widest = 0
+    for part in _MATH_RE.split(s):
+        if not part:
+            continue
+        if part.startswith('$') and part.endswith('$'):
+            widest = max(widest, display_milli(part))
+        else:
+            decoded = html.unescape(_TAG_RE.sub('', part))
+            for tok in decoded.split():
+                widest = max(widest, sum(_char(c) for c in tok))
+    return widest
 
 
 def _milli_math(tex: str) -> int:
