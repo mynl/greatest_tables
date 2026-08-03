@@ -1,5 +1,5 @@
 // js/src/gt-render.js
-var GT_RENDER_VERSION = "6.0.0a5";
+var GT_RENDER_VERSION = "6.0.0a6";
 var IR_VERSION_SUPPORTED = 1;
 var N_RULE_SLOTS = 3;
 var N_VRULE_SLOTS = 2;

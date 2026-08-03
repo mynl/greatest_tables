@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a6] - 2026-08-03
+
+Fallout from rendering `6.0.0a5` through Quarto rather than only through
+`Etcher`: the estimate was right and the margin was not.
+
+### Fixed
+
+- **Columns are no longer sized to the estimate exactly.** `Sub 1` measures
+  2.306em and got a 2.31em column — a 0.17% margin. `Etcher` cleared it; the
+  same table in a Quarto document, whose preamble brings microtype and
+  friends, broke the line. Every measured requirement now carries
+  `render.tikz._WIDTH_PAD`, 0.1em, so line breaking stops depending on the
+  host document's package list. This is what the stale `+ source padding`
+  comment on that code had always claimed.
+- **`_BOLD_PERCENT` 115 → 118.** Measured over the fixture corpus in newtx,
+  bold/roman is 1.000 at the median but 1.130 at p99, so real header words
+  (`return`, `Incurred`) could exceed the old factor and hyphenate. Digits are
+  the same width in both weights, so the common numeric header is unaffected.
+
+### Notes
+
+- **The width estimate is Times metrics, and that is now documented** in
+  `render/textlength.py`. It is exact against `newtxtext` — what `Etcher`
+  compiles with — and roughly **11% tight against Latin Modern**, the LaTeX
+  default a plain Quarto PDF uses, where long headings will hyphenate. Load a
+  Times-metric serif alongside the tables or accept slightly tight columns;
+  `dev/tools/measure_glyphs.py` re-measures any font. A per-font widening
+  factor is the obvious answer and is deliberately deferred to the width
+  budget work, where it has somewhere to live.
+- `\usepackage{newtxmath}` collides with Quarto's math setup
+  (`\arrowvert already defined`) — `newtxtext` alone is what the width
+  estimate needs.
+
 ## [6.0.0a5] - 2026-08-03
 
 Step 1 of `dev/plan-column-widths.md`: make the TikZ width estimate

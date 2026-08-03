@@ -4,6 +4,15 @@ Lives in the TikZ renderer's orbit only — TeX genuinely needs geometry ahead
 of rendering; the HTML paths let the browser measure. Widths are em
 estimates from a serif glyph table; ``$...$`` spans are token-counted TeX.
 
+**The table is Times metrics**, which is what ``Etcher`` compiles against
+(``newtxtext``): measured there, the estimate is exact — median actual /
+estimate 1.000 over the fixture corpus, p99 1.007. A document set in another
+face is a different measurement: Latin Modern, the LaTeX default that a
+plain Quarto PDF uses, runs about 11% wider for text (digits only 1.6%), so
+columns come out slightly tight and a long heading may hyphenate. Either
+load a Times-metric serif alongside the tables, or accept that. Re-measure
+any font with ``dev/tools/measure_glyphs.py``.
+
 Glyph widths are held as **integer milli-ems** and accumulated as integers,
 converted to ems only at the end. Summing the float ems directly is not
 reproducible across interpreters: CPython 3.12 gave ``sum()`` Neumaier

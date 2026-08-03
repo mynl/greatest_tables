@@ -30,6 +30,29 @@ HTML, because the browser measures better than our glyph table ever will.
   `sum()` already moved a committed width 0.01em between 3.11 and 3.13; a
   float binary search would move *every* column).
 
+## Progress
+
+- **[header-relax] done** — `6.0.0a5` / `6.0.0a6`. It turned up three things
+  that were not in the plan and that the budget work now rests on:
+  1. TikZ's `align=left/right/center` is *balanced* ragged and breaks lines
+     that fit their column. Every width the renderer computed was being second
+     guessed by the line breaker. Fixed by using the `flush` variants.
+  2. 30 glyphs were missing from the table, `—` and `%` and `µ` among them.
+     Fixed against measured values; the estimator is now exact for newtx.
+  3. **The estimate is font-specific** — exact against Times metrics, ~11%
+     tight against Latin Modern. See the open question below.
+- Next: **[width-solver]**, then the **[tikz-budget]** spike.
+
+## Open question raised by [header-relax]
+
+The budget is expressed in ems and the estimator assumes a Times-metric
+serif. In a document set in something else, every width is off by a constant
+factor — 11% for Latin Modern — so a table asked to fit 52em would overrun.
+A single `HouseStyle` widening factor covers it, and
+`dev/tools/measure_glyphs.py` measures the number for any font. Decide when
+building **[tikz-budget]**: is that a field, or is "use a Times-metric serif
+for TikZ output" simply documented as a requirement?
+
 ## Deliverables
 
 1. **[header-relax]** — independent of the budget, worth doing on its own.

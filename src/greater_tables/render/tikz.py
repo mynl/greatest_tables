@@ -43,9 +43,21 @@ TIKZ_PREAMBLE = r'\newcommand{\I}{\vphantom{lp}}'
 _EM = 1000
 _MIN_COL = 2000                 # 2em floor on any column
 
-# header cells render bold (stubs bold-italic): widen their width estimate
-# so long headers don't collide across the column gap (GT bold_adjustment)
-_BOLD_PERCENT = 115
+# Slack added to every measured requirement. The estimate is exact against
+# newtx, but *exact* is a knife edge: 'Sub 1' measures 2.306em, so a 2.31em
+# column clears it by 0.17% — Etcher renders it on one line and the same table
+# in a Quarto document, whose preamble brings microtype and friends, breaks it.
+# Sizing to the estimate with no margin makes line breaking depend on the host
+# document. 0.1em is invisible next to a column and costs under 1em across a
+# typical table.
+_WIDTH_PAD = 100
+
+# header cells render bold (stubs bold-italic) and the glyph table is roman,
+# so header estimates carry a widening factor (GT's bold_adjustment). Measured
+# over the fixture corpus in newtx, bold/roman is 1.000 at the median and
+# 1.130 at p99; 118 covers the tail of real words without visibly padding the
+# common case, where bold and roman digits are the same width anyway.
+_BOLD_PERCENT = 118
 
 _TEX_SPECIALS = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%',
                  '$': r'\$', '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
@@ -174,15 +186,16 @@ def render_tikz(doc: TableDoc, style: HouseStyle | None = None) -> str:
     # the body sets the natural width (capped for prose columns); the header
     # only floors it, having been measured a word at a time above
     prose_cap = round(style.tikz_prose_max_em * _EM)
-    widths = [max(min(w, prose_cap) if c.wrap else w, h, _MIN_COL)
+    widths = [max(min(w + _WIDTH_PAD, prose_cap) if c.wrap else w + _WIDTH_PAD,
+                  h + _WIDTH_PAD, _MIN_COL)
               for w, h, c in zip(wmax, hmax, doc.columns)]
     # a spanning label cannot wrap: widen the last column it covers if the
     # span — including the column separations it crosses — cannot hold it
     csep_milli = round(csep * _EM)
     for c0, span, need in spans:
         have = sum(widths[c0:c0 + span]) + (span - 1) * csep_milli
-        if need > have:
-            widths[c0 + span - 1] += need - have
+        if need + _WIDTH_PAD > have:
+            widths[c0 + span - 1] += need + _WIDTH_PAD - have
     colw = [max((len(grid[r][j]) for r in range(n_rows)), default=1)
             for j in range(ncols)]
     pad = {'l': '<', 'r': '>', 'c': '^'}
