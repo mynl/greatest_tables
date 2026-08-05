@@ -220,6 +220,7 @@
             "dec",
             "pct",
             "sci",
+            "gen",
             "si",
             "eng",
             "year",

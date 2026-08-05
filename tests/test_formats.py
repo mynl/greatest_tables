@@ -28,8 +28,12 @@ from greater_tables.engine.formats import (
     (',d', 'int', None, True),
     ('.3%', 'pct', 3, False),
     ('.2e', 'sci', 2, False),
+    ('.3g', 'gen', 3, False),
+    ('g', 'gen', None, False),
+    (',.3g', 'gen', 3, True),
     ('{x:,.1f}', 'dec', 1, True),
     ('{x:.1%}', 'pct', 1, False),
+    ('{x:.3g}', 'gen', 3, False),
     ('{x:,}', 'dec', None, True),
 ])
 def test_sugar_strings(sugar, kind, digits, group):
@@ -135,6 +139,24 @@ def test_kinds():
     assert apply_format(pd.Timestamp('2026-08-01'),
                         FormatSpec(kind='date')) == '2026-08-01'
     assert apply_format('text', None) == 'text'
+
+
+@pytest.mark.parametrize('value,sugar,want', [
+    (1234.5678, '.3g', '1.23e+03'),      # g switches to scientific itself
+    (0.0012345, '.3g', '0.00123'),       # ... and back to fixed
+    (1234.5678, '.6g', '1234.57'),
+    (1234.5678, 'g', '1234.57'),         # python's own default precision, 6
+    (1234567.0, ',.9g', '1,234,567'),    # grouping still applies in fixed form
+    (-0.000098765, '.2g', '-9.9e-05'),
+])
+def test_gen_kind_counts_significant_figures(value, sugar, want):
+    """`.3g` is 3 *significant* figures, unlike `.3f`'s 3 decimal places."""
+    assert apply_format(value, parse_sugar(sugar)) == want
+
+
+def test_gen_composes_with_the_spec_fields():
+    fs = FormatSpec(kind='gen', digits=3, negative='paren', prefix='$')
+    assert apply_format(-1234.5678, fs) == '($1.23e+03)'
 
 
 def test_null_zero_and_paren_negatives():

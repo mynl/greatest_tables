@@ -3,6 +3,37 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a11] - 2026-08-05
+
+Item 1 of the `[formats]` batch in `dev/pending.md`, lowercase half.
+
+### Added
+
+- **`g` format sugar**, in both dialects — `'.3g'` and `'{x:.3g}'`, analogous
+  to `'.3f'`. New `FormatKind` member **`'gen'`**.
+- `digits` on a `gen` spec counts **significant figures**, not decimal
+  places, because that is what python's `g` presentation type means: `'.3g'`
+  renders 1234.5 as `1.23e+03` and 0.0012345 as `0.00123`, where `'.3f'`
+  would give three decimals in both cases. Bare `'g'` takes python's own
+  default precision of 6.
+- `group` still applies, so `',.9g'` gives `1,234,567` — visible only while
+  `g` stays in its fixed-point form.
+- The JS walker maps `gen` to `.Ng` in `cgFormatSpec`, keeping the two
+  implementations in lockstep.
+
+### Changed
+
+- **`schema/ir-v1.json`**: the `FormatKind` enum gains `"gen"`. Additive and
+  advisory, so **`ir_version` stays 1** — but note the asymmetry: documents
+  written by an older greater_tables still validate here, while a document
+  using `gen` fails an older copy of the schema.
+
+### Notes
+
+- Uppercase `G` and `E` remain unparsed, and stay in `dev/pending.md`. They
+  are the awkward half — either two more enum members or an `upper: bool` on
+  every `FormatSpec`.
+
 ## [6.0.0a10] - 2026-08-05
 
 `dev/plan-display-bundle.md`, work item `[ascii-rules]`. Additive: defaults

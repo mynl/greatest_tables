@@ -326,6 +326,9 @@ function cgFormatSpec(f) {
       return dot + "%";
     case "sci":
       return dot + "e";
+    case "gen":
+      return dot + "g";
+    // digits = significant figures
     case "si":
     case "eng":
       return "eng";

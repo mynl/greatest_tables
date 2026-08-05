@@ -2,7 +2,30 @@
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-07-31 at 6.0.0a2.
+reviewed 2026-08-01 at 6.0.0a4.
+
+## [formats] Batch — small format/style gaps (agreed, not yet scheduled)
+
+Collected as they come up; do them together rather than one version each.
+
+1. **`G`/`E` format sugar.** ~~`g`~~ landed in 6.0.0a11 as `kind='gen'`,
+   where `digits` counts significant figures. The uppercase pair is still
+   open, and is the awkward half: `E`/`G` need either two more `FormatKind`
+   members or an `upper: bool` on `FormatSpec` — the second is tidier but
+   touches every kind. Same blast radius as `g` did: `ir.py`, the committed
+   `schema/ir-v1.json` (widening an enum — old documents still validate, new
+   ones fail an old schema), `apply_format`, and `cgFormatSpec` in the
+   walker. `ir_version` stays 1.
+2. **`HouseStyle.vrule_widths` is a 3-tuple but only 2 slots exist**
+   (`policy.N_VRULE_SLOTS = 2`, CSS has `--gt-vrule-0/1`), so `[2]` is
+   unreachable. Either drop to a 2-tuple or add a third vrule slot; the
+   horizontal side is consistently 3.
+3. **No Python route to HTML rule weights.** `hrule_widths`/`vrule_widths`
+   are TikZ-only; the HTML weights are CSS custom properties, so
+   `style=HouseStyle(hrule_widths=…)` silently does nothing for HTML. Option:
+   emit non-default weights as custom properties on the `.gt` wrapper, so one
+   `HouseStyle` governs both renderers. Keep the CSS route primary — a
+   document theme should still beat a per-table setting.
 
 ## [rtd] Set up Read the Docs — **PENDING, Steve to action**
 
@@ -42,7 +65,7 @@ at the right place. Steve uploads; Claude never publishes.
 ## [ci] GitHub Actions
 
 Nothing runs on push yet. Minimum useful workflow: `uv sync`, `pytest`
-(160 tests, ~20 s) on 3.11/3.12/3.13, `npm run build` + a walker transcript
+(261 tests, ~20 s) on 3.11/3.12/3.13, `npm run build` + a walker transcript
 check, and the `schema/ir-v1.json` diff guard. Wait until the repo is
 actually pushed.
 

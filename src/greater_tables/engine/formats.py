@@ -7,10 +7,15 @@ pure function of (value, spec).
 
 Sugar accepted, both prior vocabularies:
 
-- csv-grid spec strings: ``','``? ``'.N'``? then one of ``f d % e s``,
+- csv-grid spec strings: ``','``? ``'.N'``? then one of ``f d % e g s``,
   plus ``'year'``, ``'eng'``, ``'si'``, and strftime patterns for dates.
 - GT f-strings: ``'{x:,.1f}'``, ``'{x:.1%}'`` — the python format mini-spec.
 - An int means that many decimal digits.
+
+``g`` is the one kind whose ``digits`` counts **significant** figures rather
+than decimal places, because that is what python's ``g`` presentation type
+means; ``'.3g'`` renders 1234.5 as ``1.23e+03`` and 0.0012345 as
+``0.00123``. Uppercase ``G``/``E`` are still unparsed — see ``dev/pending.md``.
 """
 
 from __future__ import annotations
@@ -25,11 +30,12 @@ from ..ir import FormatSpec
 
 __all__ = ['apply_format', 'infer_numeric_format', 'parse_sugar']
 
-_CG_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fd%es])$')
+_CG_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fd%esg])$')
 _FSTRING_RE = re.compile(r'^\{x:(?P<spec>[^}]*)\}$')
-_PYSPEC_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fde%])?$')
+_PYSPEC_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fde%g])?$')
 
-_KIND_MAP = {'f': 'dec', 'd': 'int', '%': 'pct', 'e': 'sci', 's': 'str'}
+_KIND_MAP = {'f': 'dec', 'd': 'int', '%': 'pct', 'e': 'sci', 'g': 'gen',
+             's': 'str'}
 
 
 def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
@@ -37,9 +43,11 @@ def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
 
     Accepts a FormatSpec, a mapping of its fields (the YAML form — the only
     way a config file can reach ``negative='paren'``, ``scale``, ``prefix``,
-    ``suffix``, ``null`` or ``zero``), a csv-grid spec string (``',.1f'``), a
-    GT f-string (``'{x:.1%}'``), a strftime pattern (``'%d %b %Y'``), the
-    words ``'year'``/``'eng'``/``'si'``, or an int (decimal digits, grouped).
+    ``suffix``, ``null`` or ``zero``), a csv-grid spec string (``',.1f'``,
+    ``'.3g'``), a GT f-string (``'{x:.1%}'``, ``'{x:.3g}'``), a strftime
+    pattern (``'%d %b %Y'``), the words ``'year'``/``'eng'``/``'si'``, or an
+    int (decimal digits, grouped). ``g`` maps to ``kind='gen'``, where
+    ``digits`` means significant figures.
 
     Raises
     ------
@@ -114,8 +122,9 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
     return FormatSpec(kind='dec', digits=digits, group=True)
 
 
-# defaults when FormatSpec.digits is None, by kind
-_DEFAULT_DIGITS = {'dec': 2, 'pct': 1, 'sci': 2, 'eng': 3, 'si': 3}
+# defaults when FormatSpec.digits is None, by kind. 'gen' takes python's own
+# default precision for g (6), and counts significant figures, not decimals.
+_DEFAULT_DIGITS = {'dec': 2, 'pct': 1, 'sci': 2, 'gen': 6, 'eng': 3, 'si': 3}
 
 
 def apply_format(value, fs: FormatSpec | None) -> str:
@@ -153,6 +162,9 @@ def apply_format(value, fs: FormatSpec | None) -> str:
                 else f'{mag * 100:.{digits}f}%')
     elif fs.kind == 'sci':
         body = f'{mag:.{digits}e}'
+    elif fs.kind == 'gen':
+        # digits counts significant figures here, not decimal places
+        body = f'{mag:,.{digits}g}' if fs.group else f'{mag:.{digits}g}'
     elif fs.kind == 'eng':
         body = _eng(mag, digits)
     elif fs.kind == 'si':

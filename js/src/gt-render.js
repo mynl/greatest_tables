@@ -386,6 +386,7 @@ function cgFormatSpec(f) {
         case 'dec': return (f.group ? ',' : '') + dot + 'f';
         case 'pct': return dot + '%';
         case 'sci': return dot + 'e';
+        case 'gen': return dot + 'g';   // digits = significant figures
         case 'si':
         case 'eng': return 'eng';
         case 'year': return 'year';

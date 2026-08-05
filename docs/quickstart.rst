@@ -93,6 +93,13 @@ format strings (``'{x:.1%}'``), a plain int (decimal digits, grouped), a
 mapping of :class:`~greater_tables.ir.FormatSpec` fields, an explicit
 ``FormatSpec``, or — in ``formatters`` only — a callable.
 
+The presentation types are ``f`` decimal, ``d`` integer, ``%`` percent,
+``e`` scientific, ``g`` general and ``s`` string, in either dialect. ``g``
+follows Python and counts **significant figures**, so ``'.3g'`` gives
+``1.23e+03`` for 1234.5 and ``0.00123`` for 0.0012345 — where ``'.3f'``
+would give three decimal places in both cases. Uppercase ``G`` and ``E`` are
+not parsed.
+
 House rules, one per kind
 -------------------------
 
