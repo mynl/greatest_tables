@@ -16,6 +16,29 @@
 >    `engine/formats.py:190`). The tests assert instead that no *drawn*
 >    character is non-ASCII, plus an explicit test pinning the limit.
 >
+> **Probe re-run after the change** (GT 6.0.0a11, Sphinx 9.1.0, Quarto
+> 1.6.36, Python 3.14), the verification step this plan asked for:
+>
+> ```
+> consumer     A_print B_expr C_display D_plain E_both
+> sphinx html  text    text   text      text    text
+> sphinx latex text    text   text      text    text
+> quarto html  text    html   html      text    html
+> quarto latex text    tikz   tikz      text    DROPPED
+> quarto gfm   text    html   html      text    html
+> ```
+>
+> **B and C — the real `GT` — now render in all five consumers.** Sphinx html
+> and latex went `REPR` → `text`; gfm went `DROPPED` → `html`.
+>
+> Two corrections to the predicted table. **Quarto latex E stays `DROPPED`**,
+> which the plan did not predict but is correct: E is the *shim*, publishing
+> html-plus-plain deliberately, and its vanishing is reading 3 — the very
+> thing D3 stops GT itself from doing. And **gfm B/C now emit a raw
+> `<div class="gt">`** where they previously emitted nothing. Neither is
+> usable markdown; the fix is caller-side, and block D (`text/plain` alone →
+> `text` under gfm) is the measured proof that `mimes=('text/plain',)` works.
+>
 > Still open, carried from the plan's own caveat: **JupyterLab is unmeasured.**
 > One manual check in a live notebook before 6.0.0.
 
