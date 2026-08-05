@@ -173,6 +173,16 @@ class HouseStyle:
         HTML hands the number to the browser as a CSS ``max-width`` and lets
         it measure. Ems because every other geometry field here is ems: at
         11pt, 8 inches is about 52em.
+    text_ascii_rules
+        Draw the text rendering with ASCII only — ``=`` and ``-`` for heavy
+        and light rules, ``|`` for the stub divider, ``<<flag>>`` for the row
+        gutter. Default False (box-drawing characters). Worth setting for a
+        LaTeX verbatim block, where Pygments lexes U+2501 as an error token
+        and styles it red, and for a console whose encoding or mono font
+        cannot carry box drawing. Covers what the *renderer* draws, not cell
+        text: values arrive already formatted, so ``FormatSpec.null`` (an em
+        dash) and the SI suffix ladder (µ) still come through. Change those
+        on the spec side if a build must be pure ASCII end to end.
     """
 
     max_rule_depth: int | Literal['auto'] | None = 'auto'
@@ -180,6 +190,8 @@ class HouseStyle:
     # --- widths, shared by every renderer that has an opinion about them
     max_prose_width_em: float = 18.0
     max_table_width_em: float | None = None
+    # --- text renderer
+    text_ascii_rules: bool = False
     # --- TikZ geometry (em) and container
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0

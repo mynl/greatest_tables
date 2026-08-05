@@ -14,6 +14,7 @@ Everything on `HouseStyle`, and who actually reads it:
 | `max_vrule_depth`    | `1`                  | HTML, TikZ, walker | which column-group depths get a vertical                       |
 | `max_prose_width_em` | `18.0`               | HTML, TikZ         | how wide one *wrapping* column may get (HTML: `--gt-prose-max`) |
 | `max_table_width_em` | `None`               | HTML, TikZ         | total width to aim for (HTML: `--gt-max-width`)                |
+| `text_ascii_rules`   | `False`              | text               | `=` `-` `\|` `<<flag>>` instead of box drawing                  |
 | `hrule_widths`       | `(0.5, 0.25, 0.25)`  | TikZ               | weight per depth slot (HTML: `--gt-rule-0/1/2`)                |
 | `vrule_widths`       | `(0.25, 0.25, 0.25)` | TikZ               | weight per vrule slot (HTML: `--gt-vrule-0/1`) — `[2]` is dead |
 | `frame_rule`         | `1.0`                | TikZ               | table top and bottom (`--gt-rule-frame`)                       |
@@ -30,7 +31,7 @@ Everything on `HouseStyle`, and who actually reads it:
 
 Weight scale: `0` don't draw · `0.25` ultra thin · `0.5` very thin · `0.75` thin · `1` semithick · `1.5` thick · `2` very thick · `3` ultra thick.
 
-So the honest summary is: **four fields are portable, the other thirteen are TikZ.** HTML's equivalents are CSS custom properties, and it has four more with no `HouseStyle` counterpart at all — `--gt-pad-v`, `--gt-pad-h`, `--gt-neg-color`, `--gt-caption-align`.
+So the honest summary is: **four fields are portable, one is text-only, the other thirteen are TikZ.** HTML's equivalents are CSS custom properties, and it has four more with no `HouseStyle` counterpart at all — `--gt-pad-v`, `--gt-pad-h`, `--gt-neg-color`, `--gt-caption-align`.
 
 `tikz_scale` deserves its footnote. It rides on the matrix *nodes*, so node contents scale and the matrix column separations do not — a table at `scale=0.5` is about 0.60 of its full width, not half. Measured, the emitted width is exactly
 

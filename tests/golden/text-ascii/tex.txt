@@ -1,0 +1,12 @@
+======================================================================================================
+i_0         | formula                                           commentary                       value
+======================================================================================================
+triggering  | $\mathsf Q\in\mathcal Q$                          illiquid trumpets rightly     -199,995
+dumpty      | $xS(x)\vert_0^\infty =\lim_{x\to\infty} xS(x)=0$  pointe floated legislators     138,417
+choreograph | $Q(\omega, \cdot)$                                starling cannibalize tilts    -317,607
+dismal      | $\sigma_i^2$                                      oily overcrowded malfunction   -62,212
+blurb       | $\omega_0$                                        beats jasper calculating        80,337
+biography   | $l(y;\mu)=tbd$                                    essentials forest doubtful     562,126
+major       | $\bar M_i(a) = \bar P_i(a) - \mathsf{E}[X_i(a)]$  reversible renaming dismally   -60,054
+dislodge    | $\iota=(g-S)/(1-g)$                               defends supportive tedium      249,633
+======================================================================================================

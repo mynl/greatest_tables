@@ -1,5 +1,24 @@
 # [display-bundle] — text/plain in the mimebundle, honest Quarto detection, ASCII rules
 
+> **DONE 2026-08-05.** `[plain-in-bundle]`, `[quarto-target]`, `[bundle-policy]`
+> shipped as 6.0.0a9; `[ascii-rules]` as 6.0.0a10. Implemented as written
+> except for three points in `[ascii-rules]`, all decided by Steve:
+>
+> 1. **Eight literal sites, not six.** The plan missed `«` and `»` at
+>    `text.py:228` (the row-flag gutter, already in
+>    `tests/golden/text/totals.txt` as `«total»`). ASCII form is `<<total>>`.
+> 2. **Heavy and light stay distinct** — `=` and `-`, not `-` for both. The
+>    plan's mapping would have made a frame rule and an internal group break
+>    identical, losing information the conformance oracle carries today.
+> 3. **`s.isascii()` is not assertable** and is not asserted. Cell text
+>    arrives already formatted, and two engine choices are non-ASCII:
+>    `FormatSpec.null` (`—`, `ir.py:66`) and the SI suffix ladder (`µ`,
+>    `engine/formats.py:190`). The tests assert instead that no *drawn*
+>    character is non-ASCII, plus an explicit test pinning the limit.
+>
+> Still open, carried from the plan's own caveat: **JupyterLab is unmeasured.**
+> One manual check in a live notebook before 6.0.0.
+
 Four changes to how greater_tables advertises itself to a display front end.
 All four come out of a measured probe, not from reasoning about what ought to
 happen, and each one below cites the observation that motivates it.

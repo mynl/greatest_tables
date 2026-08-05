@@ -1,0 +1,8 @@
+Simple table {#tbl-md}
+
+=============
+item    count
+=============
+apples      3
+pears      12
+=============

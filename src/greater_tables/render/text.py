@@ -9,27 +9,59 @@ at the changed stub column (which depths qualify is ``render.policy``, shared
 with every other renderer); rowspan/colspan cells span; row flags appear in a
 right gutter; math cells render as ``$tex$``; emphasis/muted cells as
 ``*text*``/``~text~``.
+
+Every non-ASCII character the renderer emits lives in :class:`Charset`, so
+``HouseStyle.text_ascii_rules`` can swap the whole set at once — for a LaTeX
+verbatim block, or a console whose encoding or mono font cannot carry box
+drawing. The ASCII set keeps the heavy/light distinction (``=`` against
+``-``) rather than collapsing both to one character: which rule is a frame
+and which is a group break is information the oracle should not lose.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from ..ir import Cell, HeadCell, Row, TableDoc
 from ..spec import HouseStyle
 from .policy import rule_slot
 
-__all__ = ['render_text']
+__all__ = ['ASCII_CHARS', 'Charset', 'UNICODE_CHARS', 'render_text']
 
 GAP = 2            # spaces between columns
 STUB_GAP = 3       # ' │ ' between stub block and data block
 
 
+@dataclass(frozen=True)
+class Charset:
+    """The characters the text renderer draws rules and markers with.
+
+    ``vrule`` must be one character wide and the flag delimiters live in a
+    right gutter, so swapping sets never moves a column: widths are solved
+    from cell content, and ``STUB_GAP`` is 3 either way.
+    """
+
+    heavy: str        # frame, header and section rules
+    light: str        # break rules and spanner underlines
+    vrule: str        # stub/body divider
+    flag_open: str    # row-flag gutter delimiters
+    flag_close: str
+
+
+UNICODE_CHARS = Charset('━', '─', '│', '«', '»')
+ASCII_CHARS = Charset('=', '-', '|', '<<', '>>')
+
+
 def render_text(doc: TableDoc, style: HouseStyle | None = None) -> str:
     """Render a table document to monospace text.
 
-    ``style.max_rule_depth`` is the only field this renderer reads — text has
-    no way to express a rule *weight*, so every drawn break looks the same.
+    Two ``HouseStyle`` fields reach here. ``max_rule_depth`` sets how deep
+    breaks are ruled — text has no way to express a rule *weight*, so every
+    drawn break looks the same. ``text_ascii_rules`` swaps :data:`ASCII_CHARS`
+    for the default :data:`UNICODE_CHARS`.
     """
     style = style or HouseStyle()
+    cs = ASCII_CHARS if style.text_ascii_rules else UNICODE_CHARS
     ncols = len(doc.columns)
     lines: list[str] = []
     if doc.caption:
@@ -47,23 +79,23 @@ def render_text(doc: TableDoc, style: HouseStyle | None = None) -> str:
     widths, gaps = _solve_widths(doc, body_grid, foot_grid)
     total = sum(widths) + sum(gaps)
 
-    lines.append('━' * total)
+    lines.append(cs.heavy * total)
     for level, row in enumerate(doc.head):
         leaf = level == len(doc.head) - 1
-        lines.append(_head_line(row, doc, widths, gaps, leaf))
+        lines.append(_head_line(row, doc, widths, gaps, leaf, cs))
         if not leaf:
-            rule = _spanner_line(row, widths, gaps, total)
+            rule = _spanner_line(row, widths, gaps, total, cs)
             if rule.strip():
                 lines.append(rule)
     if doc.head:
-        lines.append('━' * total)
+        lines.append(cs.heavy * total)
     lines.extend(_section_lines(doc, doc.body, body_grid, widths, gaps,
-                                style.max_rule_depth))
+                                style.max_rule_depth, cs))
     if doc.foot:
-        lines.append('━' * total)
+        lines.append(cs.heavy * total)
         lines.extend(_section_lines(doc, doc.foot, foot_grid, widths, gaps,
-                                    style.max_rule_depth))
-    lines.append('━' * total)
+                                    style.max_rule_depth, cs))
+    lines.append(cs.heavy * total)
     for note in doc.notes:
         lines.append(f'Note: {note}')
     return '\n'.join(lines + [''])
@@ -152,7 +184,7 @@ def _pad(text: str, width: int, align: str) -> str:
 # ------------------------------------------------------------------ drawing
 
 def _head_line(row: tuple[HeadCell, ...], doc: TableDoc, widths, gaps,
-               leaf: bool) -> str:
+               leaf: bool, cs: Charset) -> str:
     parts: list[str] = []
     col = 0
     for hc in row:
@@ -166,17 +198,18 @@ def _head_line(row: tuple[HeadCell, ...], doc: TableDoc, widths, gaps,
             align = doc.columns[col].align
         else:
             align = 'l'
-        parts.append((_gap_str(gaps[col]) if col else '')
+        parts.append((_gap_str(gaps[col], cs) if col else '')
                      + _pad(hc.text, span_w, align))
         col += hc.colspan
     return ''.join(parts).rstrip()
 
 
-def _gap_str(gap: int) -> str:
-    return ' │ ' if gap == STUB_GAP else ' ' * gap
+def _gap_str(gap: int, cs: Charset) -> str:
+    return f' {cs.vrule} ' if gap == STUB_GAP else ' ' * gap
 
 
-def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int) -> str:
+def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int,
+                  cs: Charset) -> str:
     """Underline runs beneath labeled group cells (cmidrule analogue)."""
     chars = [' '] * total
     col = 0
@@ -186,7 +219,7 @@ def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int) -> str:
                   + sum(gaps[col + 1:col + hc.colspan]))
         if hc.text:
             for k in range(offset, min(total, offset + span_w)):
-                chars[k] = '─'
+                chars[k] = cs.light
         offset += span_w + (gaps[col + hc.colspan]
                             if col + hc.colspan < len(widths) else 0)
         col += hc.colspan
@@ -194,7 +227,7 @@ def _spanner_line(row: tuple[HeadCell, ...], widths, gaps, total: int) -> str:
 
 
 def _section_lines(doc: TableDoc, rows: tuple[Row, ...], grid, widths,
-                   gaps, max_rule_depth) -> list[str]:
+                   gaps, max_rule_depth, cs: Charset) -> list[str]:
     lines: list[str] = []
     total = sum(widths) + sum(gaps)
     for r, row in enumerate(rows):
@@ -205,13 +238,13 @@ def _section_lines(doc: TableDoc, rows: tuple[Row, ...], grid, widths,
             # indent to the changed stub column — the depth, not the weight
             # slot, drives geometry (they differ once a cap exceeds the slots)
             offset = sum(widths[:depth]) + sum(gaps[:depth + 1])
-            lines.append(' ' * offset + '─' * (total - offset))
+            lines.append(' ' * offset + cs.light * (total - offset))
         parts: list[str] = []
         col = 0
         while col < len(doc.columns):
             entry = grid[r][col]
             if entry is None:
-                parts.append((_gap_str(gaps[col]) if col else '')
+                parts.append((_gap_str(gaps[col], cs) if col else '')
                              + ' ' * widths[col])
                 col += 1
                 continue
@@ -220,11 +253,12 @@ def _section_lines(doc: TableDoc, rows: tuple[Row, ...], grid, widths,
             span_w = sum(widths[col:col + span]) + sum(gaps[col + 1:col + span])
             text = _decorate(cell) if origin else ''
             align = 'c' if span > 1 else doc.columns[col].align
-            parts.append((_gap_str(gaps[col]) if col else '')
+            parts.append((_gap_str(gaps[col], cs) if col else '')
                          + _pad(text, span_w, align))
             col += span
         line = ''.join(parts)
         if row.flags:
-            line = line + '  «' + ','.join(row.flags) + '»'
+            line = (line + '  ' + cs.flag_open + ','.join(row.flags)
+                    + cs.flag_close)
         lines.append(line.rstrip())
     return lines

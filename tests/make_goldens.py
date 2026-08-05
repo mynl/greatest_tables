@@ -14,7 +14,7 @@ import subprocess
 from pathlib import Path
 
 from greater_tables import (
-    TableDoc, build, canonical_json, render_text, render_tikz,
+    HouseStyle, TableDoc, build, canonical_json, render_text, render_tikz,
 )
 from greater_tables.render.css import write_asset
 
@@ -27,9 +27,11 @@ ROOT = Path(__file__).parent.parent
 def main() -> None:
     golden_ir = ROOT / 'tests' / 'golden' / 'ir'
     golden_text = ROOT / 'tests' / 'golden' / 'text'
+    golden_ascii = ROOT / 'tests' / 'golden' / 'text-ascii'
     golden_tikz = ROOT / 'tests' / 'golden' / 'tikz'
-    for d in (golden_ir, golden_text, golden_tikz):
+    for d in (golden_ir, golden_text, golden_ascii, golden_tikz):
         d.mkdir(parents=True, exist_ok=True)
+    ascii_style = HouseStyle(text_ascii_rules=True)
 
     for name, make in EXEMPLARS.items():
         doc = make()
@@ -43,9 +45,11 @@ def main() -> None:
         (golden_ir / f'fx-{name}.json').write_bytes(golden_bytes(doc))
         (golden_text / f'{name}.txt').write_text(
             render_text(doc), encoding='utf-8', newline='\n')
+        (golden_ascii / f'{name}.txt').write_text(
+            render_text(doc, ascii_style), encoding='utf-8', newline='\n')
         (golden_tikz / f'fx-{name}.tex').write_text(
             render_tikz(doc), encoding='utf-8', newline='\n')
-        print(f'wrote fx-{name} ir + text + tikz')
+        print(f'wrote fx-{name} ir + text + text-ascii + tikz')
 
     schema_path = ROOT / 'schema' / 'ir-v1.json'
     schema = TableDoc.model_json_schema()

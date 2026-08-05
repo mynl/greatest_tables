@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a10] - 2026-08-05
+
+`dev/plan-display-bundle.md`, work item `[ascii-rules]`. Additive: defaults
+are untouched and every existing golden is byte-identical.
+
+### Added
+
+- **`HouseStyle.text_ascii_rules`** (default False) — draw the text
+  rendering with ASCII only. Motivated by two measured problems: Pygments
+  lexes U+2501 as an error token, so a Sphinx LaTeX build emits `Lexing
+  literal_block … resulted in an error` once per table and styles the rule
+  red in the PDF; and a cp1252 console cannot encode box drawing at all.
+- **`render.text.Charset`**, with `UNICODE_CHARS` (default) and
+  `ASCII_CHARS`. Every non-ASCII character the renderer draws now lives in
+  one frozen dataclass instead of eight literal sites.
+- **`tests/golden/text-ascii/`** — a full parallel golden tree, one file per
+  fixture, written by `tests/make_goldens.py` alongside the existing ones.
+
+### Notes
+
+- The ASCII set is `=` heavy, `-` light, `|` stub divider, `<<flag>>` row
+  gutter. **Heavy and light stay distinct**: collapsing `━` and `─` both to
+  `-` would make a frame rule and an internal group break identical, and
+  which is which is information the conformance oracle should not lose.
+- The row-flag delimiters (`«total»`) were the eighth site, and are easy to
+  miss — they sit in a right gutter, not in the rules.
+- **Scope is what the renderer draws, not cell text.** Values arrive already
+  formatted, so `FormatSpec.null` (an em dash) and the SI suffix ladder (µ)
+  still come through and ASCII-mode output is not necessarily `isascii()`.
+  Laundering them here would make the oracle disagree with the document it
+  is checking; change them on the spec side if a build must be pure ASCII
+  end to end. `tests/test_text.py` asserts this limit so it stays deliberate.
+
 ## [6.0.0a9] - 2026-08-05
 
 `dev/plan-display-bundle.md`, work items `[plain-in-bundle]`,
