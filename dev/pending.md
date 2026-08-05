@@ -33,7 +33,8 @@ The docs tree, `.readthedocs.yaml`, and the `docs` extra are all in place and
 build clean locally (`uv sync --extra docs`, then `docs\make.bat html`).
 What remains is account-side and cannot be done from here:
 
-1. Push this repo to GitHub (`mynl/greatest_tables`, remote already set).
+1. Make `mynl/greatest_tables` **public** — RTD needs it. The repo is already
+   pushed; the blocker is visibility, not the push.
 2. On readthedocs.org: **Import a Project** → `mynl/greatest_tables`, and set
    the project slug to **`greater-tables`** (decided 2026-07-31 — the docs URL
    should match the name people `pip install`, not the repo codename). GT 5.x
@@ -46,28 +47,35 @@ What remains is account-side and cannot be done from here:
    - https://greater-tables.readthedocs.io/en/latest/versions.html
 5. Add the RTD webhook (automatic on GitHub import) so pushes rebuild.
 
-## [artwork] Replace the placeholder docs artwork
+## [artwork] Optional: an example figure for the docs landing page
 
-`docs/_static/greater-tables-logo.png` and `favicon.ico` are copies of the
-5.x artwork, standing in until Steve draws the GT2 set. Also worth adding a
-`docs/img/` example figure (the 5.x docs led with one) once the demo tables
-are final — `demo.html` and `demo2.html` are the obvious sources.
+The GT2 logo and favicon set in `docs/_static/` are final (confirmed
+2026-08-05) and wired up via `html_logo` / `html_favicon`. What is still
+missing is a `docs/img/` example figure — the 5.x docs led with one — now
+that the demo tables are settled. `demo.html` and `demo2.html` are the
+obvious sources. Nice to have, not a release blocker.
 
-## [publish] greater-tables 6.0 on PyPI
+## [publish] greater-tables 6.0 on PyPI — **in flight**
 
-Not yet uploaded — `6.0.0a1`/`a2` are local tags. Sequence: alphas while the
-aggregate_api adoption settles, then `6.0.0rc1` so the server can pin it
-explicitly while plain installs still resolve to 5.3, then 6.0.0. Pre-flight:
-`uv build`, check the sdist/wheel contents, `twine check`, confirm the README
-renders on the PyPI preview, and confirm 5.3's frozen repo banner still points
-at the right place. Steve uploads; Claude never publishes.
+`6.0.0b1` is the last look before `6.0.0`. Remaining sequence: review b1 →
+bump to `6.0.0` → tag → force-push the CLAUDE.md-purged history → flip the
+repo public → upload → import on Read the Docs (see `[rtd]`).
+
+Pre-flight, still to do: `twine check`, confirm the README renders on the
+PyPI preview, and confirm 5.3's frozen repo banner still points at the right
+place. `uv build` and the sdist/wheel content check are done — the sdist
+carries `src`, `tests`, `schema`, `js`, `docs` and no `dev/`, and the wheel is
+about 930 KB, half of it `data/tex_list.csv`. **Steve uploads; Claude never
+publishes.**
 
 ## [ci] GitHub Actions
 
-Nothing runs on push yet. Minimum useful workflow: `uv sync`, `pytest`
-(261 tests, ~20 s) on 3.11/3.12/3.13, `npm run build` + a walker transcript
-check, and the `schema/ir-v1.json` diff guard. Wait until the repo is
-actually pushed.
+Nothing runs on push yet, and the docs no longer claim otherwise (6.0.0b1
+reworded two "in CI" claims to "the test suite"). Minimum useful workflow:
+`uv sync`, `pytest` (428 tests, ~25 s) on 3.12/3.13/3.14, `npm run build` +
+a walker transcript check, and the `schema/ir-v1.json` diff guard. The 3.12
+floor in `pyproject.toml` is **declared but untested** — a matrix build is
+what would actually verify it. Unblocked once the repo is public.
 
 ## [cookbook] Consider a docs page from the qmd generator
 

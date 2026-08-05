@@ -7,7 +7,7 @@ name = "greater-tables"
 dynamic = ["version"]
 description = "Semantic table engine: DataFrame in, versioned table-document IR out, rendered to HTML, TikZ, text, or client-side JS."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Stephen J Mildenhall", email = "mynl@me.com" }]
@@ -21,9 +21,9 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Financial and Insurance Industry",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Office/Business",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Text Processing :: Markup :: HTML",

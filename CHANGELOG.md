@@ -3,6 +3,66 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0b1] - 2026-08-05
+
+Release candidate in all but name: the last look before `6.0.0` goes public
+and onto PyPI. No engine changes — this is the public face.
+
+### Changed
+
+- **Python floor raised to 3.12.** `requires-python = ">=3.12"`, classifiers
+  now 3.12 / 3.13 / 3.14. The old 3.11 floor was declared but never tested,
+  and 3.11 reaches end of life before this package's first stable release
+  would benefit from it. **Note:** 3.12 is likewise declared and not yet
+  matrix-tested — that is what `[ci]` in `dev/pending.md` is for.
+- **`transition.md` is gone, folded into `docs/migration.md`.** The complete
+  5.x → 6.0 option map — every `Configurator` field, the full `HouseStyle`
+  table, vertical rules, width machinery, porting recipes — was sitting in a
+  root-level file that no page linked to and the sdist did not ship, while
+  `docs/migration.rst` covered the same ground more thinly. Now one document,
+  in the docs, in the sdist. It is MyST markdown rather than reStructuredText
+  because it is twelve wide reference tables and RST grid tables would be
+  unmaintainable; `myst_parser` was already enabled for the changelog.
+- Installation text no longer says "6.0 is not on PyPI yet" (README and the
+  docs landing page).
+
+### Fixed
+
+- **`docs/migration` said a bare int does not group.** It does:
+  `formatters={'paid': 2}` gives `1,234.57`. That is the one silent behavior
+  change from 5.x and the page stated the opposite of the truth. Now a
+  warning box, alongside the two other silent default changes (`show_index`,
+  `header_row`).
+- **Two places claimed CI that does not exist** — `README.md` and
+  `docs/ir.rst` both said the schema and transcripts were guarded "in CI".
+  They are guarded by the test suite; `design.rst` had it right.
+- `docs/ir.rst` listed the `FormatKind` values without `gen` (added in a11).
+- `docs/api.rst` omitted `load_style` and `__version__` from the documented
+  exports, and never documented `render.widths`.
+- README's status block still read `6.0.0a1` and "all seven design steps",
+  and its layout listing predated the `text-ascii` and `tikz` golden trees.
+- "Licence" → "License" in README and the docs landing page (US spelling).
+
+### Added
+
+- The target-aware display bundle is now described where users will meet it:
+  `README.md`, the docs landing page, `design.rst` (with the measured
+  reasoning behind the PDF path dropping `text/html`), and migration's
+  "New in 6.0".
+- `design.rst` documents `render/notebook.py` and the two-charset golden
+  trees, and states plainly that the display-bundle probe is run by hand
+  rather than in the unit suite.
+
+### Notes
+
+- **JupyterLab verified** by hand (2026-08-05) — a live notebook takes
+  `text/html`, as inferred. That was the one unmeasured consumer left over
+  from the a9 probe, and it is now closed.
+- `CLAUDE.md` is untracked as of this release; it is a personal operating
+  procedure, not project documentation.
+- CHANGELOG entries before this one still reference `transition.md`. They are
+  a historical record of what was true at the time and have been left alone.
+
 ## [6.0.0a11] - 2026-08-05
 
 Item 1 of the `[formats]` batch in `dev/pending.md`, lowercase half.

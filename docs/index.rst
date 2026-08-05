@@ -53,11 +53,10 @@ Installation
 
    pip install greater-tables
 
-6.0 is not on PyPI yet — until it is, ``pip install greater-tables`` gives you
-the frozen 5.3 engine. Install this rewrite from source
-(``pip install git+https://github.com/mynl/greatest_tables``), and pin
-``greater-tables<6`` anywhere you want to stay on 5.x. The import name never
-changes: ``from greater_tables import GT`` works on both.
+Requires Python 3.12+. Runtime dependencies are numpy, pandas, pydantic and
+PyYAML — nothing else. Pin ``greater-tables<6`` anywhere you want to stay on
+the frozen 5.3 engine; the import name never changes, so
+``from greater_tables import GT`` works on both.
 
 Source
 ------
