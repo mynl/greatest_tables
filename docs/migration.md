@@ -46,7 +46,7 @@ call site keeps working while you clean it up.
 **Three silent default changes.** Everything else either works or warns.
 
 - **A bare int now groups.** `formatters={'paid': 2}` gives `1,234.57` where
-  5.x gave `1234.57`, because GT2 groups whenever it chooses the format for
+  5.x gave `1234.57`, because 6.0 groups whenever it chooses the format for
   you. Write `'.2f'` for the ungrouped form.
 - **`show_index` defaults to `None`**, which auto-hides a trivial unnamed
   `RangeIndex`. Pass `True` to force the index to show.
@@ -116,7 +116,7 @@ column count and table width.
 
 ### Vertical rules
 
-There are only two kinds of vertical in a GT2 table, and GT2 never draws a
+There are only two kinds of vertical in a 6.0 table, and 6.0 never draws a
 grid line between every column.
 
 **1. The stub/body divider.** Always present when there is a stub — the `│` in
@@ -156,7 +156,7 @@ you.
 
 ## `GT.__init__` arguments that were not `Configurator` fields
 
-| 5.x argument | Default | What it did | GT2 home | Notes |
+| 5.x argument | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `df` | — | DataFrame, Series, list of lists, markdown table string, or namedtuple | `build(data, spec)` / `GT(data)` | Same inputs except namedtuple, which is gone. Markdown ingest still parses the caption, `{#tbl-id}` label, and `:---`/`---:` alignment. |
 | `caption` | `''` | Table caption | **TableSpec** `.caption` | 5.x also picked up a `df.gt_caption` attribute if the argument was empty; that magic is gone — pass the caption. |
@@ -170,7 +170,7 @@ you.
 | `date_cols` | `None` | Force date treatment | **TableSpec** `.date_cols` | |
 | `raw_cols` | `None` | Pass through unformatted | **TableSpec** `.raw_cols` | Distinct from `include_raw`, which is about shipping machine values to a client. |
 | `show_index` | `True` | Show the index as stub columns | **TableSpec** `.show_index` | ⚠️ **Default changed to `None`** = auto-hide a trivial unnamed `RangeIndex`. Pass `True` to force it. |
-| `config` | `None` | A `Configurator` instance | **gone** | GT2's equivalent object is `TableSpec`, passed directly to `build`. |
+| `config` | `None` | A `Configurator` instance | **gone** | 6.0's equivalent object is `TableSpec`, passed directly to `build`. |
 | `config_path` | `None` | YAML config file | **TableSpec** via `load_spec(path)` | Still a keyword on the `GT` facade. YAML is a flat mapping of `TableSpec` field names; unknown keys **raise** so typos surface. `config.write_template()` writes a commented starting point. |
 | `**overrides` | — | Any `Configurator` field | facade only | Names matching a `TableSpec` field pass through; anything else **warns and is ignored**, so old call sites keep working while you clean them up. |
 
@@ -178,7 +178,7 @@ you.
 
 ### Default formats
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `default_integer_str` | `'{x:,d}'` | Format f-string for integers | **TableSpec** `.int_format` | The direct equivalent, and YAML-able. Unset, the built-in is `FormatSpec(kind='int', group=True)`. |
 | `default_float_str` | `'{x:,.3f}'` | Format f-string for floats | **TableSpec** `.float_format` | The direct equivalent. Left unset, decimals come from each column's own magnitude — better for one table, inconsistent across a document, which is exactly what this field is for. Setting it also turns off the automatic SI/engineering switch. |
@@ -198,7 +198,7 @@ All five became renderer opinions. Nothing about a rule weight enters the IR;
 the *semantics* that drive them (`break_depth` per row and column, `total` row
 flags) are computed by the engine and each renderer maps them to weights.
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `table_hrule_width` | `1` | Top, bottom and header rules | **HouseStyle** `.frame_rule` / **CSS** `--gt-rule-frame` | |
 | `table_hbaserule_width` | `1` | Rule under the header block | **HouseStyle** `.head_rule` / **CSS** `--gt-rule-head` | |
@@ -208,7 +208,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 
 ### Structure
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `sparsify` | `True` | Merge repeated index values | **TableSpec** `.sparsify` | Unchanged, same default. Emits real `rowspan`s. |
 | `sparsify_columns` | `True` | Merge repeated header prefixes | **TableSpec** `.sparsify_columns` | Unchanged. Emits `colspan`s plus a spanner rule under each group label. |
@@ -216,7 +216,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 
 ### Spacing, fonts, caption
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `spacing` | `'medium'` | Padding preset: tight / medium / wide | **CSS** `--gt-pad-v` `0.25em`, `--gt-pad-h` `0.6em` | The three presets are gone; set the two properties. |
 | `padding_trbl` | `None` | Manual padding, four sides | **CSS** same two properties | Reduced to vertical/horizontal — per-side padding on a table cell was never worth the API. |
@@ -229,7 +229,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 
 ### Engineering format
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `pef_precision` | `3` | Digits after the decimal in engineering format | **TableSpec** `.eng_digits` | Plus `eng_style` (`'si'` suffixes or `'exp'` aligned exponents), which 5.x had no way to choose. |
 | `pef_lower` | `-3` | Use engineering format below `10**pef_lower` | **TableSpec** `.pef_lower` | Unchanged, same default. Now a **column-level** decision (the column's mean magnitude), not per cell. |
@@ -237,7 +237,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 
 ### Ingest and limits
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `cast_to_floats` | `True` | Cast non-int, non-date columns to float where possible | **gone** | The engine trusts the dtypes it is given — 5.3 had already backed away from this for PyArrow. |
 | `max_str_length` | `-1` | Truncate stringified objects | **gone** | No truncation: cutting content out of a display table is the wrong trade. Long prose wraps at `max_prose_width_em` / `--gt-prose-max` (18em). |
@@ -247,7 +247,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 
 ### Width machinery — rebuilt, smaller
 
-5.x negotiated column widths in Python for every backend. GT2 does not, and
+5.x negotiated column widths in Python for every backend. 6.0 does not, and
 the division of labor is the point: **TikZ estimates**, because TeX has no
 browser to ask; **HTML states a limit and lets the browser measure**, because
 it measures the real font and we can only guess at it; the **JS walker** can
@@ -278,7 +278,7 @@ hyphenate. Load a Times-metric serif alongside the tables, or expect slightly
 tight columns. Use `newtxtext` alone; `newtxmath` collides with Quarto's math
 setup.
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `equal` | `False` | Force equal column widths | **gone** | |
 | `max_table_inch_width` | `8.0` | Target table width in inches | **HouseStyle** `.max_table_width_em` | Ems, not inches: at 11pt, 8in is about 52em. Advisory — see above. |
@@ -290,7 +290,7 @@ setup.
 
 ### TikZ
 
-| 5.x option | Default | What it did | GT2 home | Notes |
+| 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|
 | `tikz` | `True` | Compute TikZ output at all | **gone** | Every rendering is a lazily cached property, so the HTML path never pays for TeX. This option existed to work around that; the waste is gone by construction. |
 | `tikz_scale` | `1.0` | Scale factor | **HouseStyle** `.tikz_scale` | |

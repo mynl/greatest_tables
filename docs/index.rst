@@ -14,8 +14,8 @@ color, no shading: just your data, rendered cleanly.
    from greater_tables import GT
    GT(df)
 
-This documentation covers **GT2**, the ground-up rewrite that publishes as
-``greater-tables`` 6.0. Between the DataFrame and the page sits a versioned,
+This documentation covers **version 6.0**, a ground-up rewrite of
+``greater-tables``. Between the DataFrame and the page sits a versioned,
 JSON-serializable **table document** — the IR. Python owns *semantics*
 (dtypes, format inference, multi-index hierarchy, spans, break depths); each
 renderer owns *geometry and style*. Nothing in the IR names a width, a rule

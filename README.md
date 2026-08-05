@@ -1,8 +1,9 @@
-# greater_tables (GT2)
+# greater_tables
 
-![](https://img.shields.io/github/commit-activity/y/mynl/greatest_tables)
-![](https://img.shields.io/pypi/v/greater-tables)
-![](https://img.shields.io/readthedocs/greater-tables)
+![commit activity](https://img.shields.io/github/commit-activity/y/mynl/greatest_tables)
+![PyPI version](https://img.shields.io/pypi/v/greater-tables)
+![documentation](https://img.shields.io/readthedocs/greater-tables)
+![license MIT](https://img.shields.io/badge/license-MIT-blue)
 
 **Greater Tables** produces high-quality static display tables for journal
 articles, books, formal reports, and printed financial statements. A pandas
@@ -15,14 +16,14 @@ from greater_tables import GT
 GT(df)
 ```
 
-This project is a ground-up rewrite that publishes as `greater-tables` 6.0.
-Between the DataFrame and the page sits a versioned, JSON-serializable
-**table document**, the intermediate representation (IR). Python owns *semantics* (dtypes, format
-inference, multi-index hierarchy, spans, break depths); each renderer owns
-*geometry and style*. Nothing in the IR names a width, a rule weight, a font,
-or a CSS property, so the HTML renderer, the TikZ renderer, the text oracle,
-and the bundled JavaScript walker all draw the same table and are conformance
-tested against each other.
+Version 6.0 is a ground-up rewrite. Between the DataFrame and the page sits a
+versioned, JSON-serializable **table document**, the intermediate
+representation (IR). Python owns *semantics* (dtypes, format inference,
+multi-index hierarchy, spans, break depths); each renderer owns *geometry and
+style*. Nothing in the IR names a width, a rule weight, a font, or a CSS
+property, so the HTML renderer, the TikZ renderer, the text oracle, and the
+bundled JavaScript walker all draw the same table and are conformance tested
+against each other.
 
 ## Installation
 
@@ -55,7 +56,9 @@ render_tikz(doc)        # table environment + tikzpicture
 doc.model_dump_json()   # ship it to the browser; gt-render.js draws it
 ```
 
-Open `demo.html` for every golden fixture rendered client-side by the walker.
+[`demo.html`](https://github.com/mynl/greatest_tables/blob/master/demo.html)
+is every golden fixture rendered client-side by the walker — self-contained,
+no server needed.
 
 ## What 6.0 changes
 
@@ -85,6 +88,12 @@ Open `demo.html` for every golden fixture rendered client-side by the walker.
 - Interactive grids remain the job of the sibling `csv-grid` project,
   `irToGridInput(doc)` hands a table to it whole. This package does not sort,
   filter, or virtualize, by design.
+
+**Coming from 5.x?**
+[Migrating from greater_tables 5.x](https://greater-tables.readthedocs.io/en/latest/migration.html)
+is the complete map: every 5.x option, what it did, and where it went — plus
+the three silent default changes to watch for (`formatters` ints now group,
+`show_index` auto-hides, `header_row` defaults off).
 
 `greater_tables` 5.x stays available and pinnable on PyPI forever; its source
 and issue archive stay at
@@ -130,10 +139,13 @@ and the JS walker has none at all.
 
 ## Status
 
-**Pre-release (`6.0.0a11`).** All seven design steps are complete: the engine,
-IR, JS walker, Python HTML renderer, and TikZ renderer are conformance-tested
-against each other, and the first consumer (aggregate_api's SPA) renders
-tables client-side from the IR. The alpha series is running while that
-adoption settles, so the public API can still shift; `6.0.0` is the point at
-which it stops. See `dev/design.md` for the full design, `dev/pending.md` for
-what is outstanding, and `CHANGELOG.md` for the version-by-version record.
+**Beta (`6.0.0b1`).** All seven design steps are complete: the engine, IR, JS
+walker, Python HTML renderer, and TikZ renderer are conformance-tested against
+each other, and the first consumer (aggregate_api's SPA) renders tables
+client-side from the IR. The public API can still shift until `6.0.0`. See
+[`dev/design.md`](https://github.com/mynl/greatest_tables/blob/master/dev/design.md)
+for the full design,
+[`dev/pending.md`](https://github.com/mynl/greatest_tables/blob/master/dev/pending.md)
+for what is outstanding, and the
+[**CHANGELOG**](https://github.com/mynl/greatest_tables/blob/master/CHANGELOG.md)
+for the version-by-version record.
