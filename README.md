@@ -68,7 +68,12 @@ Open `demo.html` for every golden fixture rendered client-side by the walker.
 - **Four renderers, one contract.** HTML, TikZ, text, and the zero-dependency
   JS walker (`gt-render.js`, shipped as package data) render from that one
   document; the Python HTML renderer and the walker must produce identical DOM
-  transcripts, per fixture, in CI.
+  transcripts, per fixture, enforced by the test suite.
+- **The display bundle knows its target.** In a notebook or Quarto HTML render
+  you get HTML; a Quarto PDF render gets TikZ and no HTML, because pandoc
+  would prefer the HTML and its LaTeX writer would then throw it away. Every
+  bundle also carries `text/plain`, so a table degrades to a readable
+  monospace rendering rather than to `<GT object at 0x…>` or to nothing.
 - **Semantics stay in Python, style stays in the renderer.** One document-level
   stylesheet generated from a `RULES` dict (or inlined for HTMX/email), a
   `gt-*` class vocabulary, per-table scalars as CSS custom properties.
@@ -98,7 +103,7 @@ reference, migration notes, API.
 development codename `greatest-tables`; the package it publishes is
 `greater-tables`.
 
-## Licence
+## License
 
 MIT.
 
@@ -116,17 +121,21 @@ grew up next to its parent; the repo kept the codename, the package did not.
 ```
 src/greater_tables/    ir.py (pydantic IR) · spec.py · engine/ · render/ · assets/
 js/src/                gt-render.js walker (built into assets/)
-tests/                 fixtures (synthetic only) + golden files (ir / text / transcript)
-schema/                committed JSON Schema export of the IR (CI diff-guarded)
+tests/                 fixtures (synthetic only) + goldens (ir / text / text-ascii / tikz / transcript)
+schema/                committed JSON Schema export of the IR (diff-guarded by the tests)
 docs/                  Sphinx documentation
 dev/                   plan docs; moved to dev/done when complete
 ```
 
+Requires Python 3.11+. Runtime dependencies are numpy, pandas, pydantic and
+PyYAML — nothing else, and the JS walker has none at all.
+
 ## Status
 
-**6.0.0a1**: all seven design steps are complete: the engine, IR, JS walker,
-Python HTML renderer, and TikZ renderer are conformance-tested against each
-other, and the first consumer (aggregate_api's SPA) renders tables
-client-side from the IR. Pre-release while that adoption settles; further
-changes are `a2`, `a3`, … See `dev/design.md` for the full design,
-`dev/pending.md` for what is outstanding, and `CHANGELOG.md` for progress.
+**Pre-release (`6.0.0a11`).** All seven design steps are complete: the engine,
+IR, JS walker, Python HTML renderer, and TikZ renderer are conformance-tested
+against each other, and the first consumer (aggregate_api's SPA) renders
+tables client-side from the IR. The alpha series is running while that
+adoption settles, so the public API can still shift; `6.0.0` is the point at
+which it stops. See `dev/design.md` for the full design, `dev/pending.md` for
+what is outstanding, and `CHANGELOG.md` for the version-by-version record.

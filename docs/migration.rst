@@ -32,7 +32,15 @@ What carries over
 facade as a keyword.
 
 ``formatters`` accepts the 5.x shapes: a callable, a format string
-(``'{x:.1%}'``), or an int meaning "this many decimals, no grouping".
+(``'{x:.1%}'``), or an int meaning "this many decimals".
+
+.. warning::
+
+   **A bare int now groups.** ``formatters={'paid': 2}`` gives ``1,234.57``
+   in 6.0 where 5.x gave ``1234.57``, because GT2 groups whenever it chooses
+   the format for you. Write ``'.2f'`` for the ungrouped form. This is the
+   one silent behavior change in the facade — everything else either works
+   or warns.
 
 Unrecognized keywords **warn and are ignored** rather than raising, so an old
 call site keeps working while you clean it up.
@@ -106,6 +114,16 @@ Things worth adopting once the port is done:
 - ``notes`` for table footnotes; ``label`` for Quarto cross-references.
 - The bundled JS walker renders the same table client-side, and
   ``irToGridInput(doc)`` hands it to csv-grid for interactive use.
+- ``max_table_width_em`` on :class:`~greater_tables.spec.HouseStyle` is the
+  heir to 5.x's ``max_table_inch_width`` — a target, not a guarantee, since
+  columns that cannot wrap hold their natural width.
+- ``g`` format sugar (``'.3g'``), where ``digits`` counts significant
+  figures rather than decimal places.
+- ``text_ascii_rules`` on ``HouseStyle`` draws the text rendering without
+  box-drawing characters, for LaTeX verbatim blocks and legacy consoles.
+- The display bundle is target-aware — see :ref:`quickstart:notebooks and
+  quarto`. A Quarto PDF render gets TikZ, everything else gets HTML, and
+  ``text/plain`` always rides along so a table never silently vanishes.
 
 Checking a port
 ---------------

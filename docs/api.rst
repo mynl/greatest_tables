@@ -10,7 +10,7 @@ Everything in ``__all__`` is importable from the top-level package:
        TableDoc, Column, Row, Cell, HeadCell, FormatSpec, IR_VERSION,
        render_html, render_text, render_tikz, Etcher,
        canonical_dict, canonical_json, doc_hash, stamp,
-       Fabricator, quick_fab, load_spec,
+       Fabricator, quick_fab, load_spec, load_style, __version__,
    )
 
 Package
@@ -65,6 +65,8 @@ Renderers
 .. automodule:: greater_tables.render.tikz
 
 .. automodule:: greater_tables.render.textlength
+
+.. automodule:: greater_tables.render.widths
 
 .. automodule:: greater_tables.render.etcher
 

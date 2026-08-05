@@ -24,9 +24,13 @@ the text oracle, and the bundled JavaScript walker all draw the same table —
 and are conformance tested against each other.
 
 Designed for **JupyterLab**, **Quarto**, and scripting: the output format is
-auto-detected. Display tables are small and focused — the end result of your
-analysis, after selecting rows and columns, ordering, and labeling. Greater
-Tables gets those raw materials onto the page, cleanly and consistently.
+auto-detected. A notebook or Quarto HTML render gets HTML, a Quarto PDF
+render gets TikZ, and every bundle also carries ``text/plain`` so a table
+degrades to a readable monospace rendering instead of vanishing — see
+:ref:`quickstart:notebooks and quarto`. Display tables are small and focused
+— the end result of your analysis, after selecting rows and columns,
+ordering, and labeling. Greater Tables gets those raw materials onto the
+page, cleanly and consistently.
 
 Also included: **Fabricator**, a flexible test DataFrame generator — specify
 row count, index and column hierarchies, data types, missing values, and more.
@@ -64,7 +68,7 @@ development codename ``greatest-tables``; the package it publishes is
 its source and issue archive at
 `mynl/greater_tables_project <https://github.com/mynl/greater_tables_project>`__.
 
-Licence
+License
 -------
 
 MIT.

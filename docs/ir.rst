@@ -7,7 +7,8 @@ server and a browser. It is a JSON object; in Python it is a frozen pydantic
 no rule weights, no CSS, no fonts.
 
 The committed JSON Schema lives at ``schema/ir-v1.json`` in the repository and
-is diff-guarded in CI against the models.
+is diff-guarded against the live models by the test suite, so an accidental
+IR change cannot ship quietly.
 
 Shape
 -----
@@ -53,8 +54,10 @@ Cell
 FormatSpec
     ``{kind, digits, group, scale, prefix, suffix, negative, null, zero,
     pattern}`` with ``kind`` one of ``int``, ``dec``, ``pct``, ``sci``,
-    ``si``, ``eng``, ``year``, ``date``, ``str``. Applicable by Python and by
-    about forty lines of ``Intl.NumberFormat`` JavaScript.
+    ``gen``, ``si``, ``eng``, ``year``, ``date``, ``str``. Applicable by
+    Python and by about forty lines of ``Intl.NumberFormat`` JavaScript.
+    ``digits`` means decimal places for every kind except ``gen``, python's
+    ``g``, where it counts significant figures.
 
 Rules that matter
 -----------------
