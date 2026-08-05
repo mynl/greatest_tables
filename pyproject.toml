@@ -16,7 +16,7 @@ keywords = [
     "jupyter", "typography", "reporting",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Framework :: Jupyter",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Financial and Insurance Industry",

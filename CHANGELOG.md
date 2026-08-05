@@ -3,6 +3,47 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0] - 2026-08-05
+
+**First stable release of the rewrite.** No code changes since `6.0.0b1` —
+this promotes the beta after review.
+
+The alpha and beta series ran while `aggregate_api` adopted the engine; that
+adoption is settled, so the surface is now fixed. From here 6.x is additive:
+new `TableSpec` / `HouseStyle` fields and new renderers are minor bumps,
+anything that changes an existing rendering is not.
+
+### Changed
+
+- `Development Status` classifier moved from `4 - Beta` to
+  `5 - Production/Stable`.
+
+### The contract, stated once
+
+- **`ir_version` is 1 and stays 1** for all of 6.x. Readers must ignore
+  unknown fields, so additive IR fields can only ever be advisory; anything
+  content-bearing needs a version bump. The schema is committed at
+  `schema/ir-v1.json` and diff-guarded by the test suite.
+- **`greater_tables` 5.3 is frozen and stays on PyPI forever.** Pin
+  `greater-tables<6` to stay there; the import name is identical on both, so
+  `from greater_tables import GT` works either way. `docs/migration.md` is
+  the complete option-by-option map, including the three silent default
+  changes (`formatters` ints now group, `show_index` auto-hides,
+  `header_row` defaults off).
+- Python 3.12+. Runtime dependencies are numpy, pandas, pydantic and PyYAML;
+  the JS walker has none.
+
+### Known gaps, carried into 6.x
+
+- **No CI yet.** 428 tests pass locally and the schema and walker transcripts
+  are guarded by the suite, but nothing runs on push. The 3.12 floor is
+  therefore declared rather than matrix-verified. See `[ci]` in
+  `dev/pending.md`.
+- `HouseStyle.vrule_widths` is a 3-tuple with only 2 usable slots, and
+  `hrule_widths`/`vrule_widths` have no Python route to the HTML weights —
+  both in `dev/pending.md` under `[formats]`.
+- Uppercase `G`/`E` format sugar is still unparsed.
+
 ## [6.0.0b1] - 2026-08-05
 
 Release candidate in all but name: the last look before `6.0.0` goes public

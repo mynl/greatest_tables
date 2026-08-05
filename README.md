@@ -139,10 +139,11 @@ and the JS walker has none at all.
 
 ## Status
 
-**Beta (`6.0.0b1`).** All seven design steps are complete: the engine, IR, JS
+**Stable (`6.0.0`).** All seven design steps are complete: the engine, IR, JS
 walker, Python HTML renderer, and TikZ renderer are conformance-tested against
 each other, and the first consumer (aggregate_api's SPA) renders tables
-client-side from the IR. The public API can still shift until `6.0.0`. See
+client-side from the IR. `ir_version` 1 and the public API are now settled —
+additive changes only within 6.x. See
 [`dev/design.md`](https://github.com/mynl/greatest_tables/blob/main/dev/design.md)
 for the full design,
 [`dev/pending.md`](https://github.com/mynl/greatest_tables/blob/main/dev/pending.md)

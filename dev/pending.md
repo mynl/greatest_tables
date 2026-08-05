@@ -57,15 +57,19 @@ obvious sources. Nice to have, not a release blocker.
 
 ## [publish] greater-tables 6.0 on PyPI — **in flight**
 
-`6.0.0b1` is the last look before `6.0.0`. Remaining sequence: review b1 →
-bump to `6.0.0` → tag → force-push the CLAUDE.md-purged history → flip the
-repo public → upload → import on Read the Docs (see `[rtd]`).
+`6.0.0` is cut and tagged `v6.0.0` locally. Remaining, all Steve's:
 
-Pre-flight, still to do: `twine check`, confirm the README renders on the
-PyPI preview, and confirm 5.3's frozen repo banner still points at the right
-place. `uv build` and the sdist/wheel content check are done — the sdist
-carries `src`, `tests`, `schema`, `js`, `docs` and no `dev/`, and the wheel is
-about 930 KB, half of it `data/tex_list.csv`. **Steve uploads; Claude never
+1. `git push mynl main` and `git push mynl v6.0.0`.
+2. Flip the repo public.
+3. Import on Read the Docs (see `[rtd]`), leaving RTD's *Default branch*
+   empty now that GitHub's default is `main`.
+4. `twine check dist/*`, confirm the README renders on the PyPI preview,
+   then upload.
+5. Confirm 5.3's frozen repo banner still points at the right place.
+
+`uv build` and the sdist/wheel content check are done — the sdist carries
+`src`, `tests`, `schema`, `js`, `docs` and no `dev/`; the wheel is about
+930 KB, half of it `data/tex_list.csv`. **Steve uploads; Claude never
 publishes.**
 
 ## [ci] GitHub Actions
