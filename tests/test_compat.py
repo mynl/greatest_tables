@@ -18,7 +18,25 @@ def test_basic_render(df):
     gt = GT(df, caption='Compat check')
     bundle = gt._repr_mimebundle_()
     assert 'text/html' in bundle and 'Compat check' in bundle['text/html']
+    assert bundle['text/plain'] == render_text(gt.doc)
     assert str(gt) == render_text(gt.doc)
+
+
+def test_repr_is_the_table(df):
+    """Not <GT at 0x…> — scripts and REPLs fall back to repr()."""
+    gt = GT(df)
+    assert repr(gt) == gt.text
+
+
+def test_mimes_pins_the_bundle(df):
+    """The gfm case: the caller knows what GT cannot detect."""
+    gt = GT(df, mimes=('text/plain',))
+    assert set(gt._repr_mimebundle_()) == {'text/plain'}
+
+
+def test_mimes_typo_raises_at_construction(df):
+    with pytest.raises(ValueError, match='unknown MIME type'):
+        GT(df, mimes=('text/plian',))
 
 
 def test_lazy_and_cached(df):

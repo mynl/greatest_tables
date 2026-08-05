@@ -23,7 +23,7 @@ from functools import cached_property
 from .config import load_spec
 from .ir import TableDoc
 from .render.html import render_html
-from .render.notebook import mimebundle
+from .render.notebook import mimebundle, validate_mimes
 from .render.text import render_text
 from .spec import HouseStyle, TableSpec
 
@@ -41,15 +41,20 @@ class GT:
     format string, or int = decimal digits, now grouped). ``config_path``
     loads YAML TableSpec defaults which explicit arguments override.
     ``style`` takes a :class:`~greater_tables.spec.HouseStyle` and is
-    forwarded to every renderer. Additional keyword arguments naming
-    TableSpec fields pass through; unknown ones warn and are ignored
-    (migration aid), and a HouseStyle field name warns with the fix.
+    forwarded to every renderer. ``mimes`` pins what ``_repr_mimebundle_``
+    publishes — None (default) detects the target, an explicit tuple such as
+    ``('text/plain',)`` publishes exactly that. It is a whole-document
+    policy, so the intended form is
+    ``render = partial(GT, mimes=('text/plain',))``. Additional keyword
+    arguments naming TableSpec fields pass through; unknown ones warn and are
+    ignored (migration aid), and a HouseStyle field name warns with the fix.
     """
 
     def __init__(self, data=None, caption=None, label=None, aligners=None,
                  formatters=None, unbreakable=None, ratio_cols=None,
                  year_cols=None, date_cols=None, raw_cols=None,
-                 show_index=None, config_path=None, style=None, **overrides):
+                 show_index=None, config_path=None, style=None, mimes=None,
+                 **overrides):
         base = load_spec(config_path) if config_path else TableSpec()
         kwargs = {
             'caption': caption, 'label': label, 'aligners': aligners,
@@ -71,6 +76,8 @@ class GT:
         merged.update({k: v for k, v in kwargs.items() if v is not None})
         self.spec = TableSpec(**merged)
         self.style = style
+        # validated here, not at display time, so a typo names its call site
+        self.mimes = None if mimes is None else validate_mimes(mimes)
         self._data = data
 
     @cached_property
@@ -98,5 +105,10 @@ class GT:
     def __str__(self) -> str:
         return self.text
 
+    def __repr__(self) -> str:
+        # the table, not <GT at 0x…> — this is what makes GT usable from a
+        # plain script, a REPL, and any consumer that falls back to repr()
+        return self.text
+
     def _repr_mimebundle_(self, include=None, exclude=None):
-        return mimebundle(self.doc, style=self.style)
+        return mimebundle(self.doc, style=self.style, mimes=self.mimes)

@@ -145,14 +145,44 @@ ratio_cols=r'lr|ratio$')`` — since the column tags are regexes.
 Notebooks and Quarto
 --------------------
 
-``GT`` implements ``_repr_mimebundle_``: JupyterLab and Quarto HTML get the
-HTML fragment; a Quarto PDF/LaTeX render gets TikZ. Nothing global is touched
-on import — no pandas options, no warnings filters.
+``GT`` implements ``_repr_mimebundle_``, and always publishes ``text/plain``
+— every measured consumer renders it, so a table never degrades to silence or
+to ``<GT at 0x…>``. What joins it depends on the target:
+
+===================================  ============================
+target                               keys published
+===================================  ============================
+Quarto PDF (``QUARTO_FIG_FORMAT``    ``text/latex, text/plain``
+is ``pdf``)
+JupyterLab, Quarto HTML, anything    ``text/html, text/plain``
+else
+===================================  ============================
+
+``text/html`` is omitted on the PDF path on purpose: pandoc prefers html when
+offered and its LaTeX writer then discards it, so the table would vanish
+entirely. Nothing global is touched on import — no pandas options, no
+warnings filters.
 
 .. code:: python
 
    from greater_tables import GT
    GT(df, caption='Exhibit 1', label='tbl-exhibit-1')   # label = Quarto xref id
+
+One target cannot be detected: ``quarto render --to gfm`` looks exactly like
+an HTML render from the environment, and pandoc's commonmark writer leaks raw
+html into the markdown. Pin the bundle for the whole build:
+
+.. code:: python
+
+   from functools import partial
+   render = partial(GT, mimes=('text/plain',))    # for a gfm document
+
+``mimes=None`` (the default) detects; an explicit tuple publishes exactly
+those types. Members are validated at construction, so a typo raises rather
+than silently producing a bundle nothing can display.
+
+``repr()`` gives the text table too, which is what makes ``GT`` usable from a
+plain script or a REPL.
 
 The stylesheet is embedded with every fragment by default (~2 KB, idempotent
 — safe for saved and cleared notebooks). ``render_html(doc, css='once')``

@@ -3,6 +3,75 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.0.0a9] - 2026-08-05
+
+`dev/plan-display-bundle.md`, work items `[plain-in-bundle]`,
+`[quarto-target]` and `[bundle-policy]` — one coherent change to what GT
+advertises to a display front end. Every decision here comes from a measured
+probe of five consumers (Sphinx html/latex, Quarto html/latex/gfm), which
+lives at `dev/tools/output-modes/`, not from reasoning about what ought to
+happen.
+
+The bundle rules are now:
+
+| target                                | keys published             |
+|---------------------------------------|----------------------------|
+| Quarto PDF (`QUARTO_FIG_FORMAT == 'pdf'`) | `text/latex`, `text/plain` |
+| any other Quarto render, or none      | `text/html`, `text/plain`  |
+| caller passed `mimes=`                | exactly what was asked for |
+
+### Added
+
+- **`text/plain` in every mimebundle.** It is the one type all five measured
+  consumers render, so a table degrades to the monospace rendering rather
+  than to silence. This alone fixes Sphinx HTML and Sphinx LaTeX, which
+  prefer `text/plain` and previously fell through to the default repr — with
+  no caller-side change. Measured identically under Sphinx 8.2.3 and 9.1.0.
+- **`GT.__repr__`** returns the text table. `__str__` already did; without
+  the pair, any consumer falling back to `repr()` showed
+  `<greater_tables.compat.GT at 0x…>`. This is what makes `GT` usable from a
+  plain script or REPL.
+- **`render.notebook.quarto_target()`** → `'pdf' | 'other' | None`. `'other'`
+  deliberately is not `'html'`: `QUARTO_FIG_FORMAT` is `png` for both html
+  and gfm, so the two are indistinguishable from the environment and the
+  return type says so rather than hiding it.
+- **`GT(..., mimes=...)`**, threaded through to `mimebundle`. `None`
+  detects; an explicit tuple publishes exactly those types and suppresses
+  detection. Members are validated at construction, so a typo raises instead
+  of silently publishing a bundle nothing can display. It exists for the one
+  target that cannot be auto-detected — `quarto render --to gfm`, where
+  pandoc's commonmark writer prefers html and leaks a raw `<div class="gt">`
+  into the markdown. A whole-document policy, so the intended form is
+  `render = partial(GT, mimes=('text/plain',))`.
+
+### Changed
+
+**Both of these change output for anyone relying on the old bundle.**
+
+- **An HTML render no longer receives `text/latex`.** `in_quarto()` is true
+  for *any* `QUARTO_*` variable, so `quarto render --to html` was computing
+  and shipping a TikZ payload that was never used — the exact
+  compute-TikZ-then-discard waste this module's design was meant to have
+  fixed, reintroduced one level up. The `text/latex` decision now routes
+  through `quarto_target()`. `in_quarto()` is unchanged and still exported.
+  Net effect on an HTML or notebook render is a speed *gain*: the TikZ pass
+  that disappears costs more than the text pass that arrives.
+- **A Quarto PDF render no longer receives `text/html`.** A `{html, plain}`
+  bundle renders *nothing at all* under Quarto latex — pandoc picks the html
+  and the LaTeX writer discards it, silently. Omitting html means a TikZ
+  failure degrades to text rather than to an empty page.
+
+### Notes
+
+- `mimebundle`'s existing `tikz=` flag is untouched: `True` still means "also
+  give me TikZ" and keeps `text/html`. It is a forcing knob, not a target
+  declaration; `mimes=` is the precise control.
+- `render_text` runs on every render now, and is bounded by
+  `TableSpec.max_rows` (default 200) like every other renderer.
+- **Not measured:** JupyterLab itself, which needs a live front end. It is
+  expected to behave as Quarto HTML does and prefer `text/html`, but that is
+  an inference, not an observation. Worth one manual check before 6.0.0.
+
 ## [6.0.0a8] - 2026-08-03
 
 Steps 3 and 4 of `dev/plan-column-widths.md`. 5.x's `max_table_inch_width`

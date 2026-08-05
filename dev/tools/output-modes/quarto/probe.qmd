@@ -1,0 +1,52 @@
+---
+title: "greater_tables output-mode probe: Quarto"
+format:
+  html: default
+  latex: default
+  gfm: default
+jupyter: python3
+---
+
+Six blocks. A prints a string to stdout, which is the path `qd` takes today. B and C hand the display machinery a real GT object. D and E hand it a shim advertising a chosen mimebundle, to establish what the consumer would do if `text/plain` were on offer. F dumps the `QUARTO_*` environment, which is the only channel Quarto has for telling the kernel what it is rendering.
+
+```{python}
+from fixture import table, Bundle
+from IPython.display import display
+```
+
+## A. print path: a string on stdout
+
+```{python}
+print(table('A print').text)
+```
+
+## B. display path: bare expression
+
+```{python}
+table('B expr')
+```
+
+## C. display path: explicit display()
+
+```{python}
+display(table('C display'))
+```
+
+## D. shim: text/plain only
+
+```{python}
+display(Bundle('D plain', ['text/plain']))
+```
+
+## E. shim: text/html plus text/plain
+
+```{python}
+display(Bundle('E both', ['text/html', 'text/plain']))
+```
+
+## F. what Quarto tells the kernel
+
+```{python}
+import os
+print({k: v for k, v in sorted(os.environ.items()) if k.startswith('QUARTO')})
+```
