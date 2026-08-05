@@ -35,17 +35,30 @@ What remains is account-side and cannot be done from here:
 
 1. Make `mynl/greatest_tables` **public** — RTD needs it. The repo is already
    pushed; the blocker is visibility, not the push.
-2. On readthedocs.org: **Import a Project** → `mynl/greatest_tables`, and set
-   the project slug to **`greater-tables`** (decided 2026-07-31 — the docs URL
-   should match the name people `pip install`, not the repo codename). GT 5.x
-   keeps `greater-tables-project`, so there is no clash.
-3. Confirm the build picks up `.readthedocs.yaml` (Python 3.13, `pip install
-   .[docs]`, PDF format on).
-4. Check the resulting URLs, which are already baked into `pyproject.toml`
-   and both READMEs:
-   - https://greater-tables.readthedocs.io/en/latest/
-   - https://greater-tables.readthedocs.io/en/latest/versions.html
-5. Add the RTD webhook (automatic on GitHub import) so pushes rebuild.
+2. Confirm the build picks up `.readthedocs.yaml` (Python 3.13, `pip install
+   .[docs]`, PDF format on), and leave RTD's *Default branch* empty now that
+   GitHub's default is `main`.
+3. Add the RTD webhook (automatic on GitHub import) so pushes rebuild.
+
+### The slug — deferred to the next release
+
+The 6.0 docs publish under the existing **`greater-tables-project`** slug, so
+every URL in `pyproject.toml`, `README.md` and `docs/index.rst` points there.
+
+The plan of 2026-07-31 was `greater-tables`, matching the name people
+`pip install`. That did not happen, and **an RTD slug cannot be renamed** —
+it is fixed from the project Name at creation and the Name field afterwards
+is cosmetic. Getting `greater-tables` means creating a *new* RTD project with
+that exact Name (the import form prefills the repo name, `greatest_tables`,
+so it has to be overridden at that moment), then repointing five URLs:
+
+- `pyproject.toml` — `Documentation` and `Changelog`
+- `README.md` — the migration link, the Documentation section, the RTD badge
+- `docs/index.rst` — the RTD badge
+
+Because the first two are PyPI release metadata, that change needs a version
+bump; PyPI will not accept a re-upload of an existing version. Hence next
+release, not this one.
 
 ## [artwork] Optional: an example figure for the docs landing page
 

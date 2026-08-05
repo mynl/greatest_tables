@@ -17,6 +17,14 @@ anything that changes an existing rendering is not.
 
 - `Development Status` classifier moved from `4 - Beta` to
   `5 - Production/Stable`.
+- **Docs URL is
+  [greater-tables-project.readthedocs.io](https://greater-tables-project.readthedocs.io/en/latest/),**
+  not the `greater-tables` slug earlier entries promised. A Read the Docs
+  slug is fixed when the project is created and cannot be renamed, so 6.0
+  publishes under the existing project. Moving it means a new RTD project and
+  new release metadata, which is a job for the next version — see `[rtd]` in
+  `dev/pending.md`. Any `greater-tables.readthedocs.io` link in an entry
+  below this one is dead; use the URL above.
 
 ### The contract, stated once
 

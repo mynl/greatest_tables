@@ -92,4 +92,4 @@ Indices and tables
 
 .. |image1| image:: https://img.shields.io/github/commit-activity/y/mynl/greatest_tables
 .. |image2| image:: https://img.shields.io/pypi/v/greater-tables
-.. |image3| image:: https://img.shields.io/readthedocs/greater-tables
+.. |image3| image:: https://img.shields.io/readthedocs/greater-tables-project

@@ -38,9 +38,9 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/mynl/greatest_tables"
-Documentation = "https://greater-tables.readthedocs.io/en/latest/"
+Documentation = "https://greater-tables-project.readthedocs.io/en/latest/"
 "Source Code" = "https://github.com/mynl/greatest_tables"
-Changelog = "https://greater-tables.readthedocs.io/en/latest/versions.html"
+Changelog = "https://greater-tables-project.readthedocs.io/en/latest/versions.html"
 Issues = "https://github.com/mynl/greatest_tables/issues"
 
 # Read the Docs installs the package plus this extra (see .readthedocs.yaml);

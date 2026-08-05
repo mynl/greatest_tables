@@ -2,7 +2,7 @@
 
 ![commit activity](https://img.shields.io/github/commit-activity/y/mynl/greatest_tables)
 ![PyPI version](https://img.shields.io/pypi/v/greater-tables)
-![documentation](https://img.shields.io/readthedocs/greater-tables)
+![documentation](https://img.shields.io/readthedocs/greater-tables-project)
 ![license MIT](https://img.shields.io/badge/license-MIT-blue)
 
 **Greater Tables** produces high-quality static display tables for journal
@@ -90,7 +90,7 @@ no server needed.
   filter, or virtualize, by design.
 
 **Coming from 5.x?**
-[Migrating from greater_tables 5.x](https://greater-tables.readthedocs.io/en/latest/migration.html)
+[Migrating from greater_tables 5.x](https://greater-tables-project.readthedocs.io/en/latest/migration.html)
 is the complete map: every 5.x option, what it did, and where it went — plus
 the three silent default changes to watch for (`formatters` ints now group,
 `show_index` auto-hides, `header_row` defaults off).
@@ -101,7 +101,7 @@ and issue archive stay at
 
 ## Documentation
 
-[ReadtheDocs](https://greater-tables.readthedocs.io/en/latest/) covers design, IR
+[ReadtheDocs](https://greater-tables-project.readthedocs.io/en/latest/) covers design, IR
 reference, migration notes, API.
 
 ## Source
