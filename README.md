@@ -56,7 +56,7 @@ render_tikz(doc)        # table environment + tikzpicture
 doc.model_dump_json()   # ship it to the browser; gt-render.js draws it
 ```
 
-[`demo.html`](https://github.com/mynl/greatest_tables/blob/master/demo.html)
+[`demo.html`](https://github.com/mynl/greatest_tables/blob/main/demo.html)
 is every golden fixture rendered client-side by the walker — self-contained,
 no server needed.
 
@@ -143,9 +143,9 @@ and the JS walker has none at all.
 walker, Python HTML renderer, and TikZ renderer are conformance-tested against
 each other, and the first consumer (aggregate_api's SPA) renders tables
 client-side from the IR. The public API can still shift until `6.0.0`. See
-[`dev/design.md`](https://github.com/mynl/greatest_tables/blob/master/dev/design.md)
+[`dev/design.md`](https://github.com/mynl/greatest_tables/blob/main/dev/design.md)
 for the full design,
-[`dev/pending.md`](https://github.com/mynl/greatest_tables/blob/master/dev/pending.md)
+[`dev/pending.md`](https://github.com/mynl/greatest_tables/blob/main/dev/pending.md)
 for what is outstanding, and the
-[**CHANGELOG**](https://github.com/mynl/greatest_tables/blob/master/CHANGELOG.md)
+[**CHANGELOG**](https://github.com/mynl/greatest_tables/blob/main/CHANGELOG.md)
 for the version-by-version record.
