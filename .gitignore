@@ -23,6 +23,7 @@ docs/_build/
 *.ipynb
 # regenerate-at-will review artifacts (dev/tools/compare_gt5.py, dev/check-widths.qmd)
 compare-gt5.html
+dev/out/
 dev/check-widths.pdf
 dev/check-widths.html
 dev/check-widths.tex
