@@ -199,8 +199,9 @@ than silently producing a bundle nothing can display.
 
       \newcommand{\I}{\vphantom{lp}}
 
-   to the document preamble, or use ``tikz_engine='tabular'``, which carries
-   its own macros inside each picture and needs nothing from the host.
+   to the document preamble. The default ``'tabular'`` engine carries its own
+   macros inside each picture and needs nothing from the host, so this bites
+   only if you have asked for ``tikz_engine='matrix'``.
 
 ``repr()`` gives the text table too, which is what makes ``GT`` usable from a
 plain script or a REPL.
@@ -229,24 +230,26 @@ Two TikZ engines
 
 ``HouseStyle.tikz_engine`` picks how the LaTeX is built:
 
-``'matrix'`` (default)
-   A pgf ``matrix of nodes`` — one addressable node per cell. Every
-   capability, and roughly 290 ms of TeX per table. The cost is materializing
-   the nodes, which is why swapping in ``nicematrix`` or ``tabularray`` does
-   not help: they give every cell a node too.
-
-``'tabular'``
+``'tabular'`` (default since 6.2.0)
    One real ``tabular`` inside a single node. Horizontal rules come from
    booktabs, where TeX already knows the row positions; vertical rules are
    drawn from the node's corners at offsets ``greater_tables`` computes
    itself. About 30x faster, visually equivalent — measured height drift over
    the fixture corpus is ±2%.
 
+``'matrix'``
+   A pgf ``matrix of nodes`` — one addressable node per cell. Roughly 290 ms
+   of TeX per table. The cost is materializing the nodes, which is why
+   swapping in ``nicematrix`` or ``tabularray`` does not help: they give every
+   cell a node too. Ask for it when you need output byte-identical to 6.1.0,
+   or when ``tikz_post_process`` TeX addresses cells by node name — the
+   tabular has one node for the whole table.
+
 .. code:: python
 
    from greater_tables import HouseStyle, render_tikz
 
-   render_tikz(doc, HouseStyle(tikz_engine='tabular'))
+   render_tikz(doc, HouseStyle(tikz_engine='matrix'))
 
 The tabular engine also emits a body that is a literal ``tabular``, so a
 typesetter who does not use TikZ can lift it by deleting the wrapper.

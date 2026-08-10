@@ -34,13 +34,14 @@ def main() -> None:
               golden_tabular):
         d.mkdir(parents=True, exist_ok=True)
     ascii_style = HouseStyle(text_ascii_rules=True)
-    tabular_style = HouseStyle(tikz_engine='tabular')
+    matrix_style = HouseStyle(tikz_engine='matrix')
+    tabular_style = HouseStyle(tikz_engine='tabular')   # the 6.2.0 default
 
     for name, make in EXEMPLARS.items():
         doc = make()
         (golden_ir / f'{name}.json').write_bytes(canonical_json(doc))
         (golden_tikz / f'{name}.tex').write_text(
-            render_tikz(doc), encoding='utf-8', newline='\n')
+            render_tikz(doc, matrix_style), encoding='utf-8', newline='\n')
         (golden_tabular / f'{name}.tex').write_text(
             render_tikz(doc, tabular_style), encoding='utf-8', newline='\n')
         print(f'wrote {name}.json + {name}.tex (both engines)')
@@ -53,7 +54,7 @@ def main() -> None:
         (golden_ascii / f'{name}.txt').write_text(
             render_text(doc, ascii_style), encoding='utf-8', newline='\n')
         (golden_tikz / f'fx-{name}.tex').write_text(
-            render_tikz(doc), encoding='utf-8', newline='\n')
+            render_tikz(doc, matrix_style), encoding='utf-8', newline='\n')
         (golden_tabular / f'fx-{name}.tex').write_text(
             render_tikz(doc, tabular_style), encoding='utf-8', newline='\n')
         print(f'wrote fx-{name} ir + text + text-ascii + tikz (both engines)')

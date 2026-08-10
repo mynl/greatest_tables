@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [6.2.0] - 2026-08-10
+
+**The tabular TikZ engine is now the default.** The side-by-side review that
+6.1.0 was waiting on came back clean, so the fast engine is what you get
+without asking. Invisible in the output, 30x in the build.
+
+### Changed
+
+- **`HouseStyle.tikz_engine` now defaults to `'tabular'`** (was `'matrix'`).
+  Every TikZ render — `render_tikz`, `GT.tikz`, whatever `Etcher` compiles —
+  takes the one-node tabular path unless told otherwise: about 9 ms of TeX per
+  table against 290 ms, measured over 159 real tables.
+
+  Two reasons to keep asking for `'matrix'`: output that must stay
+  byte-identical to 6.1.0, and `tikz_post_process` TeX that addresses cells by
+  pgf node name — the tabular is one node for the whole table. Both engines
+  remain fully supported; switching is one `HouseStyle` field.
+
+- **The embedding document now needs `booktabs` and `array`.** `Etcher` loads
+  both and Quarto's default LaTeX template already does, so most builds notice
+  nothing; a preamble that rolls its own must add them.
+
+- **The `\I` strut trap no longer bites by default.** The tabular engine
+  carries its own `\providecommand`, so a Quarto PDF no longer needs
+  `\newcommand{\I}{\vphantom{lp}}` in the preamble unless it opts back into
+  the matrix. `docs/quickstart.rst` says so where the warning already was.
+
+- **Tests pin the engine they mean.** `tests/test_tikz.py` and the TikZ
+  assertions in `test_rules.py` now ask for `'matrix'` explicitly, and
+  `make_goldens.py` writes `tests/golden/tikz/` with the matrix style. Both
+  golden sets are unchanged on disk — nothing was regenerated, which is the
+  point: the matrix output is still byte-for-byte what 6.0.0 emitted.
+
+### Notes
+
+- Still true of both engines: **neither breaks across pages**, a TikZ node
+  being one unbreakable box. A `longtable` body remains the follow-on.
+
 ## [6.1.0] - 2026-08-09
 
 **A second TikZ engine, about 30x faster, off by default.** Nothing changes

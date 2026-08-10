@@ -3,17 +3,19 @@
 Two emitters share one layout pass (:mod:`.tikz_layout`) and are chosen by
 ``HouseStyle.tikz_engine``:
 
-- ``'matrix'`` (default) — a ``matrix of nodes`` with a zero-height spacer row
-  that fixes column widths, header rows in bold (stub header cells
-  bold-italic), and a trailing phantom column used as a stable anchor rail.
-  Rules are ``\\path`` segments anchored on node corners, shifted by half the
-  row/column separation into the inter-cell gap; colspans sit as empty matrix
-  cells whose label is overlaid centered on the span via ``calc`` midpoints.
-  Every capability GT has, at roughly 290 ms of TeX per table — the cost is
-  materializing one pgf node per cell and nothing else.
-- ``'tabular'`` (:mod:`.tikz_tabular`) — one node holding one real ``tabular``,
-  horizontal rules from booktabs and vertical rules drawn off the node's known
-  geometry. Same output to the eye, roughly 30x faster.
+- ``'tabular'`` (default, :mod:`.tikz_tabular`) — one node holding one real
+  ``tabular``, horizontal rules from booktabs and vertical rules drawn off the
+  node's known geometry. Roughly 30x faster than the matrix, and the same
+  table to the eye.
+- ``'matrix'`` — a ``matrix of nodes`` with a zero-height spacer row that fixes
+  column widths, header rows in bold (stub header cells bold-italic), and a
+  trailing phantom column used as a stable anchor rail. Rules are ``\\path``
+  segments anchored on node corners, shifted by half the row/column separation
+  into the inter-cell gap; colspans sit as empty matrix cells whose label is
+  overlaid centered on the span via ``calc`` midpoints. Roughly 290 ms of TeX
+  per table — the cost is materializing one pgf node per cell and nothing
+  else — but those nodes are addressable, which ``tikz_post_process`` TeX may
+  rely on.
 
 Cells flagged ``math`` re-wrap as ``$...$``; everything else is TeX-escaped.
 The matrix emitter's output expects the ``\\I`` strut macro

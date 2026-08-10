@@ -109,9 +109,9 @@ def test_renderers_agree_with_the_policy(levels, policy):
     assert sum(bool(_TEXT_RULE.match(ln)) for ln in text.splitlines()) == want
 
     # zero every other rule weight so the remaining paths are break rules only
-    bare = HouseStyle(max_rule_depth=policy, frame_rule=0, head_rule=0,
-                      stub_rule=0, total_rule=0, spanner_rule=0,
-                      vrule_widths=(0, 0, 0))
+    bare = HouseStyle(tikz_engine='matrix', max_rule_depth=policy,
+                      frame_rule=0, head_rule=0, stub_rule=0, total_rule=0,
+                      spanner_rule=0, vrule_widths=(0, 0, 0))
     assert render_tikz(doc, bare).count('\\path[draw') == want
 
 
@@ -155,6 +155,7 @@ def test_first_row_of_each_section_never_rules():
     assert render_html(doc, css='none').count('gt-break-') == 1
     text = render_text(doc)
     assert sum(bool(_TEXT_RULE.match(ln)) for ln in text.splitlines()) == 1
-    bare = HouseStyle(frame_rule=0, head_rule=0, stub_rule=0, total_rule=0,
-                      spanner_rule=0, vrule_widths=(0, 0, 0))
+    bare = HouseStyle(tikz_engine='matrix', frame_rule=0, head_rule=0,
+                      stub_rule=0, total_rule=0, spanner_rule=0,
+                      vrule_widths=(0, 0, 0))
     assert render_tikz(doc, bare).count('\\path[draw') == 1

@@ -5,7 +5,7 @@ import warnings
 import pandas as pd
 import pytest
 
-from greater_tables import Fabricator, render_text
+from greater_tables import Fabricator, HouseStyle, render_text
 from greater_tables.compat import GT
 
 
@@ -89,4 +89,6 @@ def test_config_path(tmp_path, df):
 
 def test_tikz_renders(df):
     tikz = GT(df).tikz
-    assert '\\begin{tikzpicture}' in tikz and '\\matrix' in tikz
+    assert '\\begin{tikzpicture}' in tikz and '\\begin{tabular}' in tikz
+    matrix = GT(df, style=HouseStyle(tikz_engine='matrix')).tikz
+    assert '\\matrix' in matrix

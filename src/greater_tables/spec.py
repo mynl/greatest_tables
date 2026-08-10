@@ -174,16 +174,19 @@ class HouseStyle:
         it measure. Ems because every other geometry field here is ems: at
         11pt, 8 inches is about 52em.
     tikz_engine
-        Which TikZ emitter renders the table. ``'matrix'`` (default) is the
-        ``matrix of nodes`` renderer: one pgf node per cell, every capability,
-        and about 290 ms of TeX per table — materializing the nodes *is* the
-        cost, which is why swapping table packages does not help.
-        ``'tabular'`` puts one real ``tabular`` inside a single node, taking
-        horizontal rules from booktabs and drawing only the vertical rules in
-        TikZ; it renders the same table to the eye roughly 30x faster, and its
-        body is a literal ``tabular`` so the ``.tex`` lifts straight into a
-        document that does not use TikZ. The one thing neither can do is break
-        across pages — a node is one unbreakable box.
+        Which TikZ emitter renders the table. ``'tabular'`` (default) puts one
+        real ``tabular`` inside a single node, taking horizontal rules from
+        booktabs and drawing only the vertical rules in TikZ; its body is a
+        literal ``tabular``, so the ``.tex`` lifts straight into a document
+        that does not use TikZ, and it needs ``booktabs`` and ``array`` in the
+        preamble. ``'matrix'`` is the original ``matrix of nodes`` renderer:
+        one addressable pgf node per cell, and about 290 ms of TeX per table
+        against the tabular's 9 — materializing the nodes *is* the cost, which
+        is why swapping table packages does not help. Keep ``'matrix'`` for
+        output that must stay byte-identical to 6.1.0, or for
+        ``tikz_post_process`` TeX that addresses cells by node name, which
+        only the matrix emits. The one thing neither can do is break across
+        pages — a node is one unbreakable box.
     text_ascii_rules
         Draw the text rendering with ASCII only — ``=`` and ``-`` for heavy
         and light rules, ``|`` for the stub divider, ``<<flag>>`` for the row
@@ -204,7 +207,7 @@ class HouseStyle:
     # --- text renderer
     text_ascii_rules: bool = False
     # --- TikZ engine, geometry (em) and container
-    tikz_engine: Literal['matrix', 'tabular'] = 'matrix'
+    tikz_engine: Literal['matrix', 'tabular'] = 'tabular'
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0
     tikz_row_sep: float = 0.25

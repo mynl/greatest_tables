@@ -97,7 +97,8 @@ resolves cell text, spans, column widths and scale — and owns the only
 character-based width estimation in the package (``TextLength``), since PDF
 has no browser to measure for it. ``render/tikz.py`` emits a pgf ``matrix of
 nodes``; ``render/tikz_tabular.py`` emits one ``tabular`` inside one node.
-``HouseStyle.tikz_engine`` chooses, and ``render_tikz`` dispatches.
+``HouseStyle.tikz_engine`` chooses — ``'tabular'`` since 6.2.0 — and
+``render_tikz`` dispatches.
 
 The split exists because the cost of the matrix is *per addressable pgf node*
 and nothing else — measured at about 290 ms per table, where the same table

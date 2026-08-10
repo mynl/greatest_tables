@@ -69,9 +69,10 @@ def test_tabular_golden(name):
 
 
 def test_engine_dispatch():
-    """render_tikz honors the house style; the default is still the matrix."""
+    """render_tikz honors the house style; the default is the tabular."""
     doc = load('loss-dev')
     assert render_tikz(doc) == render_tikz(doc, HouseStyle())
+    assert render_tikz(doc) == render_tikz(doc, TABULAR)      # 6.2.0 default
     assert '\\matrix (gt' in render_tikz(doc, HouseStyle(tikz_engine='matrix'))
     assert render_tikz(doc, TABULAR) == render_tikz_tabular(doc, TABULAR)
     assert '\\matrix (gt' not in render_tikz(doc, TABULAR)
