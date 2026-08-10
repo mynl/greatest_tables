@@ -74,9 +74,6 @@ class TableSpec:
     cell_flags
         Callable ``(position, column_label, value) -> flags`` for per-cell
         emphasis/muted. The ``neg`` flag is stamped automatically.
-    math
-        ``'auto'`` detects ``$...$``-wrapped string cells as math;
-        ``'off'`` disables.
     include_raw
         Carry raw values in body cells: False (default), True/'data'
         (numeric/date/bool data columns), or an explicit column list.
@@ -122,7 +119,6 @@ class TableSpec:
     table_float_format: FormatSpec | Mapping | str | int | None = None
     row_flags: Mapping[int, Sequence[str]] | Callable[[int, Any], Sequence[str]] | None = None
     cell_flags: Callable[[int, Hashable, Any], Sequence[str]] | None = None
-    math: str = 'auto'
     include_raw: bool | str | Sequence[Hashable] = False
     max_rows: int | None = 200
     sparsify: bool = True

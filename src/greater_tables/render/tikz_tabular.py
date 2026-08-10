@@ -209,7 +209,7 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     if doc.caption is not None:
         cap = doc.caption if isinstance(doc.caption, Cell) else Cell(text=doc.caption)
         label = f'\\label{{{doc.label}}}' if doc.label else ''
-        w(f'\\caption{{{cell_tex(cap)}}}{label}')
+        w(f'\\caption{{{cell_tex(cap, math=doc.math != "off")}}}{label}')
     w('\\begin{tikzpicture}[transform shape]')
     w(f'\\node[inner sep=0pt, scale={lay.scale}] ({lay.name}) {{%')
     # inside the node, so the picture is self-contained: lift the
@@ -316,6 +316,6 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         w(style.tikz_post_process)
     w('\\end{tikzpicture}')
     for note in doc.notes:
-        w(f'\\par{{\\footnotesize {tex_escape(note)}}}')
+        w(f'\\par{{\\footnotesize {tex_escape(note, math=doc.math != "off")}}}')
     w(f'\\end{{{style.tikz_container_env}}}')
     return '\n'.join(out) + '\n'

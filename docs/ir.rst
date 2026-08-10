@@ -44,12 +44,14 @@ Row
 
 Cell
     ``text`` (plain unicode, **unescaped** — each renderer escapes for its own
-    target), optional ``raw``, ``rowspan``/``colspan``, ``flags``
-    (``neg``, ``emphasis``, ``muted``), ``math`` (TeX source without
-    delimiters), ``html`` (default false; the walker additionally requires
-    ``allowHtml``, so injection is off by default). A cell that is plain text
-    with no other attributes serializes as a bare string — the shorthand
-    roughly halves the payload.
+    target; unless the document says ``math='off'`` it may carry inline
+    ``$...$`` spans, which renderers segment via
+    :mod:`greater_tables.mathspans`), optional ``raw``,
+    ``rowspan``/``colspan``, ``flags`` (``neg``, ``emphasis``, ``muted``),
+    ``math`` (whole-cell TeX source without delimiters), ``html`` (default
+    false; the walker additionally requires ``allowHtml``, so injection is
+    off by default). A cell that is plain text with no other attributes
+    serializes as a bare string — the shorthand roughly halves the payload.
 
 FormatSpec
     ``{kind, digits, group, scale, prefix, suffix, negative, null, zero,

@@ -124,7 +124,7 @@ def _place(rows: tuple[Row, ...], ncols: int):
     return grid, norm_rows
 
 
-def _decorate(cell: Cell) -> str:
+def _decorate(cell: Cell | HeadCell) -> str:
     text = cell.text
     if cell.math:
         text = f'${text}$'
@@ -146,7 +146,7 @@ def _solve_widths(doc: TableDoc, *grids) -> tuple[list[int], list[int]]:
         col = 0
         for hc in row:
             if hc.colspan == 1:
-                widths[col] = max(widths[col], len(hc.text))
+                widths[col] = max(widths[col], len(_decorate(hc)))
             col += hc.colspan
     for grid in grids:
         for r, grow in enumerate(grid):
@@ -163,7 +163,7 @@ def _solve_widths(doc: TableDoc, *grids) -> tuple[list[int], list[int]]:
         col = 0
         for hc in row:
             if hc.colspan > 1:
-                ensure(col, hc.colspan, len(hc.text))
+                ensure(col, hc.colspan, len(_decorate(hc)))
             col += hc.colspan
     for grid in grids:
         for r, grow in enumerate(grid):
@@ -199,7 +199,7 @@ def _head_line(row: tuple[HeadCell, ...], doc: TableDoc, widths, gaps,
         else:
             align = 'l'
         parts.append((_gap_str(gaps[col], cs) if col else '')
-                     + _pad(hc.text, span_w, align))
+                     + _pad(_decorate(hc), span_w, align))
         col += hc.colspan
     return ''.join(parts).rstrip()
 

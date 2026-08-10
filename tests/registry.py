@@ -52,6 +52,19 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
         'expr': [r'$\alpha+\beta$', 'plain', r'$e^{i\pi}$'],
         'link': ['<a href="x">x</a>', '<b>b</b>', 'none']}),
         TableSpec(html_cols=['link']))
+    # the inline-math matrix: math in a column name (inline and whole-cell),
+    # the stub name, stub values and body cells; currency that must never
+    # become math; an escaped literal dollar beside a real span
+    fx['inline-math'] = (
+        pd.DataFrame({
+            r'formula $f(x)$': [r'$\psi(u)$', r'ruin $\psi(u)$ falls',
+                                'plain'],
+            r'$\beta$': [r'escaped \$100 and $y=1$', '$10 to $20',
+                         '$5-$10'],
+        }, index=pd.Index([r'case $\alpha$', 'case b', 'case c'],
+                          name=r'label $\ell$')),
+        TableSpec(caption=r'Mixed $x^2$ caption',
+                  notes=[r'A note with $\sigma$ inside.']))
     base = Fabricator(seed=111).make(5, 'ff')
     totals = pd.concat([base, base.sum().to_frame('Total').T])
     fx['totals'] = (totals, TableSpec(row_flags={-1: ('total',)}))

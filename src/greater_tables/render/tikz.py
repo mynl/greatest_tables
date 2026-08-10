@@ -17,7 +17,9 @@ Two emitters share one layout pass (:mod:`.tikz_layout`) and are chosen by
   else — but those nodes are addressable, which ``tikz_post_process`` TeX may
   rely on.
 
-Cells flagged ``math`` re-wrap as ``$...$``; everything else is TeX-escaped.
+Cells flagged ``math`` re-wrap as ``$...$``; other text is TeX-escaped with
+inline ``$...$`` spans passed through as math (``mathspans``, unless the
+document says ``math='off'``).
 The matrix emitter's output expects the ``\\I`` strut macro
 (``TIKZ_PREAMBLE``) — Etcher's standalone template defines it, and a Quarto
 document must include it once in the preamble. The tabular emitter carries its
@@ -106,7 +108,7 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     if doc.caption is not None:
         cap = doc.caption if isinstance(doc.caption, Cell) else Cell(text=doc.caption)
         label = f'\\label{{{doc.label}}}' if doc.label else ''
-        w(f'\\caption{{{cell_tex(cap)}}}{label}')
+        w(f'\\caption{{{cell_tex(cap, math=doc.math != "off")}}}{label}')
     w('\\begin{tikzpicture}[')
     w('    auto, transform shape,')
     w('    nosep/.style={inner sep=0},')
@@ -223,6 +225,6 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         w(style.tikz_post_process)
     w('\\end{tikzpicture}')
     for note in doc.notes:
-        w(f'\\par{{\\footnotesize {tex_escape(note)}}}')
+        w(f'\\par{{\\footnotesize {tex_escape(note, math=doc.math != "off")}}}')
     w(f'\\end{{{style.tikz_container_env}}}')
     return '\n'.join(out) + '\n'

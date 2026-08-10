@@ -73,6 +73,20 @@ The engine
     defaults omitted) and the 12-hex content hash. No time salt — this is
     what makes golden files, caching, and ETags possible.
 
+**Math is part of the IR contract.** A cell that is entirely one ``$...$``
+span is detected at build time: delimiters stripped, ``math: true`` stamped —
+the fast path KaTeX and the width estimator consume directly. Everything
+else keeps its text verbatim, which means any ``text`` field (cells, headers,
+caption, notes) **may contain inline math delimiters, and a renderer is
+responsible for segmenting them**. The shared rule is
+:mod:`greater_tables.mathspans` — tight delimiters, no interior ``$``, no
+digit after the close, ``\$`` for a literal dollar — and the JS walker
+carries a visually identical regex as a lockstep pair. ``TableDoc.math``
+(default ``'auto'``) is the document-wide off switch for foreign documents
+whose dollars are all literal; it stops *detection*, not explicit ``math``
+flags. The width estimator segments with the same rule, so what is measured
+is what is set.
+
 Renderers
 ---------
 
@@ -152,8 +166,11 @@ the same ``gt-*`` class vocabulary as the Python renderer, and throws on an
 unrecognized ``ir_version``. One delegated click listener on the instance
 root dispatches ``gt:cellclick`` custom events. Math cells arrive as TeX and
 render through an injected ``katex`` object, or fall back to ``\(...\)`` for
-page MathJax. Cell ``html`` flags are honored only when ``allowHtml`` is
-passed — injection-safe by default.
+page MathJax; inline ``$...$`` spans inside prose become child ``gt-math``
+spans, KaTeX called per span (the regex is a lockstep twin of
+``mathspans.MATH_RE``, and its lookbehinds need Safari ≥ 16.4). Cell ``html``
+flags are honored only when ``allowHtml`` is passed — injection-safe by
+default.
 
 The walker does **not** sort, filter, or virtualize, and never will: a table
 you want to sort is an interactive grid, which is the sibling ``csv-grid``

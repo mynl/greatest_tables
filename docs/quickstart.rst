@@ -100,6 +100,29 @@ follows Python and counts **significant figures**, so ``'.3g'`` gives
 would give three decimal places in both cases. Uppercase ``G`` and ``E`` are
 not parsed.
 
+TeX math just works
+-------------------
+
+``$...$`` (and display ``$$...$$``) is math wherever text appears — body
+cells, stub cells, column headers, captions and notes; whole-cell
+(``$\psi(u)$``) and mid-sentence (``the survival $\psi(u)$ falls``) alike.
+There is nothing to configure: each renderer draws its own math (native TeX
+in TikZ, MathJax/KaTeX ``\(...\)`` spans in HTML) and escapes the prose
+around it.
+
+Currency is safe because the rule is strict: delimiters must be tight
+against their content, a span may not contain another ``$``, and a closing
+``$`` may not be followed by a digit — so ``$10 to $20`` and ``$5-$10`` set
+as prices, escaped for TeX, never italicized. Write ``\$`` for a literal
+dollar next to a real span (``escaped \$100 and $y=1$``).
+
+The corners, so they are on record: ``$x$2`` reads as currency (write
+``$x$ 2``); space-padded ``$ loose $`` is prose, not math; ``\(...\)`` /
+``\[...\]`` are not recognized (write the ``$`` forms); and a ``\$``
+*inside* a span is unsupported — use ``\mathdollar``. A document whose
+dollars are all literal (a ticker table) can opt out wholesale with the
+IR-level ``TableDoc.math='off'``.
+
 House rules, one per kind
 -------------------------
 

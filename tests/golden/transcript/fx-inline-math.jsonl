@@ -1,0 +1,13 @@
+{"caption":"Mixed $x^2$ caption","label":null,"hash":"f925c107f4b3","notes":["A note with $\\sigma$ inside."]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-l","gt-stub","gt-stub-end"],"text":"label \\(\\ell\\)"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-l"],"text":"formula \\(f(x)\\)"}
+{"s":"head","r":0,"c":2,"tag":"th","classes":["gt-data","gt-l","gt-math"],"text":"\\(\\beta\\)"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"case \\(\\alpha\\)"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-math","gt-wrap"],"text":"\\(\\psi(u)\\)"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"escaped $100 and \\(y=1\\)"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"case b"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"ruin \\(\\psi(u)\\) falls"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"$10 to $20"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"case c"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"plain"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"$5-$10"}

@@ -290,7 +290,7 @@ def tex_dir(tmp_path_factory):
 
 @pytest.mark.skipif(TECTONIC is None, reason='tectonic not available')
 @pytest.mark.parametrize('name', ['loss-dev', 'fx-both-mi', 'fx-wide-floats',
-                                  'fx-tex', 'fx-deep-stub'])
+                                  'fx-tex', 'fx-deep-stub', 'fx-inline-math'])
 def test_compiles(name, tex_dir):
     pdf = Etcher(render_tikz(load(name), TABULAR), base_path=tex_dir).compile()
     assert pdf.exists() and pdf.stat().st_size > 1000

@@ -225,7 +225,7 @@ flags) are computed by the engine and each renderer maps them to weights.
 | `font_caption` | `1.1` | Caption font size (em) | **gone** | Caption is `font-weight: 600`, size inherited. |
 | `font_bold_index` | `False` | Bold the index columns | **gone** | Style `.gt .gt-stub` yourself. |
 | `caption_align` | `'center'` | Caption alignment | **CSS** `--gt-caption-align` | ⚠️ **Default changed to `left`.** |
-| `tex_to_html` | `None` | Hook mapping non-math TeX/markdown to HTML | **gone** | Math is auto-detected (`math='auto'`) and each renderer draws it — MathJax/KaTeX in HTML, native in TikZ. For genuine HTML in a cell, use `TableSpec.html_cols`. |
+| `tex_to_html` | `None` | Hook mapping non-math TeX/markdown to HTML | **gone** | Math — whole-cell and inline — is always auto-detected and each renderer draws it: MathJax/KaTeX in HTML, native in TikZ. For genuine HTML in a cell, use `TableSpec.html_cols`. |
 
 ### Engineering format
 
@@ -301,7 +301,7 @@ setup.
 | `tikz_post_process` | `''` | Extra commands at the bottom of the picture | **HouseStyle** `.tikz_post_process` | |
 | `tikz_hrule` | `None` | Explicit list of row indices to rule | **gone** | Rules follow row `break_depth` and the `total` flag. If you were hand-placing a rule above a total row, use `row_flags={-1: ['total']}` and it is drawn everywhere, in every renderer. |
 | `tikz_vrule` | `None` | Explicit list of column indices to rule | **gone** | Follows column `break_depth`. |
-| `tikz_escape_tex` | `True` | Escape `%`, `_`, `\` outside math | **gone** | Cells carry plain unicode in the IR and **each renderer escapes for its own target**; math rides in a separate `math` flag. Escaping is no longer a user decision. |
+| `tikz_escape_tex` | `True` | Escape `%`, `_`, `\` outside math | **gone** | Cells carry plain unicode in the IR and **each renderer escapes for its own target**; whole-cell math rides in a separate `math` flag and, since 7.0, inline `$...$` spans work everywhere again — GT5's span-splitting escape, with the currency bug fixed (`$10 to $20` is never math). Escaping is no longer a user decision. One deliberate drop from GT5: `\[...\]` is no longer recognized (GT5's TeX path protected it; `\(...\)` never actually worked there) — write the `$` forms. |
 
 ## New in 6.0 — no 5.x equivalent
 
@@ -311,7 +311,7 @@ setup.
 | `TableSpec.html_cols` | Columns whose cells carry raw HTML (renderers still gate on their own allow-html). |
 | `TableSpec.row_flags` | Mark rows `total` / `subtotal` / `emphasis` / `muted`, by position or a callable. Semantic — this is what deleted aggregate_api's BeautifulSoup post-pass. |
 | `TableSpec.cell_flags` | Same per cell. The `neg` flag is stamped automatically. |
-| `TableSpec.math` | `'auto'` detects `$…$` string cells as math; `'off'` disables. |
+| `TableSpec.math` | **Removed in 7.0.** Math detection is always on — whole-cell and inline, in cells, headers, captions and notes. The escape hatch moved into the IR: `TableDoc.math='off'` (default `'auto'`) turns every `$` literal for hand-authored/foreign documents; the builder always emits the default. |
 | `TableSpec.include_raw` | Ship machine values alongside formatted text, for clients. Data columns only. |
 | `HouseStyle.max_rule_depth` | How deep the hierarchy is ruled. `'auto'` (default) rules every break except the innermost stub level — no rules on a single-level index, depth 0 only on two levels, depths 0 and 1 on three. An int is literal, so `0` on a single-level index rules every row whose stub changed; `None` draws no internal rules. `max_vrule_depth` is the same for column-group verticals. The walker takes the same values as `opts.maxRuleDepth`. |
 | `HouseStyle.total_rule`, `.spanner_rule` | Weights for the rule above a total row and under a column-group label. |

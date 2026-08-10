@@ -1,5 +1,5 @@
 // js/src/gt-render.js
-var GT_RENDER_VERSION = "6.0.0a8";
+var GT_RENDER_VERSION = "7.0.0";
 var IR_VERSION_SUPPORTED = 1;
 var N_RULE_SLOTS = 3;
 var N_VRULE_SLOTS = 2;
@@ -30,12 +30,41 @@ var ROW_FLAG_CLASS = {
   muted: "gt-muted"
 };
 var cellOf = (c) => typeof c === "string" ? { text: c } : c;
+var MATH_RE = new RegExp(
+  "(?<!\\\\)\\$\\$(?!\\s)([^$]*[^$\\s])(?<!\\\\)\\$\\$(?!\\d)|(?<!\\\\)\\$(?!\\s)([^$]*[^$\\s])(?<!\\\\)\\$(?!\\d)",
+  // inline
+  "g"
+);
+function mathSegments(text) {
+  const out = [];
+  let pos = 0;
+  MATH_RE.lastIndex = 0;
+  let m;
+  while ((m = MATH_RE.exec(text)) !== null) {
+    if (m.index > pos) {
+      out.push([false, text.slice(pos, m.index).replace(/\\\$/g, "$")]);
+    }
+    out.push([true, m[1] !== void 0 ? m[1] : m[2]]);
+    pos = m.index + m[0].length;
+  }
+  if (pos < text.length || pos === 0) {
+    out.push([false, text.slice(pos).replace(/\\\$/g, "$")]);
+  }
+  return out;
+}
 function renderTable(doc, opts = {}) {
   if (doc.ir_version !== IR_VERSION_SUPPORTED) {
     throw new Error(`gt-render supports ir_version ${IR_VERSION_SUPPORTED}, got ${doc.ir_version}`);
   }
   doc = Object.assign(
-    { caption: null, label: null, hash: null, notes: [], foot: [] },
+    {
+      caption: null,
+      label: null,
+      hash: null,
+      notes: [],
+      foot: [],
+      math: "auto"
+    },
     doc
   );
   const d = opts.document || (typeof document !== "undefined" ? document : null);
@@ -43,6 +72,7 @@ function renderTable(doc, opts = {}) {
   const maxRuleDepth = opts.maxRuleDepth === void 0 ? "auto" : opts.maxRuleDepth;
   const maxVruleDepth = opts.maxVruleDepth === void 0 ? 1 : opts.maxVruleDepth;
   const cols = doc.columns;
+  const mathOn = doc.math !== "off";
   const el = d.createElement("div");
   el.className = "gt";
   if (doc.hash) el.setAttribute("data-gt-hash", doc.hash);
@@ -52,7 +82,7 @@ function renderTable(doc, opts = {}) {
   if (doc.caption != null) {
     const cap = d.createElement("caption");
     cap.className = "gt-caption";
-    fillCell(d, cap, cellOf(doc.caption), opts);
+    fillCell(d, cap, cellOf(doc.caption), opts, mathOn);
     table.appendChild(cap);
   }
   if (doc.head.length) {
@@ -73,7 +103,7 @@ function renderTable(doc, opts = {}) {
           hc,
           maxVruleDepth
         ).join(" ");
-        fillCell(d, th, hc, opts);
+        fillCell(d, th, hc, opts, mathOn);
         tr.appendChild(th);
         col += colspan;
       }
@@ -97,7 +127,7 @@ function renderTable(doc, opts = {}) {
     notes.className = "gt-notes";
     for (const n of doc.notes) {
       const div = d.createElement("div");
-      div.textContent = n;
+      fillCell(d, div, { text: n }, opts, mathOn);
       notes.appendChild(div);
     }
     el.appendChild(notes);
@@ -154,6 +184,7 @@ function renderTable(doc, opts = {}) {
 }
 function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
   const ncols = doc.columns.length;
+  const mathOn = doc.math !== "off";
   const pending = new Array(ncols).fill(0);
   const carry = new Array(ncols).fill("");
   rows.forEach((row, r) => {
@@ -181,7 +212,7 @@ function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
         cell,
         depths.maxVruleDepth
       ).join(" ");
-      fillCell(d, td, cell, opts);
+      fillCell(d, td, cell, opts, mathOn);
       tr.appendChild(td);
       for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
         texts[cc] = cell.text;
@@ -201,18 +232,33 @@ function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
     parent.appendChild(tr);
   });
 }
-function fillCell(d, node, cell, opts) {
+function fillCell(d, node, cell, opts, mathOn) {
   if (cell.math) {
     node.classList.add("gt-math");
-    if (opts.katex) {
-      opts.katex.render(cell.text, node, { throwOnError: false });
-    } else {
-      node.textContent = `\\(${cell.text}\\)`;
+    renderMath(d, node, cell.text, opts);
+  } else if (cell.html) {
+    if (opts.allowHtml) node.innerHTML = cell.text;
+    else node.textContent = cell.text;
+  } else if (mathOn && cell.text.includes("$")) {
+    for (const [isMath, run] of mathSegments(cell.text)) {
+      if (isMath) {
+        const span = d.createElement("span");
+        span.className = "gt-math";
+        renderMath(d, span, run, opts);
+        node.appendChild(span);
+      } else if (run) {
+        node.appendChild(d.createTextNode(run));
+      }
     }
-  } else if (cell.html && opts.allowHtml) {
-    node.innerHTML = cell.text;
   } else {
     node.textContent = cell.text;
+  }
+}
+function renderMath(d, node, tex, opts) {
+  if (opts.katex) {
+    opts.katex.render(tex, node, { throwOnError: false });
+  } else {
+    node.textContent = `\\(${tex}\\)`;
   }
 }
 function columnClasses(col, maxVruleDepth) {

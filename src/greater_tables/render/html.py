@@ -24,6 +24,7 @@ import html as _html
 import re
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..mathspans import segments
 from ..spec import HouseStyle
 from . import css as _css
 from .policy import rule_slot, vrule_slot
@@ -68,6 +69,7 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
     """
     global _css_emitted
     style = style or HouseStyle()
+    math_on = doc.math != 'off'
     ncols = len(doc.columns)
     custom = _width_properties(style)
     sty = _Styler(inline_css, custom)
@@ -87,7 +89,7 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
 
     if doc.caption is not None:
         cap = doc.caption if isinstance(doc.caption, Cell) else Cell(text=doc.caption)
-        cls, content = _cell_content(cap, ['gt-caption'], allow_html)
+        cls, content = _cell_content(cap, ['gt-caption'], allow_html, math_on)
         out.append(f'<caption class="{" ".join(cls)}"'
                    f'{sty.attr(".gt-caption")}>{content}</caption>')
 
@@ -102,7 +104,7 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
                 colspan = hc.colspan
                 cls = _head_classes(doc, col, colspan, leaf, hc,
                                     style.max_vrule_depth)
-                cls, content = _cell_content(hc, cls, allow_html)
+                cls, content = _cell_content(hc, cls, allow_html, math_on)
                 span = f' colspan="{colspan}"' if colspan > 1 else ''
                 cells.append(f'<th{span} class="{" ".join(cls)}"'
                              f'{sty.th(cls, leaf)}>{content}</th>')
@@ -120,7 +122,8 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
     out.append('</table>')
 
     if doc.notes:
-        notes = ''.join(f'<div>{_esc(n)}</div>' for n in doc.notes)
+        notes = ''.join(f'<div>{_span_html(n, math_on)}</div>'
+                        for n in doc.notes)
         out.append(f'<div class="gt-notes"{sty.attr(".gt-notes")}>{notes}</div>')
     out.append('</div>')
     return '\n'.join(out)
@@ -144,7 +147,8 @@ def _section(doc: TableDoc, rows: tuple[Row, ...], sty: _Styler,
                 break
             cls = _body_classes(doc, col, cell.colspan, cell,
                                 style.max_vrule_depth)
-            cls, content = _cell_content(cell, cls, allow_html)
+            cls, content = _cell_content(cell, cls, allow_html,
+                                         doc.math != 'off')
             span = ''
             if cell.colspan > 1:
                 span += f' colspan="{cell.colspan}"'
@@ -163,14 +167,25 @@ def _section(doc: TableDoc, rows: tuple[Row, ...], sty: _Styler,
     return out
 
 
-def _cell_content(cell: Cell | HeadCell, cls: list[str],
-                  allow_html: bool) -> tuple[list[str], str]:
+def _cell_content(cell: Cell | HeadCell, cls: list[str], allow_html: bool,
+                  math: bool = True) -> tuple[list[str], str]:
     """Return (classes, inner html) applying math/html handling (walker port)."""
     if cell.math:
         return cls + ['gt-math'], _esc(f'\\({cell.text}\\)')
-    if cell.html and allow_html:
-        return cls, cell.text
-    return cls, _esc(cell.text)
+    if cell.html:
+        # user markup: its $s are literal, never segmented
+        return (cls, cell.text) if allow_html else (cls, _esc(cell.text))
+    return cls, _span_html(cell.text, math)
+
+
+def _span_html(text: str, math: bool) -> str:
+    """Escape prose; with ``math`` on, ``$...$`` spans emit as gt-math spans."""
+    if not math or '$' not in text:
+        return _esc(text)
+    return ''.join(
+        '<span class="gt-math">' + _esc('\\(' + run + '\\)') + '</span>'
+        if is_math else _esc(run)
+        for is_math, run in segments(text))
 
 
 def _esc(text: str) -> str:

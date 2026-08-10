@@ -73,9 +73,13 @@ class Cell(BaseModel):
     """One body/foot cell.
 
     ``text`` is plain unicode — each renderer applies its own escaping.
-    ``raw`` is only present when the owning column advertises ``raw: true``;
-    an explicit JSON ``null`` there means a missing value, which is distinct
-    from the field being absent (tracked via pydantic's fields-set).
+    Unless the document says ``math='off'``, ``text`` may contain inline
+    ``$...$`` / ``$$...$$`` math spans (and ``\\$`` for a literal dollar);
+    a renderer is responsible for segmenting them — the shared rule is
+    :mod:`greater_tables.mathspans`. ``raw`` is only present when the owning
+    column advertises ``raw: true``; an explicit JSON ``null`` there means a
+    missing value, which is distinct from the field being absent (tracked
+    via pydantic's fields-set).
     """
 
     model_config = _FROZEN
@@ -145,6 +149,13 @@ class TableDoc(BaseModel):
 
     ``hash`` is stamped by :func:`greater_tables.engine.hashing.stamp`
     (sha256 over canonical bytes, ``hash`` and ``generator`` excluded).
+
+    ``math`` is the document-wide switch for ``$``-delimiter interpretation
+    in every ``text`` field (cells, headers, caption, notes). The builder
+    always emits the default ``'auto'``; ``'off'`` is the escape hatch for
+    hand-authored and foreign documents whose dollars are all literal (a
+    ticker table). ``'off'`` stops renderers *detecting* delimiters — an
+    explicit ``Cell.math`` / ``HeadCell.math`` flag is honored regardless.
     """
 
     model_config = _FROZEN
@@ -155,6 +166,7 @@ class TableDoc(BaseModel):
     caption: str | Cell | None = None
     label: str | None = None
     notes: tuple[str, ...] = ()
+    math: Literal['auto', 'off'] = 'auto'
     n_stub_levels: int = Field(ge=0)
     n_head_levels: int = Field(ge=0)
     columns: tuple[Column, ...]
@@ -334,6 +346,8 @@ def canonical_dict(doc: TableDoc, *, include_hash: bool = True) -> dict[str, Any
         out['label'] = _nfc(doc.label)
     if doc.notes:
         out['notes'] = [_nfc(n) for n in doc.notes]
+    if doc.math != 'auto':
+        out['math'] = doc.math
     out['columns'] = [_canonical_column(c) for c in doc.columns]
     out['head'] = [[_canonical_model(c, always=('text',)) for c in level]
                    for level in doc.head]

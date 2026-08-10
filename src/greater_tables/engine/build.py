@@ -16,6 +16,7 @@ import pandas as pd
 
 from .._version import __version__
 from ..ir import Cell, Column, FormatSpec, HeadCell, Row, TableDoc
+from ..mathspans import whole_cell
 from ..spec import TableSpec
 from . import dtypes as dt
 from . import structure as st
@@ -23,8 +24,6 @@ from .formats import apply_format, infer_numeric_format, parse_sugar
 from .hashing import stamp
 
 __all__ = ['build']
-
-_MATH_RE = re.compile(r'^\$([^$]+)\$$')
 
 
 def build(data, spec: TableSpec | None = None) -> TableDoc:
@@ -131,9 +130,9 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
             if level < n_head - 1:
                 cells.append(HeadCell(colspan=n_stub))
             else:
-                cells.extend(HeadCell(text=str(n)) for n in stub_names)
+                cells.extend(_head_cell(str(n)) for n in stub_names)
         merge = spec.sparsify_columns and level < n_head - 1
-        cells.extend(HeadCell(text=t, colspan=s) if s > 1 else HeadCell(text=t)
+        cells.extend(_head_cell(t, s)
                      for t, s in st.head_groups(data_names, level, merge))
         head.append(tuple(cells))
 
@@ -325,13 +324,10 @@ def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
     else:
         text = apply_format(value, fspec)
     math_flag = False
-    if (spec.math == 'auto' and isinstance(value, str) and not html):
-        m = _MATH_RE.match(value)
-        # a trailing backslash would escape the closing delimiter downstream
-        # ($...\$ in TeX, \(...\\) in MathJax) — not well-formed math, keep
-        # as plain text
-        if m and not m.group(1).endswith('\\'):
-            text, math_flag = m.group(1), True
+    if isinstance(value, str) and not html:
+        tex = whole_cell(value)
+        if tex is not None:
+            text, math_flag = tex, True
     flags = tuple(dict.fromkeys(
         (('neg',) if _is_negative(value, dtype) else ()) + tuple(extra)))
     kwargs: dict[str, Any] = {}
@@ -339,6 +335,14 @@ def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
         kwargs['raw'] = _json_raw(value, raw_dtype)
     return Cell(text=text, rowspan=rowspan, flags=flags, math=math_flag,
                 html=html, **kwargs)
+
+
+def _head_cell(text: str, colspan: int = 1) -> HeadCell:
+    """Header text gets the same whole-cell math detection body cells do."""
+    tex = whole_cell(text)
+    if tex is not None:
+        return HeadCell(text=tex, colspan=colspan, math=True)
+    return HeadCell(text=text, colspan=colspan)
 
 
 def _is_negative(value, dtype) -> bool:

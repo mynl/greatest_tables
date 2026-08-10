@@ -3,6 +3,91 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.0.0] - 2026-08-10
+
+**TeX math just works — inline, in headers, everywhere.** GT5 could set
+`the survival $\psi(u)$ falls` mid-sentence; the 6.0 rewrite silently lost
+that, kept only whole-cell math, and never flagged math in a column header
+at all. Both are back, on one shared rule
+(`src/greater_tables/mathspans.py`) used by the builder, all four
+renderers *and* the width estimator — so what is measured is what is set.
+Major version because `TableSpec.math` is gone (see Removed).
+
+### Added
+
+- **Inline `$...$` / `$$...$$` spans in any text**: body cells, stub cells,
+  column headers, captions and notes, through TikZ (both engines), HTML, the
+  JS walker (KaTeX called per span) and the width estimator. `\$` is a
+  literal dollar; renderers spend the escape and re-escape for their target
+  (`\$100` → `\$100` in TeX, `$100` in HTML).
+- **Math in column headers.** `HeadCell.math` was in the IR from 6.0 and
+  every renderer honored it — only the builder never set it. A header now
+  behaves exactly like a body cell, whole-cell (`$\beta$`) and inline
+  (`formula $f(x)$`) alike; the text renderer prints math headers with
+  their `$`s restored.
+- **`TableDoc.math: 'auto' | 'off'`** (default `'auto'`, omitted from
+  canonical JSON — no golden or hash churn). The document-level escape
+  hatch for hand-authored/foreign IR whose dollars are all literal (ticker
+  tables): `'off'` stops delimiter *detection* in every renderer and the
+  estimator; explicit `Cell.math` flags are still honored. The builder
+  always emits the default.
+- Fixture `inline-math` exercising the full matrix — inline and whole-cell
+  math in body, stub, header, caption and notes beside currency and an
+  escaped dollar — plus `tests/test_inline_math.py` (39 tests) and compile
+  coverage under tectonic in both TikZ engines.
+
+### Changed
+
+- **The math rule is stricter than GT5's, deliberately.** Delimiters must be
+  tight against their content (`$ loose $` and `$x $` are prose now — the
+  6.x whole-cell detector accepted them), no interior `$`, and a closing
+  `$` followed by a digit reads as currency. Consequence: **GT5's currency
+  bug is fixed** — `$10 to $20` and `$5-$10` set as escaped prices, never
+  as `10to` in math italic. The accepted corner: `$x$2` reads as currency;
+  write `$x$ 2`.
+- **Whole-cell display math `$$x$$` is now detected** (6.x only matched
+  single-`$`); display spans render with each target's *inline* delimiters —
+  display primitives misbehave inside a table cell.
+- The width estimator (`render/textlength.py`) segments with the shared
+  rule instead of its GT5 loose-regex copy, closing the
+  estimator-vs-renderer disagreement on currency cells (`'$10 to $20'`
+  measured 3278 milli-em as phantom math; literal glyphs are 4478).
+  `display_milli` / `token_milli` gain a `math` flag; `_milli_math` is now
+  public `math_milli`.
+
+### Removed
+
+- **`TableSpec.math`.** Detection is always on — that is what "just works"
+  means — so the spec knob goes; `TableSpec(math=...)` now raises
+  `TypeError`. The `'off'` escape hatch moved into the IR as
+  `TableDoc.math` (see Added). Also dropped from the YAML config template
+  hints.
+
+### Fixed
+
+- Math in column headers (never detected in 6.x — `build.py` constructed
+  `HeadCell` without ever running the detector).
+- The text renderer now decorates head cells, so a math header prints as
+  `$\beta$` instead of silently dropping its delimiters.
+- The walker renders notes through the same cell path as Python (they were
+  plain `textContent`), so a note's math renders in the browser too.
+- Escaped dollars inside math-adjacent prose no longer emit a stray
+  backslash in TeX (`escaped \$100` renders as “escaped $100”).
+
+### Notes
+
+- `\(...\)` / `\[...\]` are **not** recognized — write the `$` forms. GT5's
+  TeX path protected `\[...\]` (deliberate) while `\(...\)` only ever
+  worked by accident in HTML; if `\[...\]` is ever wanted back it is a
+  contained change in `mathspans.py`. A literal `\$` *inside* a math span
+  is also unsupported (`[^$]` excludes it) — use `\mathdollar`.
+- The walker's inline regex uses lookbehind: Safari ≥ 16.4. It is a
+  visually-identical lockstep twin of the Python pattern, enforced by the
+  DOM-transcript conformance goldens; `GT_RENDER_VERSION` is now `7.0.0`.
+- Zero committed goldens changed; the only golden additions are the new
+  `inline-math` fixture's files. `schema/ir-v1.json` gains the `math`
+  document field.
+
 ## [6.2.0] - 2026-08-10
 
 **The tabular TikZ engine is now the default.** The side-by-side review that

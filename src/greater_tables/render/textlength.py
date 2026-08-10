@@ -35,8 +35,10 @@ from __future__ import annotations
 import html
 import re
 
-__all__ = ['display_milli', 'text_display_len', 'token_display_len',
-           'token_milli']
+from ..mathspans import segments
+
+__all__ = ['display_milli', 'math_milli', 'text_display_len',
+           'token_display_len', 'token_milli']
 
 TEX_SIMPLE_GLYPHS = {
     'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
@@ -80,7 +82,6 @@ _WIDTH_TABLE = {
     '…': 1000, '‰': 1000,
 }
 _DEFAULT_WIDTH = 600
-_MATH_RE = re.compile(r'(\$\$.*?\$\$)|(\$.*?\$)')
 _TAG_RE = re.compile(r'<[^>]*>')
 _TOKEN_RE = re.compile(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.')
 
@@ -101,30 +102,28 @@ def token_display_len(s: str) -> float:
 
 def estimate_math_width(tex: str) -> float:
     """Token-count a TeX math fragment into an em estimate."""
-    return _milli_math(tex) / _EM
+    return math_milli(tex) / _EM
 
 
-def display_milli(s: str) -> int:
-    """Display width in milli-ems — the exact, integer accumulation."""
+def display_milli(s: str, math: bool = True) -> int:
+    """Display width in milli-ems — the exact, integer accumulation.
+
+    ``math`` gates ``$``-span interpretation (mathspans, the same rule the
+    renderers emit by, so what is measured is what is set); pass False for a
+    ``TableDoc.math='off'`` document or html-flag text, where every ``$``
+    is a glyph.
+    """
     if not isinstance(s, str):
         s = str(s)
     if '$' not in s and '<' not in s and '&' not in s:
         return sum(_char(c) for c in s)
-    total = 0
-    for part in _MATH_RE.split(s):
-        if not part:
-            continue
-        if part.startswith('$$') and part.endswith('$$'):
-            total += _milli_math(part[2:-2])
-        elif part.startswith('$') and part.endswith('$'):
-            total += _milli_math(part[1:-1])
-        else:
-            decoded = html.unescape(_TAG_RE.sub('', part))
-            total += sum(_char(c) for c in decoded)
-    return total
+    if not math:
+        return _milli_prose(s)
+    return sum(math_milli(run) if is_math else _milli_prose(run)
+               for is_math, run in segments(s))
 
 
-def token_milli(s: str) -> int:
+def token_milli(s: str, math: bool = True) -> int:
     """Widest whitespace-delimited token in milli-ems.
 
     A ``$...$`` span counts as one token: math is set as a box and does not
@@ -135,19 +134,23 @@ def token_milli(s: str) -> int:
     if '$' not in s and '<' not in s and '&' not in s:
         return max((sum(_char(c) for c in tok) for tok in s.split()), default=0)
     widest = 0
-    for part in _MATH_RE.split(s):
-        if not part:
-            continue
-        if part.startswith('$') and part.endswith('$'):
-            widest = max(widest, display_milli(part))
+    for is_math, run in (segments(s) if math else [(False, s)]):
+        if is_math:
+            widest = max(widest, math_milli(run))
         else:
-            decoded = html.unescape(_TAG_RE.sub('', part))
+            decoded = html.unescape(_TAG_RE.sub('', run))
             for tok in decoded.split():
                 widest = max(widest, sum(_char(c) for c in tok))
     return widest
 
 
-def _milli_math(tex: str) -> int:
+def _milli_prose(run: str) -> int:
+    """Prose width: tags stripped, entities decoded, glyphs accumulated."""
+    decoded = html.unescape(_TAG_RE.sub('', run))
+    return sum(_char(c) for c in decoded)
+
+
+def math_milli(tex: str) -> int:
     """TeX math fragment width in milli-ems."""
     width = 0
     for tok in _TOKEN_RE.findall(tex):

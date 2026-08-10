@@ -22,7 +22,7 @@
  *   opts.maxVruleDepth  same for column-group verticals (default 1)
  */
 
-export const GT_RENDER_VERSION = '6.0.0a8';
+export const GT_RENDER_VERSION = '7.0.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 /* Rule policy — a line-for-line port of src/greater_tables/render/policy.py.
@@ -63,6 +63,36 @@ const ROW_FLAG_CLASS = { total: 'gt-total', subtotal: 'gt-subtotal',
 
 const cellOf = c => (typeof c === 'string' ? { text: c } : c);
 
+/* Inline-math rule — keep visually identical to MATH_RE in
+ * src/greater_tables/mathspans.py (a lockstep pair; the DOM-transcript
+ * conformance goldens enforce the agreement). Tight delimiters, no interior
+ * $, no digit after the close, \$ never delimits. The lookbehinds need
+ * Safari >= 16.4 — do not "simplify" them away. */
+const MATH_RE = new RegExp(
+    '(?<!\\\\)\\$\\$(?!\\s)([^$]*[^$\\s])(?<!\\\\)\\$\\$(?!\\d)'  // display
+    + '|(?<!\\\\)\\$(?!\\s)([^$]*[^$\\s])(?<!\\\\)\\$(?!\\d)',    // inline
+    'g');
+
+/* (isMath, run) pairs: math runs delimiter-stripped, prose \$ unescaped —
+ * a port of mathspans.segments. */
+function mathSegments(text) {
+    const out = [];
+    let pos = 0;
+    MATH_RE.lastIndex = 0;
+    let m;
+    while ((m = MATH_RE.exec(text)) !== null) {
+        if (m.index > pos) {
+            out.push([false, text.slice(pos, m.index).replace(/\\\$/g, '$')]);
+        }
+        out.push([true, m[1] !== undefined ? m[1] : m[2]]);
+        pos = m.index + m[0].length;
+    }
+    if (pos < text.length || pos === 0) {
+        out.push([false, text.slice(pos).replace(/\\\$/g, '$')]);
+    }
+    return out;
+}
+
 export function renderTable(doc, opts = {}) {
     if (doc.ir_version !== IR_VERSION_SUPPORTED) {
         throw new Error(`gt-render supports ir_version ${IR_VERSION_SUPPORTED}, ` +
@@ -70,7 +100,8 @@ export function renderTable(doc, opts = {}) {
     }
     // canonical JSON omits defaulted fields — restore them
     doc = Object.assign(
-        { caption: null, label: null, hash: null, notes: [], foot: [] }, doc);
+        { caption: null, label: null, hash: null, notes: [], foot: [],
+          math: 'auto' }, doc);
     const d = opts.document ||
         (typeof document !== 'undefined' ? document : null);
     if (!d) throw new Error('no document available — pass opts.document');
@@ -79,6 +110,7 @@ export function renderTable(doc, opts = {}) {
     const maxVruleDepth = opts.maxVruleDepth === undefined ? 1 : opts.maxVruleDepth;
 
     const cols = doc.columns;
+    const mathOn = doc.math !== 'off';
     const el = d.createElement('div');
     el.className = 'gt';
     if (doc.hash) el.setAttribute('data-gt-hash', doc.hash);
@@ -90,7 +122,7 @@ export function renderTable(doc, opts = {}) {
     if (doc.caption != null) {
         const cap = d.createElement('caption');
         cap.className = 'gt-caption';
-        fillCell(d, cap, cellOf(doc.caption), opts);
+        fillCell(d, cap, cellOf(doc.caption), opts, mathOn);
         table.appendChild(cap);
     }
 
@@ -107,7 +139,7 @@ export function renderTable(doc, opts = {}) {
                 if (colspan > 1) th.setAttribute('colspan', String(colspan));
                 th.className = headClasses(doc, col, colspan, leaf, hc,
                                            maxVruleDepth).join(' ');
-                fillCell(d, th, hc, opts);
+                fillCell(d, th, hc, opts, mathOn);
                 tr.appendChild(th);
                 col += colspan;
             }
@@ -134,7 +166,7 @@ export function renderTable(doc, opts = {}) {
         notes.className = 'gt-notes';
         for (const n of doc.notes) {
             const div = d.createElement('div');
-            div.textContent = n;
+            fillCell(d, div, { text: n }, opts, mathOn);   // notes get math too
             notes.appendChild(div);
         }
         el.appendChild(notes);
@@ -189,6 +221,7 @@ export function renderTable(doc, opts = {}) {
 
 function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
     const ncols = doc.columns.length;
+    const mathOn = doc.math !== 'off';
     const pending = new Array(ncols).fill(0);   // rows still covered per column
     const carry = new Array(ncols).fill('');    // text carried down rowspans
     rows.forEach((row, r) => {
@@ -211,7 +244,7 @@ function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
             if (rowspan > 1) td.setAttribute('rowspan', String(rowspan));
             td.className = bodyClasses(doc, col, colspan, cell,
                                        depths.maxVruleDepth).join(' ');
-            fillCell(d, td, cell, opts);
+            fillCell(d, td, cell, opts, mathOn);
             tr.appendChild(td);
             for (let cc = col; cc < Math.min(ncols, col + colspan); cc++) {
                 texts[cc] = cell.text;
@@ -232,18 +265,35 @@ function renderSection(d, parent, doc, rows, resolved, rawRes, opts, depths) {
     });
 }
 
-function fillCell(d, node, cell, opts) {
+function fillCell(d, node, cell, opts, mathOn) {
     if (cell.math) {
         node.classList.add('gt-math');
-        if (opts.katex) {
-            opts.katex.render(cell.text, node, { throwOnError: false });
-        } else {
-            node.textContent = `\\(${cell.text}\\)`;
+        renderMath(d, node, cell.text, opts);
+    } else if (cell.html) {
+        // user markup: its $s are literal, never segmented
+        if (opts.allowHtml) node.innerHTML = cell.text;
+        else node.textContent = cell.text;
+    } else if (mathOn && cell.text.includes('$')) {
+        for (const [isMath, run] of mathSegments(cell.text)) {
+            if (isMath) {
+                const span = d.createElement('span');
+                span.className = 'gt-math';
+                renderMath(d, span, run, opts);
+                node.appendChild(span);
+            } else if (run) {
+                node.appendChild(d.createTextNode(run));
+            }
         }
-    } else if (cell.html && opts.allowHtml) {
-        node.innerHTML = cell.text;
     } else {
         node.textContent = cell.text;
+    }
+}
+
+function renderMath(d, node, tex, opts) {
+    if (opts.katex) {
+        opts.katex.render(tex, node, { throwOnError: false });
+    } else {
+        node.textContent = `\\(${tex}\\)`;
     }
 }
 

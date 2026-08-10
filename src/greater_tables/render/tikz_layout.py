@@ -24,8 +24,9 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..mathspans import segments
 from ..spec import HouseStyle
-from .textlength import display_milli, token_milli
+from .textlength import display_milli, math_milli, token_milli
 from .widths import solve_widths
 
 __all__ = ['W2TIKZ', 'Geometry', 'Layout', 'MATRIX_GEOMETRY',
@@ -82,17 +83,34 @@ def style_for(weight: float) -> str | None:
     return W2TIKZ.get(weight, 'very thin')
 
 
-def tex_escape(text: str) -> str:
-    return _TEX_RE.sub(lambda m: _TEX_SPECIALS[m.group(0)], text)
+def _escape_run(run: str) -> str:
+    return _TEX_RE.sub(lambda m: _TEX_SPECIALS[m.group(0)], run)
 
 
-def cell_tex(cell: Cell | HeadCell, row_flags: tuple = ()) -> str:
+def tex_escape(text: str, math: bool = True) -> str:
+    """TeX-escape prose; with ``math`` on, ``$...$`` spans re-emit as math.
+
+    ``math=False`` (a ``TableDoc.math='off'`` document, or html-flag text)
+    escapes wholesale — every ``$`` becomes ``\\$``.
+    """
+    if not math or '$' not in text:
+        return _escape_run(text)
+    return ''.join(f'${run}$' if is_math else _escape_run(run)
+                   for is_math, run in segments(text))
+
+
+def cell_tex(cell: Cell | HeadCell, row_flags: tuple = (),
+             math: bool = True) -> str:
     """TeX for one cell: math re-wrapped, html stripped, flags styled."""
     if cell.math:
         tex = f'${cell.text}$'
     else:
-        text = _TAG_RE.sub('', cell.text) if cell.html else cell.text
-        tex = tex_escape(text).replace(chr(0xa0), '~')
+        if cell.html:
+            # user markup: strip tags, never segment — its $s are literal
+            text, math = _TAG_RE.sub('', cell.text), False
+        else:
+            text = cell.text
+        tex = tex_escape(text, math).replace(chr(0xa0), '~')
     flags = set(cell.flags) | set(row_flags)
     if flags & {'total', 'subtotal', 'emphasis'}:
         tex = f'\\bfseries {tex}'
@@ -103,18 +121,21 @@ def cell_tex(cell: Cell | HeadCell, row_flags: tuple = ()) -> str:
 
 def _measured(cell: Cell | HeadCell) -> str:
     """The text whose width the renderer must reserve room for."""
-    return f'${cell.text}$' if cell.math else _TAG_RE.sub('', cell.text) \
-        if cell.html else cell.text
+    return _TAG_RE.sub('', cell.text) if cell.html else cell.text
 
 
-def _display_milli(cell: Cell | HeadCell) -> int:
+def _display_milli(cell: Cell | HeadCell, math: bool = True) -> int:
     """Milli-em width of a cell's content set on one line."""
-    return display_milli(_measured(cell))
+    if cell.math:
+        return math_milli(cell.text)
+    return display_milli(_measured(cell), math=math and not cell.html)
 
 
-def _token_milli(cell: Cell | HeadCell) -> int:
+def _token_milli(cell: Cell | HeadCell, math: bool = True) -> int:
     """Milli-em width of a cell's widest unbreakable token."""
-    return token_milli(_measured(cell))
+    if cell.math:
+        return math_milli(cell.text)
+    return token_milli(_measured(cell), math=math and not cell.html)
 
 
 def _bold(milli: int) -> int:
@@ -311,6 +332,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     n_head = len(doc.head)
     n_stub = doc.n_stub_levels
     csep = style.tikz_column_sep
+    math_on = doc.math != 'off'
 
     # ---- lay out cells into an ncols-wide text matrix + overlay spans;
     # measure display widths at placement (true visual column known here)
@@ -328,7 +350,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
         leaf = level == n_head - 1
         col = 0
         for hc in hrow:
-            tex = cell_tex(hc)
+            tex = cell_tex(hc, math=math_on)
             if not leaf and hc.text:
                 spanners.append((level, col, hc.colspan))
             if hc.colspan == 1:
@@ -336,12 +358,13 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                 # a header cell has a text width and wraps, so a long heading
                 # only floors its column at its widest word — it does not drag
                 # a column of six-em numbers out to the width of its title
-                hmax[col] = max(hmax[col], _bold(_token_milli(hc)))
+                hmax[col] = max(hmax[col], _bold(_token_milli(hc, math_on)))
             elif hc.text:
                 overlays.append((2 + level, col, hc.colspan, tex))
                 # an overlaid label carries no text width: it cannot wrap, so
                 # it constrains the whole group it spans
-                spans.append((col, hc.colspan, _bold(_display_milli(hc))))
+                spans.append((col, hc.colspan,
+                              _bold(_display_milli(hc, math_on))))
             col += hc.colspan
         grid.append(cells)
 
@@ -357,16 +380,16 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                 col += 1
             if col >= ncols:
                 break
-            tex = cell_tex(cell, row.flags)
+            tex = cell_tex(cell, row.flags, math=math_on)
             if cell.colspan == 1:
                 cells[col] = tex
-                width = _display_milli(cell)
+                width = _display_milli(cell, math_on)
                 samples[col].append(width)
                 wmax[col] = max(wmax[col], width)
-                tokmax[col] = max(tokmax[col], _token_milli(cell))
+                tokmax[col] = max(tokmax[col], _token_milli(cell, math_on))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
-                spans.append((col, cell.colspan, _display_milli(cell)))
+                spans.append((col, cell.colspan, _display_milli(cell, math_on)))
             for cc in range(col, min(ncols, col + cell.colspan)):
                 if cell.rowspan > 1:
                     pending[cc] = cell.rowspan

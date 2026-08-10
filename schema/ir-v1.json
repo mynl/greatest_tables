@@ -2,7 +2,7 @@
   "$defs": {
     "Cell": {
       "additionalProperties": false,
-      "description": "One body/foot cell.\n\n``text`` is plain unicode \u2014 each renderer applies its own escaping.\n``raw`` is only present when the owning column advertises ``raw: true``;\nan explicit JSON ``null`` there means a missing value, which is distinct\nfrom the field being absent (tracked via pydantic's fields-set).",
+      "description": "One body/foot cell.\n\n``text`` is plain unicode \u2014 each renderer applies its own escaping.\nUnless the document says ``math='off'``, ``text`` may contain inline\n``$...$`` / ``$$...$$`` math spans (and ``\\$`` for a literal dollar);\na renderer is responsible for segmenting them \u2014 the shared rule is\n:mod:`greater_tables.mathspans`. ``raw`` is only present when the owning\ncolumn advertises ``raw: true``; an explicit JSON ``null`` there means a\nmissing value, which is distinct from the field being absent (tracked\nvia pydantic's fields-set).",
       "properties": {
         "colspan": {
           "default": 1,
@@ -417,7 +417,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "The table document \u2014 the versioned IR a semantic engine emits.\n\n``hash`` is stamped by :func:`greater_tables.engine.hashing.stamp`\n(sha256 over canonical bytes, ``hash`` and ``generator`` excluded).",
+  "description": "The table document \u2014 the versioned IR a semantic engine emits.\n\n``hash`` is stamped by :func:`greater_tables.engine.hashing.stamp`\n(sha256 over canonical bytes, ``hash`` and ``generator`` excluded).\n\n``math`` is the document-wide switch for ``$``-delimiter interpretation\nin every ``text`` field (cells, headers, caption, notes). The builder\nalways emits the default ``'auto'``; ``'off'`` is the escape hatch for\nhand-authored and foreign documents whose dollars are all literal (a\nticker table). ``'off'`` stops renderers *detecting* delimiters \u2014 an\nexplicit ``Cell.math`` / ``HeadCell.math`` flag is honored regardless.",
   "properties": {
     "body": {
       "items": {
@@ -507,6 +507,15 @@
       ],
       "default": null,
       "title": "Label"
+    },
+    "math": {
+      "default": "auto",
+      "enum": [
+        "auto",
+        "off"
+      ],
+      "title": "Math",
+      "type": "string"
     },
     "n_head_levels": {
       "minimum": 0,

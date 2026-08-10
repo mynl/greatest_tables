@@ -75,7 +75,6 @@ _HINTS = {
     'date_format': "'%d %b %Y'   # date tag, date and datetime dtypes",
     'row_flags': None,           # code, not config
     'cell_flags': None,
-    'math': "auto           # or 'off'",
     'include_raw': "false         # true/'data' or an explicit column list",
     'max_rows': '200           # null = unlimited',
     'sparsify': 'true',
