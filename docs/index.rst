@@ -40,6 +40,7 @@ row count, index and column hierarchies, data types, missing values, and more.
    :caption: Contents:
 
    quickstart
+   cheatsheet
    design
    ir
    migration
