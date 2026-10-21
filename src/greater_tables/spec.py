@@ -157,6 +157,13 @@ class HouseStyle:
         How wide a single *wrapping* column may get. TikZ reads it directly;
         HTML emits it as ``--gt-prose-max``. One column, not the table — the
         table is ``max_table_width_em``.
+    min_prose_width_em
+        How narrow a width budget may squeeze a column of prose, in ems: below
+        it, the TikZ table scales instead. Without it a budget narrowed prose
+        to its longest word, setting a description a word or two a line
+        before it scaled anything. A column naturally narrower keeps its
+        natural width, and a longer word still widens it. TikZ only: HTML
+        has no scale to fall back on, so a minimum there would only overflow.
     max_table_width_em
         Total table width to aim for, in ems, or None (default) for no
         target. **A target, not a guarantee**: columns that must not wrap —
@@ -211,6 +218,7 @@ class HouseStyle:
     max_vrule_depth: int | None = 1
     # --- widths, shared by every renderer that has an opinion about them
     max_prose_width_em: float = 18.0
+    min_prose_width_em: float = 8.0
     max_table_width_em: float | None = None
     # --- text renderer
     text_ascii_rules: bool = False

@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.5.0] - 2026-10-21
+
+### Added
+
+- `HouseStyle.min_prose_width_em`, default 8: a TikZ width budget narrows a column of prose no
+  further than this, and scales the table instead. A budget used to narrow prose to its longest
+  word, a word or two a line; `wrap-low` at 24em ran a page and a half. **Output changes** for
+  budgeted tables whose prose was below 8em: wider prose, a smaller scale, a shorter table. Set
+  it to 0 for the old behavior. HTML is unaffected.
+
 ## [7.4.0] - 2026-10-21
 
 **Output changes** for float columns holding a value too small for their decimals, and for HTML

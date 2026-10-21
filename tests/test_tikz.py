@@ -238,6 +238,20 @@ def test_budget_respects_the_longest_word():
             assert width >= 2.0
 
 
+def test_budget_stops_narrowing_prose_at_its_minimum():
+    """Past min_prose_width_em the table scales: at 24em, prose narrowed to
+    its longest word used to set a word or two a line at full scale."""
+    doc = load('fx-wrap-low')
+    _total, scale, cols = emitted(doc, 24)
+    for col, width in zip(doc.columns, cols):
+        if col.wrap and col.role == 'data':
+            assert width >= HouseStyle().min_prose_width_em
+    # a minimum of 0 narrows to the longest word again, and scales less
+    style = HouseStyle(tikz_engine='matrix', max_table_width_em=24, min_prose_width_em=0)
+    narrowest = float(re.search(r'scale=([\d.]+),', render_tikz(doc, style)).group(1))
+    assert scale < narrowest
+
+
 def test_no_budget_is_unchanged():
     doc = load('fx-wrap-low')
     assert render_tikz(doc, MATRIX) == \

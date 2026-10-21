@@ -444,13 +444,17 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
         return max(measure + _WIDTH_PAD, header + _WIDTH_PAD, _MIN_COL)
 
     naturals = [sized(w, h) for w, h in zip(wmax, hmax)]
-    # how narrow a column may go: prose down to its widest single word, since
-    # TeX will not hyphenate inside one; anything unbreakable, not at all. A
-    # column of labels, no cell longer than _LABEL_WORDS words, counts as
-    # unbreakable too: wrapping "40M xs 10M" or "Portfolio A" costs a line in
-    # every row it touches and saves an em or two, so a budget scales the
-    # table instead and keeps the narrowing for prose, which can afford it
-    floors = [sized(t, h) if c.wrap and k > _LABEL_WORDS else n
+    # how narrow a column may go: prose down to min_prose_width_em, or its
+    # widest single word if that is wider, since TeX will not hyphenate inside
+    # one; anything unbreakable, not at all. Below the minimum the table
+    # scales instead: prose at its longest word sets a word or two a line,
+    # which nobody would choose. A column of labels, no cell longer than
+    # _LABEL_WORDS words, counts as unbreakable: wrapping "40M xs 10M" or
+    # "Portfolio A" costs a line in every row it touches and saves an em or
+    # two, so a budget scales the table and keeps the narrowing for prose
+    prose_min = round(style.min_prose_width_em * _EM)
+    floors = [max(sized(t, h), min(n, prose_min)) if c.wrap and k > _LABEL_WORDS
+              else n
               for t, h, n, k, c in zip(tokmax, hmax, naturals, wordmax, doc.columns)]
     # the prose cap is a ceiling, not a target — but a single word beats it,
     # because the alternative is an overfull box

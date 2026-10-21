@@ -298,3 +298,12 @@ Each is a defect seen in the rendered gallery, with the fixture that shows it.
   - Gallery: tables numbered; long-heading section (five fixtures) and sideways section added.
   - Engine timing on DOOB, 48 tables, tectonic: matrix 9.56s, tabular 0.73s, empty document
     0.63s: about 190ms against 2ms per table per TeX pass.
+- 2026-10-21, second round, from Steve's look at the house-style PDF (Tables 12, 18, 32, 39):
+  - 7.1.5: bold rows measured bold. "Subtotal" (Table 12) cleared the stub rule by 0.2pt in STIX
+    Two and 2.7pt in Times; its estimate was roman.
+  - 7.2.0 to 7.4.0: `dev/done/plan-font-metrics.md`, ruled "go with yours" and executed; its log
+    holds the detail. The Unit wraps (Table 18) and the heading hyphenation (Table 39) were the
+    face, not the layout: the Times gallery had neither.
+  - 7.5.0: `min_prose_width_em`, default 8. Table 32 (wrap-low at 24em) narrowed prose to its
+    longest word, set a word or two a line at full scale, ran a page and a half and off the
+    bottom of the page. With the minimum it sets 8em prose at 0.75.
