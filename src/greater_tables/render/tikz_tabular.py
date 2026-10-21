@@ -147,6 +147,33 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     def em(milli: int) -> str:
         return f'{milli / _EM:.2f}em'
 
+    def mc_preamble(c0: int, c1: int, inner: str) -> str:
+        """A \\multicolumn preamble over 0-based columns ``c0..c1`` whose
+        entry is exactly as wide as the body entries it replaces.
+
+        A \\multicolumn drops the inter-column material of the columns it
+        covers and adds a \\tabcolsep on each side unless an @{} says
+        otherwise. Left bare, a header over column 2, which follows column
+        1's 2*csep gap and so has no \\tabcolsep of its own, comes out a
+        \\tabcolsep wider than the body: TeX widens the column to fit, and
+        every column to its right moves off the x its vertical rule is drawn
+        at. A header over column 1 comes out narrower and sits a \\tabcolsep
+        left of its body.
+        """
+        if c0 == 0:
+            left = f'@{{\\hspace{{{em(csep_milli)}}}}}'
+        elif gap_after(c0 - 1) != csep_milli:
+            left = '@{}'
+        else:
+            left = ''
+        if c1 == ncols - 1:
+            right = f'@{{\\hspace{{{em(csep_milli)}}}}}'
+        elif gap_after(c1) != csep_milli:
+            right = f'@{{\\hspace{{{em(gap_after(c1))}}}}}'
+        else:
+            right = ''
+        return left + inner + right
+
     # ---- cells: the layout's grid, with spans folded back in as \multicolumn
     rows = [list(r) for r in lay.grid[1:]]      # drop the matrix spacer row
     for tikz_row, c0, span, tex in lay.overlays:
@@ -157,8 +184,9 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         # placed it, and sits with the rest of the body
         kind = 'b' if head else 'p'
         body = f'\\gtheadstrut \\bfseries {tex}' if head else tex
-        rows[i][c0] = (f'\\multicolumn{{{span}}}{{{_ALIGN["c"]}'
-                       f'{kind}{{{em(span_milli(c0, span))}}}}}{{{body}}}')
+        pre = mc_preamble(c0, c0 + span - 1,
+                          f'{_ALIGN["c"]}{kind}{{{em(span_milli(c0, span))}}}')
+        rows[i][c0] = f'\\multicolumn{{{span}}}{{{pre}}}{{{body}}}'
         for j in range(c0 + 1, c0 + span):
             rows[i][j] = None                   # swallowed by the multicolumn
 
@@ -170,7 +198,8 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
                 continue
             font = '\\bfseries\\itshape ' if j < n_stub else '\\bfseries '
             al = _ALIGN['l'] if j < n_stub else _ALIGN['c']
-            rows[i][j] = (f'\\multicolumn{{1}}{{{al}b{{{em(widths[j])}}}}}'
+            pre = mc_preamble(j, j, f'{al}b{{{em(widths[j])}}}')
+            rows[i][j] = (f'\\multicolumn{{1}}{{{pre}}}'
                           f'{{\\gtheadstrut {font}{text}}}')
 
     # body cells are plain, so pad them into columns — the source is meant to
@@ -284,12 +313,35 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     # ---- vertical rules: full height, at an x we already know exactly.
     # xshift is in picture coordinates while the node carries the scale, so
     # the offsets scale with it.
-    def vrule(x_milli: int, line: str) -> None:
+    def rule_pt(width: str | None) -> float:
+        return float(width[:-2]) if width else 0.0
+
+    # Header row pitch: the header strut's height over the array strut's
+    # depth, which is 0.3 \baselineskip (about 1.2em) times \arraystretch.
+    # Spanner labels never wrap (the layout widens their columns to fit), so
+    # every row above the leaf headers is exactly one of these.
+    head_row = _HEAD_STRUT - _HEAD_DEPTH + max(_HEAD_DEPTH, 0.36 * _ARRAYSTRETCH)
+    spanner_rows = {level for level, _c0, _span in lay.spanners}
+
+    def vrule(x_milli: int, line: str, rows_down: int = 0) -> None:
+        """A vertical at ``x_milli``, from below header row ``rows_down - 1``
+        (or from the top frame) to the bottom frame."""
         x = f'{lay.scale * x_milli / _EM:.3f}em'
         # inset by the frame padding, which is inside the node's bounding box
         # but outside the frame rules — without it the verticals overhang
         y = f'{lay.scale * _FRAME_PAD:.3f}em'
-        w(f'\\draw[{line}] ([xshift={x}, yshift=-{y}]{lay.name}.north west) -- '
+        if rows_down:
+            # a vertical between groups that share a label at a higher level
+            # starts under that label's underline, not through the label
+            ems = _FRAME_PAD + rows_down * head_row
+            pts = rule_pt(_rule_width(style.frame_rule)) + rule_pt(
+                _rule_width(style.spanner_rule)) * sum(
+                    1 for k in range(rows_down) if k in spanner_rows)
+            factor = '' if lay.scale == 1 else f'{lay.scale:g}*'
+            top = f'{{{factor}({ems:.3f}em+{pts:.2f}pt)}}'
+        else:
+            top = y
+        w(f'\\draw[{line}] ([xshift={x}, yshift=-{top}]{lay.name}.north west) -- '
           f'([xshift={x}, yshift={y}]{lay.name}.south west);')
 
     stub = style_for(style.stub_rule)
@@ -308,9 +360,11 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         line = style_for(style.vrule_widths[slot])
         if not line:
             continue
-        # matching the HTML gt-vbreak border, which runs the full height
+        # matching the HTML gt-vbreak border: full height through the body,
+        # but in the head only from the level where the groups divide
         anchor = 0 if j == 0 else xleft(j + 1)
-        vrule(anchor - gap_milli, line)
+        depth = column.break_depth or 0
+        vrule(anchor - gap_milli, line, min(depth, max(n_head - 1, 0)))
 
     if style.tikz_post_process:
         w(style.tikz_post_process)

@@ -262,3 +262,13 @@ Each is a defect seen in the rendered gallery, with the fixture that shows it.
 9. **A TikZ table cannot break across pages**, so narrowing prose to fit a tight budget can make
    a table taller than the page (`wrap-low` at 24em), and the default `max_rows=200` never fits a
    page. Known; recorded for the cheat sheet and the blog post.
+- 2026-10-21: [vrules] fixed in 7.1.0. Measured first: every tabular data column sat 0.52em right
+  of the x its vertical was drawn at. Cause: each header cell is a `\multicolumn{1}`, which adds a
+  `\tabcolsep` each side, and the column after the stub's `@{\hspace{2em}}` has none of its own,
+  so its header entry was half an em wider than its body and TeX widened the column; the stub
+  header, conversely, sat half an em left. Findings 3 and 6 above were this one bug. Every
+  `\multicolumn` now carries the outer `@{}` of the columns it covers (`mc_preamble`), and a
+  vertical at break depth d starts below header row d-1 (finding 2, tabular). The harness is
+  `tests/test_tikz_geometry.py`; against the pre-fix emitter 7 tabular cases fail. The matrix
+  engine keeps both of its defects (finding 2 and a 1.4pt short bottom), held byte-identical to
+  6.1.0 and marked as strict expected failures; whether to fix the matrix too is Steve's call.

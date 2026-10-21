@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.0] - 2026-10-21
+
+**Rendered output changes for the default `tabular` TikZ engine**: every table with a header row
+sets differently, by up to half an em. Rebuilt documents will move. The `matrix` engine is unchanged.
+
+### Fixed
+
+- Vertical rules sit in the middle of the column gap. Header cells came out half an em wider than
+  their columns after the stub's double gap, pushing every data column right of its rule, so rules
+  touched right-aligned numbers and the widest stub word. Tables are half an em narrower.
+- A vertical between groups that share a label above starts under that label's underline instead
+  of running through it (`Gross` and `Net` over `Paid` and `Incurred`).
+- Stub headers line up with their column instead of sitting half an em off.
+
+### Added
+
+- `tests/test_tikz_geometry.py` compiles fixtures and measures where rules land against the words,
+  with pdfplumber (a new dev dependency). Two matrix defects are recorded there as expected
+  failures: verticals through spanner labels, and verticals 1.4pt short of the bottom frame.
+
 ## [7.0.1] - 2026-10-21
 
 ### Fixed
