@@ -34,7 +34,8 @@ from ..ir import Cell, TableDoc
 from ..spec import HouseStyle
 from .policy import rule_slot, vrule_slot
 from .tikz_layout import (
-    MATRIX_GEOMETRY, W2TIKZ, Layout, cell_tex, layout, style_for, tex_escape,
+    MATRIX_GEOMETRY, W2TIKZ, Layout, cell_tex, layout, placement, style_for,
+    tex_escape,
 )
 from .tikz_tabular import render_tikz_tabular
 
@@ -102,7 +103,7 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     w = out.append
 
     # ---- container, caption, matrix styles
-    latex = f'[{style.tikz_latex}]' if style.tikz_latex else ''
+    latex = placement(style)
     w(f'\\begin{{{style.tikz_container_env}}}{latex}')
     w('\\centering')
     if doc.caption is not None:

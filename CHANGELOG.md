@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.4] - 2026-10-21
+
+### Fixed
+
+- A `sidewaystable` or `sidewaysfigure` container with no `tikz_latex` is placed `[p]`. Left bare
+  it took the document's default placement, and where that is `H`, as in house style, rotating
+  cannot place it and the table vanished from the PDF without an error.
+
 ## [7.1.3] - 2026-10-21
 
 ### Changed

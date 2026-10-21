@@ -87,6 +87,21 @@ def style_for(weight: float) -> str | None:
     return W2TIKZ.get(weight, 'very thin')
 
 
+def placement(style: HouseStyle) -> str:
+    """The container's placement option: ``tikz_latex``, or ``[p]`` for a
+    sideways float.
+
+    A sideways float fills a page of its own whatever it is told, so ``[p]``
+    costs nothing. Left bare it takes the document's default placement, and
+    a document that makes ``H`` the default for tables, as house style does,
+    loses it: rotating cannot set a sideways float ``H``, and the table
+    vanishes from the PDF without an error.
+    """
+    if style.tikz_latex:
+        return f'[{style.tikz_latex}]'
+    return '[p]' if style.tikz_container_env.startswith('sideways') else ''
+
+
 def _escape_run(run: str) -> str:
     return _TEX_RE.sub(lambda m: _TEX_SPECIALS[m.group(0)], run)
 

@@ -15,6 +15,7 @@ the width estimates are exact for, so a failure here is geometry, not font.
 """
 
 import shutil
+import subprocess
 from functools import cache
 from pathlib import Path
 
@@ -183,3 +184,37 @@ def test_spanner_underlines_reach_the_stub_rule(name, engine, pdf_dir):
              if frame[1] + TOUCH < h['top'] and h['bottom'] < top - TOUCH]
     left = min(h['x0'] for h in under)
     assert abs(left - stub) <= TOUCH, f'underline starts at {left:.2f}, stub rule at {stub:.2f}'
+
+
+# A document that makes H the default for tables, as house style does, around
+# one sideways table. Etcher strips the container, so this compiles directly.
+SIDEWAYS_DOC = r"""\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{newtxtext}\usepackage{booktabs}\usepackage{array}\usepackage{xcolor}
+\usepackage{tikz}\usetikzlibrary{matrix,calc,fit}\providecommand{\I}{\vphantom{lp}}
+\usepackage{float}\floatplacement{table}{H}\usepackage{rotating}
+\begin{document}
+Before the table.
+
+%s
+
+After the table.
+\end{document}
+"""
+
+
+@pytest.mark.parametrize('engine', ENGINES)
+def test_sideways_table_survives_an_h_default(engine, tmp_path):
+    """Left without a placement, the sidewaystable took H and vanished."""
+    data, spec = FIX['wide-lab']
+    tex = render_tikz(build(data, spec), HouseStyle(
+        tikz_engine=engine, tikz_container_env='sidewaystable', max_table_width_em=62))
+    assert '\\begin{sidewaystable}[p]' in tex
+    src = tmp_path / 'sideways.tex'
+    src.write_text(SIDEWAYS_DOC % tex, encoding='utf-8')
+    subprocess.run([shutil.which('tectonic'), '--outdir', str(tmp_path), str(src)],
+                   capture_output=True, check=False)
+    with pdfplumber.open(tmp_path / 'sideways.pdf') as p:
+        assert len(p.pages) == 2                    # the text, then the table
+        # rotated text extracts backwards, so count glyphs rather than read
+        assert len(p.pages[1].chars) > 500
