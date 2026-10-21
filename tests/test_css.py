@@ -11,7 +11,7 @@ ASSET = (Path(__file__).parent.parent / 'src' / 'greater_tables' / 'assets'
 VOCAB = [
     'gt-l', 'gt-r', 'gt-c', 'gt-stub', 'gt-data', 'gt-stub-end',
     'gt-nowrap', 'gt-wrap', 'gt-break-0', 'gt-break-1', 'gt-break-2',
-    'gt-vbreak-0', 'gt-vbreak-1', 'gt-total', 'gt-subtotal', 'gt-emph',
+    'gt-vbreak-0', 'gt-vbreak-1', 'gt-vbreak-2', 'gt-total', 'gt-subtotal', 'gt-emph',
     'gt-muted', 'gt-neg', 'gt-math', 'gt-caption', 'gt-notes', 'gt-fit',
     'gt-spanner',
 ]

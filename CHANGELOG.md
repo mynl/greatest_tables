@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.4.0] - 2026-10-21
+
+**Output changes** for float columns holding a value too small for their decimals, and for HTML
+tables with three or more column levels and `max_vrule_depth` of 2 or more.
+
+### Added
+
+- `E` and `G` format sugar (`'.2E'`, `'{x:.3G}'`): `FormatSpec.upper` sets `1.95E-05`.
+- `HouseStyle` rule weights reach HTML. A weight set away from its default scales its custom
+  property on that table (twice the weight, twice the width; 0 draws none), so one `HouseStyle`
+  governs both renderers. Weights left at their defaults leave the stylesheet in charge.
+- A third vertical rule weight, `--gt-vrule-2`, so `vrule_widths[2]` is reachable.
+- A `formatters` key that matches no column warns. `'all'` is not a column selector there; the
+  warning points to `float_format`.
+
+### Fixed
+
+- A float column showing decimals no longer prints a nonzero value as zero: `0.00033` came out
+  `0.000`. The column takes the decimals its smallest value needs, or goes to SI past five.
+  Columns printed to the unit still round a stray `0.4` to `0`.
+
 ## [7.3.0] - 2026-10-21
 
 **TikZ source changes for every table with a number column**; the page does not, wherever the

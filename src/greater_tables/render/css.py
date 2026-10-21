@@ -53,6 +53,7 @@ VARIABLES: dict[str, str] = {
     # properties so one can be softened or removed without the other
     '--gt-vrule-0': '0.5pt solid',
     '--gt-vrule-1': '0.35pt solid',
+    '--gt-vrule-2': '0.2pt solid',
     '--gt-rule-stub': '0.5pt solid',
     '--gt-rule-total': '0.7pt solid',
     '--gt-rule-spanner': '0.35pt solid',
@@ -107,6 +108,7 @@ RULES: dict[str, dict[str, str]] = {
     '.gt.gt tr.gt-break-2 > td': {'border-top': 'var(--gt-rule-2)'},
     '.gt.gt .gt-vbreak-0': {'border-left': 'var(--gt-vrule-0)'},
     '.gt.gt .gt-vbreak-1': {'border-left': 'var(--gt-vrule-1)'},
+    '.gt.gt .gt-vbreak-2': {'border-left': 'var(--gt-vrule-2)'},
     '.gt.gt tr.gt-total > td': {
         'font-weight': '600',
         'border-top': 'var(--gt-rule-total)',

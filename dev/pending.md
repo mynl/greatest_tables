@@ -2,37 +2,7 @@
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-10-21 at 7.1.0.
-
-## [formats] Batch — small format/style gaps (agreed, not yet scheduled)
-
-Collected as they come up; do them together rather than one version each.
-
-1. **`G`/`E` format sugar.** ~~`g`~~ landed in 6.0.0a11 as `kind='gen'`,
-   where `digits` counts significant figures. The uppercase pair is still
-   open, and is the awkward half: `E`/`G` need either two more `FormatKind`
-   members or an `upper: bool` on `FormatSpec` — the second is tidier but
-   touches every kind. Same blast radius as `g` did: `ir.py`, the committed
-   `schema/ir-v1.json` (widening an enum — old documents still validate, new
-   ones fail an old schema), `apply_format`, and `cgFormatSpec` in the
-   walker. `ir_version` stays 1.
-2. **`HouseStyle.vrule_widths` is a 3-tuple but only 2 slots exist**
-   (`policy.N_VRULE_SLOTS = 2`, CSS has `--gt-vrule-0/1`), so `[2]` is
-   unreachable. Either drop to a 2-tuple or add a third vrule slot; the
-   horizontal side is consistently 3.
-3. **No Python route to HTML rule weights.** `hrule_widths`/`vrule_widths`
-   are TikZ-only; the HTML weights are CSS custom properties, so
-   `style=HouseStyle(hrule_widths=…)` silently does nothing for HTML. Option:
-   emit non-default weights as custom properties on the `.gt` wrapper, so one
-   `HouseStyle` governs both renderers. Keep the CSS route primary — a
-   document theme should still beat a per-table setting.
-4. **`formatters` keys that match no column are silently ignored**, `'all'`
-   included: `formatters={'all': lambda x: ...}` changes nothing and says
-   nothing (`dev/writedown-examples.qmd`), though `ratio_cols='all'` works.
-   Warn on an unmatched key, or accept `'all'` as the column selectors do.
-5. **Small floats print as `0.000`.** A float column with values near
-   0.002 (Fabricator `'v'`) gets 3 decimals, so 0.00033 prints `0.000`. Seen in
-   `dev/writedown-examples.qmd`; check the decimals inference below 0.01.
+reviewed 2026-10-21 at 7.4.0.
 
 ## [gallery] Defects the gallery shows, not yet planned
 

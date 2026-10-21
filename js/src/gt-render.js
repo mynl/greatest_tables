@@ -30,7 +30,7 @@ export const IR_VERSION_SUPPORTED = 1;
  * matching --gt-rule-{n} / --gt-vrule-{n} property), or null for no rule.
  * Keep in lockstep with the Python module; the transcript goldens enforce it. */
 export const N_RULE_SLOTS = 3;
-export const N_VRULE_SLOTS = 2;
+export const N_VRULE_SLOTS = 3;
 
 export function ruleSlot(breakDepth, nStubLevels, maxRuleDepth = 'auto') {
     if (breakDepth === undefined || breakDepth === null
@@ -435,6 +435,8 @@ function cgFormatSpec(f) {
         case 'int': return f.group ? ',d' : 'd';
         case 'dec': return (f.group ? ',' : '') + dot + 'f';
         case 'pct': return dot + '%';
+        // csv-grid has no uppercase exponent, so `upper` (E, G) exports as
+        // e and g; the cell text, which is normative, keeps its E
         case 'sci': return dot + 'e';
         case 'gen': return dot + 'g';   // digits = significant figures
         case 'si':

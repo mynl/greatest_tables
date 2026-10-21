@@ -136,7 +136,8 @@ class HouseStyle:
     Rule weights are the greater_tables float scale, mapped to TikZ line
     styles via ``render.tikz.W2TIKZ`` (0 = don't draw, 0.25 = ultra thin …
     3 = ultra thick). HTML equivalents live as CSS custom properties in
-    ``render.css.VARIABLES``.
+    ``render.css.VARIABLES``; a weight set away from its default scales its
+    property on that table, so both renderers follow one ``HouseStyle``.
 
     Parameters
     ----------

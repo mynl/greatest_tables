@@ -221,3 +221,26 @@ Question 4 was already done (`2f9b005`).
 - `test_a_number_holds_in_the_wrong_face`: sized in Times, set in Lato and in Fira Sans,
   `-1.95e-05` stays whole and its right edge matches `3.20e-06` within 0.3pt. Before the box,
   both faces broke it at the hyphen.
+
+### 7.4.0 [formats] - 2026-10-21
+
+All five items `pending.md` held by then; its [formats] section is deleted.
+
+1. `E`/`G`: `FormatSpec.upper`, as recommended. The schema gains one optional property;
+   `ir_version` stays 1. The walker exports `upper` as `e`/`g`, because csv-grid's format
+   language has no uppercase exponent; the cell text, which is normative, keeps the `E`.
+2. `N_VRULE_SLOTS = 3`, `--gt-vrule-2: 0.2pt solid` (the same as `--gt-rule-2`), in Python, the
+   stylesheet and the walker. Only tables with a vertical break at depth 2 change.
+3. HTML rule weights: `render.html._rule_properties`. The TikZ weights and the stylesheet widths
+   are different scales, so a weight is read as a multiple of its `HouseStyle` default and scales
+   the sheet's width. All seven weights are covered (frame, head, stub, total, spanner and both
+   tuples), not only the two tuples the draft named, since the point was one `HouseStyle` for
+   both renderers.
+4. Added after the draft: an unmatched `formatters` key is a `UserWarning` (house style quiets
+   the package logger, so a log record would go unseen). `'all'` is not accepted: one formatter
+   over every column would reach dates and text, and `float_format` / `table_float_format`
+   already cover every float column.
+5. Added after the draft: small floats. The decimals still come from the mean magnitude, but a
+   column that shows decimals takes enough for its smallest nonzero value to show one
+   significant figure, or SI past five. The `eng` fixture's `3.348e-06`, which printed
+   `0.00000`, now prints `3.348µ`.

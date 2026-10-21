@@ -23,7 +23,7 @@ from __future__ import annotations
 __all__ = ['N_RULE_SLOTS', 'N_VRULE_SLOTS', 'rule_slot', 'vrule_slot']
 
 N_RULE_SLOTS = 3      # hrule_widths, --gt-rule-0/1/2, gt-break-0/1/2
-N_VRULE_SLOTS = 2     # vrule_widths, --gt-vrule-0/1, gt-vbreak-0/1
+N_VRULE_SLOTS = 3     # vrule_widths, --gt-vrule-0/1/2, gt-vbreak-0/1/2
 
 
 def rule_slot(break_depth: int | None, n_stub_levels: int,

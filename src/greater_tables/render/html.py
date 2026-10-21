@@ -27,7 +27,7 @@ from ..ir import Cell, HeadCell, Row, TableDoc
 from ..mathspans import segments
 from ..spec import HouseStyle
 from . import css as _css
-from .policy import rule_slot, vrule_slot
+from .policy import N_RULE_SLOTS, N_VRULE_SLOTS, rule_slot, vrule_slot
 
 __all__ = ['render_html', 'reset_css_once']
 
@@ -61,17 +61,20 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
     allow_html
         Honor cell ``html: true``. Off ⇒ such cells render as escaped source.
     style
-        House style. ``max_rule_depth`` and ``max_vrule_depth`` are the only
-        fields this renderer reads — they decide which breaks get a
-        ``gt-break-{slot}`` / ``gt-vbreak-{slot}`` class. Rule *weights* are
-        CSS custom properties (``--gt-rule-{slot}``, ``--gt-vrule-{slot}``),
-        set in a stylesheet, not here.
+        House style. ``max_rule_depth`` and ``max_vrule_depth`` decide which
+        breaks get a ``gt-break-{slot}`` / ``gt-vbreak-{slot}`` class. Rule
+        *weights* are CSS custom properties (``--gt-rule-{slot}``,
+        ``--gt-vrule-{slot}``, ``--gt-rule-frame`` and so on): a weight set
+        away from its ``HouseStyle`` default scales its property on this
+        table, so ``hrule_widths=(1.0, ...)``, twice the default 0.5, draws
+        the 0.5pt rule at 1pt, and 0 draws none. The sheet still governs every
+        weight left at its default, so a document theme beats the defaults.
     """
     global _css_emitted
     style = style or HouseStyle()
     math_on = doc.math != 'off'
     ncols = len(doc.columns)
-    custom = _width_properties(style)
+    custom = _width_properties(style) | _rule_properties(style)
     sty = _Styler(inline_css, custom)
     out: list[str] = []
 
@@ -267,6 +270,39 @@ def _width_properties(style: HouseStyle) -> dict[str, str]:
     prose = f'{style.max_prose_width_em:g}em'
     if prose != _css.VARIABLES['--gt-prose-max']:
         custom['--gt-prose-max'] = prose
+    return custom
+
+
+# HouseStyle rule weight → the custom property it scales
+_RULE_PROPERTIES = (
+    [('frame_rule', None, '--gt-rule-frame'), ('head_rule', None, '--gt-rule-head'),
+     ('stub_rule', None, '--gt-rule-stub'), ('total_rule', None, '--gt-rule-total'),
+     ('spanner_rule', None, '--gt-rule-spanner')]
+    + [('hrule_widths', k, f'--gt-rule-{k}') for k in range(N_RULE_SLOTS)]
+    + [('vrule_widths', k, f'--gt-vrule-{k}') for k in range(N_VRULE_SLOTS)])
+_BORDER_RE = re.compile(r'^([\d.]+)pt(.*)$')
+
+
+def _rule_properties(style: HouseStyle) -> dict[str, str]:
+    """Per-table rule weights, emitted only where ``style`` departs from the
+    ``HouseStyle`` default.
+
+    The TikZ weights and the stylesheet widths are different scales (the
+    sheet sets heavier rules for a screen), so a weight is read as a multiple
+    of its default: twice the TikZ weight is twice the CSS width, and the
+    two renderers stay in proportion.
+    """
+    default = HouseStyle()
+    custom: dict[str, str] = {}
+    for field, k, name in _RULE_PROPERTIES:
+        weight, base = getattr(style, field), getattr(default, field)
+        if k is not None:
+            weight, base = weight[k], base[k]
+        if weight == base:
+            continue
+        m = _BORDER_RE.match(_css.VARIABLES[name])
+        custom[name] = ('none' if weight == 0 else
+                        f'{float(m.group(1)) * weight / base:.3g}pt{m.group(2)}')
     return custom
 
 

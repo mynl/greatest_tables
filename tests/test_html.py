@@ -105,3 +105,39 @@ def test_inline_css_resolves_widths_to_literals():
     assert '--gt' not in html                     # no declarations survive
     assert 'max-width: 40em;' in html.split('>')[0]
     assert 'max-width: 12em;' in html             # this table's prose cap
+
+
+# ------------------------------------------------------------- rule weights
+
+def _wrapper_style(style):
+    doc = build(pd.DataFrame({'a': [1, 2]}), TableSpec())
+    head = render_html(doc, style=style, css='none').split('\n', 1)[0]
+    return head.partition('style="')[2].partition('"')[0]
+
+
+def test_default_rule_weights_leave_the_sheet_alone():
+    assert _wrapper_style(HouseStyle()) == ''
+
+
+def test_rule_weights_scale_their_custom_property():
+    """Twice the TikZ weight is twice the stylesheet width; 0 draws none."""
+    got = _wrapper_style(HouseStyle(hrule_widths=(1.0, 0.25, 0.25), frame_rule=0,
+                                    vrule_widths=(0.25, 0.25, 0.5)))
+    assert '--gt-rule-0: 1pt solid;' in got        # 0.5 → 1.0, 0.5pt → 1pt
+    assert '--gt-rule-frame: none;' in got
+    assert '--gt-vrule-2: 0.4pt solid;' in got     # the third slot reaches HTML
+    assert '--gt-rule-1' not in got
+
+
+def test_rule_weights_reach_inline_css():
+    doc = build(pd.DataFrame({'a': [1, 2]}), TableSpec())
+    html = render_html(doc, style=HouseStyle(frame_rule=2), inline_css=True)
+    assert 'border-top: 2.4pt solid' in html and '--gt-' not in html
+
+
+def test_third_vertical_slot_is_stamped():
+    # four levels: the leaf level is "next column" and carries no break
+    cols = pd.MultiIndex.from_product([['A', 'B'], ['x', 'y'], ['p', 'q'], ['1', '2']])
+    doc = build(pd.DataFrame([range(16)], columns=cols), TableSpec())
+    html = render_html(doc, style=HouseStyle(max_vrule_depth=2), css='none')
+    assert 'gt-vbreak-2' in html

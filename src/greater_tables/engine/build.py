@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from dataclasses import replace
+from pathlib import Path
 from typing import Any, Hashable
 
 import pandas as pd
@@ -98,6 +100,7 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
     raw_set = _resolve_raw(spec, data_cols, df)
     cbd = st.column_break_depths(data_names)
     defaults = format_defaults(spec)
+    _check_formatter_keys(spec, all_labels)
 
     for i, (label, ser) in enumerate(zip(all_labels, series_all)):
         is_stub = i < n_stub
@@ -269,6 +272,30 @@ def format_defaults(spec) -> dict[str, FormatSpec | None]:
             except ValueError as exc:
                 raise ValueError(f'TableSpec.{name}: {exc}') from None
     return out
+
+
+# the warning points at the caller's line, outside the package
+_PACKAGE = str(Path(__file__).resolve().parent.parent)
+
+
+def _check_formatter_keys(spec, labels) -> None:
+    """Warn on a ``formatters`` key that matches no column: it changes
+    nothing and would otherwise say nothing.
+
+    ``'all'`` is the likely one, since the column selectors accept it. It is
+    not accepted here: one formatter over every column would reach the dates
+    and the text, and a float format for the whole table already exists.
+    A warning, not a log record, so a caller that quiets the package logger
+    (house style does) still sees it.
+    """
+    known = set(labels) | {lab[-1] for lab in labels if isinstance(lab, tuple)}
+    for key in spec.formatters:
+        if key in known:
+            continue
+        hint = (" For every float column use float_format, or table_float_format "
+                "to override per-column entries too." if key == 'all' else '')
+        warnings.warn(f'formatters key {key!r} matches no column and is ignored.{hint}',
+                      skip_file_prefixes=(_PACKAGE,))
 
 
 def _resolve_format(label, ser, dtype, tag, spec, defaults):

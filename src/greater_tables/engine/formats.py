@@ -30,12 +30,12 @@ from ..ir import FormatSpec
 
 __all__ = ['apply_format', 'infer_numeric_format', 'parse_sugar']
 
-_CG_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fd%esg])$')
+_CG_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fd%eEsgG])$')
 _FSTRING_RE = re.compile(r'^\{x:(?P<spec>[^}]*)\}$')
-_PYSPEC_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fde%g])?$')
+_PYSPEC_RE = re.compile(r'^(?P<group>,)?(?:\.(?P<digits>\d+))?(?P<kind>[fdeE%gG])?$')
 
 _KIND_MAP = {'f': 'dec', 'd': 'int', '%': 'pct', 'e': 'sci', 'g': 'gen',
-             's': 'str'}
+             's': 'str', 'E': 'sci', 'G': 'gen'}
 
 
 def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
@@ -47,7 +47,8 @@ def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
     ``'.3g'``), a GT f-string (``'{x:.1%}'``, ``'{x:.3g}'``), a strftime
     pattern (``'%d %b %Y'``), the words ``'year'``/``'eng'``/``'si'``, or an
     int (decimal digits, grouped). ``g`` maps to ``kind='gen'``, where
-    ``digits`` means significant figures.
+    ``digits`` means significant figures. ``E`` and ``G`` are ``e`` and
+    ``g`` with ``upper=True``: ``1.95E-05``.
 
     Raises
     ------
@@ -78,7 +79,8 @@ def parse_sugar(value: FormatSpec | Mapping | str | int) -> FormatSpec:
     digits = int(m.group('digits')) if m.group('digits') else None
     if kind == 'str':
         return FormatSpec(kind='str')
-    return FormatSpec(kind=kind, digits=digits, group=bool(m.group('group')))
+    return FormatSpec(kind=kind, digits=digits, group=bool(m.group('group')),
+                      upper=m.group('kind') in ('E', 'G'))
 
 
 def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
@@ -111,6 +113,7 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
         # SI suffixes are the default engineering display; eng_style='exp'
         # switches the whole document to aligned e+00 exponents
         return FormatSpec(kind='eng' if style == 'exp' else 'si', digits=digits)
+    eng = FormatSpec(kind='eng' if style == 'exp' else 'si', digits=digits)
     if amean < 1:
         digits = 5
     elif amean < 10:
@@ -119,6 +122,18 @@ def infer_numeric_format(ser: pd.Series, *, pef_lower: int = -3,
         digits = 2
     else:
         digits = 0
+    # A column that shows decimals must not print a nonzero value as zero:
+    # 0.00033 under a mean of 4 came out 0.000, which claims a precision the
+    # column does not have. Take the decimals the smallest value needs for
+    # one significant figure; past the five the buckets ever use, the column
+    # spans too much for fixed decimals, and engineering notation it is. A
+    # column printed to the unit keeps rounding a stray 0.4 to 0, as a
+    # financial table does.
+    if digits and absvals:
+        need = -math.floor(math.log10(min(absvals)))
+        if need > 5:
+            return eng
+        digits = max(digits, need)
     return FormatSpec(kind='dec', digits=digits, group=True)
 
 
@@ -161,10 +176,11 @@ def apply_format(value, fs: FormatSpec | None) -> str:
         body = (f'{mag * 100:,.{digits}f}%' if fs.group
                 else f'{mag * 100:.{digits}f}%')
     elif fs.kind == 'sci':
-        body = f'{mag:.{digits}e}'
+        body = f'{mag:.{digits}{"E" if fs.upper else "e"}}'
     elif fs.kind == 'gen':
         # digits counts significant figures here, not decimal places
-        body = f'{mag:,.{digits}g}' if fs.group else f'{mag:.{digits}g}'
+        g = 'G' if fs.upper else 'g'
+        body = f'{mag:,.{digits}{g}}' if fs.group else f'{mag:.{digits}{g}}'
     elif fs.kind == 'eng':
         body = _eng(mag, digits)
     elif fs.kind == 'si':

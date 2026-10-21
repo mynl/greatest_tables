@@ -36,7 +36,7 @@ var GtRender = (() => {
   var GT_RENDER_VERSION = "7.0.0";
   var IR_VERSION_SUPPORTED = 1;
   var N_RULE_SLOTS = 3;
-  var N_VRULE_SLOTS = 2;
+  var N_VRULE_SLOTS = 3;
   function ruleSlot(breakDepth, nStubLevels, maxRuleDepth = "auto") {
     if (breakDepth === void 0 || breakDepth === null || maxRuleDepth === null) return null;
     let cap;
@@ -404,6 +404,8 @@ var GtRender = (() => {
         return (f.group ? "," : "") + dot + "f";
       case "pct":
         return dot + "%";
+      // csv-grid has no uppercase exponent, so `upper` (E, G) exports as
+      // e and g; the cell text, which is normative, keeps its E
       case "sci":
         return dot + "e";
       case "gen":

@@ -7,12 +7,13 @@ get pinned here.
 """
 
 import math
+import warnings
 
 import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from greater_tables import FormatSpec
+from greater_tables import FormatSpec, TableSpec, build
 from greater_tables.engine.formats import (
     apply_format, infer_numeric_format, parse_sugar,
 )
@@ -189,3 +190,59 @@ def test_exponent_style_is_fixed_width():
 
 def test_non_numeric_falls_back_to_str():
     assert apply_format('abc', parse_sugar(',.2f')) == 'abc'
+
+
+# ------------------------------------------------- E and G, upper exponents
+
+@pytest.mark.parametrize('sugar, kind', [('.2E', 'sci'), ('{x:.3G}', 'gen'),
+                                         (',.4G', 'gen')])
+def test_uppercase_sugar_sets_upper(sugar, kind):
+    fs = parse_sugar(sugar)
+    assert (fs.kind, fs.upper) == (kind, True)
+    assert 'E-05' in apply_format(-1.95e-05, fs)
+
+
+def test_lowercase_sugar_stays_lower():
+    assert not parse_sugar('.2e').upper
+    assert apply_format(-1.95e-05, parse_sugar('.2e')) == '-1.95e-05'
+
+
+# ------------------------------------------- small values in a decimal column
+
+def test_a_nonzero_value_never_prints_as_zero():
+    """0.00033 in a column whose mean is about 4 printed 0.000."""
+    vals = [0.00033, 4.0, 12.0, 0.002, 0.003]
+    fs = infer_numeric_format(pd.Series(vals))
+    assert fs.kind == 'dec' and fs.digits == 4
+    assert all(float(apply_format(v, fs)) != 0 for v in vals)
+
+
+def test_too_small_for_fixed_decimals_goes_engineering():
+    fs = infer_numeric_format(pd.Series([4e-7, 3.0, 5.0]))
+    assert fs.kind == 'si'
+
+
+def test_a_column_printed_to_the_unit_still_rounds_to_zero():
+    """Financial convention: a stray 0.4 among thousands prints 0."""
+    fs = infer_numeric_format(pd.Series([50_000, 0.4, 120_000]))
+    assert fs.digits == 0
+    assert apply_format(0.4, fs) == '0'
+
+
+# ------------------------------------------------ formatters that match nothing
+
+def test_unmatched_formatters_key_warns():
+    df = pd.DataFrame({'paid': [1.5, 2.5]})
+    with pytest.warns(UserWarning, match="'all'.*float_format"):
+        build(df, TableSpec(formatters={'all': '.2f'}))
+    with pytest.warns(UserWarning, match="'unpaid' matches no column"):
+        build(df, TableSpec(formatters={'unpaid': '.2f'}))
+
+
+def test_matched_formatters_keys_are_quiet():
+    cols = pd.MultiIndex.from_tuples([('Gross', 'paid'), ('Gross', 'case')])
+    df = pd.DataFrame([[1.5, 2.5]], columns=cols, index=pd.Index(['a'], name='line'))
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        build(df, TableSpec(formatters={('Gross', 'paid'): '.1f', 'case': '.3f',
+                                        'line': 's'}))

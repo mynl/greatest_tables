@@ -67,6 +67,8 @@ class FormatSpec(BaseModel):
     null: str = '—'
     zero: str | None = None
     pattern: str | None = None
+    # an uppercase exponent marker, 1.95E-05: Python's E and G formats
+    upper: bool = False
 
 
 class Cell(BaseModel):

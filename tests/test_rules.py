@@ -76,7 +76,8 @@ def test_vrule_slot():
     assert vrule_slot(0) == 0
     assert vrule_slot(1) == 1
     assert vrule_slot(2) is None            # default cap
-    assert vrule_slot(2, 3) == 1            # saturates at the last slot
+    assert vrule_slot(2, 3) == 2            # three weights, as horizontals have
+    assert vrule_slot(3, 3) == 2            # saturates at the last slot
     assert vrule_slot(0, None) is None
     assert vrule_slot(None) is None
 

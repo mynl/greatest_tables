@@ -285,6 +285,11 @@
           "default": null,
           "title": "Suffix"
         },
+        "upper": {
+          "default": false,
+          "title": "Upper",
+          "type": "boolean"
+        },
         "zero": {
           "anyOf": [
             {
