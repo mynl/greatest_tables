@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.6.0] - 2026-10-21
+
+### Changed
+
+- Under a TikZ width budget, the column with the tallest heading takes spare width until its
+  heading is no taller than the next tallest, or as near as the room allows. A seven-word
+  heading over a ratio column stacked seven lines deep beside five-line ones; it now sets in
+  five. When two headings tie, nothing moves. **Output changes** for budgeted tables with one
+  heading taller than the rest; without a budget, nothing changes.
+
 ## [7.5.0] - 2026-10-21
 
 ### Added

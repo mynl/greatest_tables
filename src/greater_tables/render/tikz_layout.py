@@ -314,6 +314,61 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
     return widths, scale
 
 
+def _heading_lines(words: Sequence[int], space: int, width: int) -> int:
+    """Lines a heading of these word widths sets in at ``width``.
+
+    Greedy filling gives the fewest lines, which is what TeX finds for a
+    centered heading: every line of a ragged setting has zero badness, so
+    the line breaker minimizes the count.
+    """
+    lines, used = 1, None
+    for w in words:
+        if used is None:
+            used = w
+        elif used + space + w <= width:
+            used += space + w
+        else:
+            lines, used = lines + 1, w
+    return lines
+
+
+def _balance_headings(widths: list[int], headings: Sequence[Sequence[int] | None],
+                      space: int, spare: int) -> list[int]:
+    """Widen the column under the tallest heading, out of ``spare``, until
+    its heading is no taller than the next tallest, or as near as the room
+    allows.
+
+    A column is as wide as its heading's longest word, so a seven-word
+    heading over a column of ratios stacks seven lines deep while the line
+    has room to spare. Only the one tallest heading moves; when two tie,
+    nothing does, since widening both buys less and costs twice.
+    """
+    heights = [_heading_lines(h, space, w - _WIDTH_PAD) if h else 0
+               for h, w in zip(headings, widths)]
+    top = max(heights, default=0)
+    tallest = [j for j, h in enumerate(heights) if h == top]
+    if top <= 1 or len(tallest) > 1 or spare <= 0:
+        return widths
+    j = tallest[0]
+    words, room = headings[j], widths[j] + spare
+    next_tallest = max((h for k, h in enumerate(heights) if k != j), default=1)
+    target = max(next_tallest, _heading_lines(words, space, room - _WIDTH_PAD))
+    if target >= top:
+        return widths
+    # line count falls as width grows, so bisect for the least width that
+    # sets the heading in target lines
+    lo, hi = widths[j], room
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if _heading_lines(words, space, mid - _WIDTH_PAD) <= target:
+            hi = mid
+        else:
+            lo = mid + 1
+    out = list(widths)
+    out[j] = lo
+    return out
+
+
 # ----------------------------------------------------------------- the layout
 
 @dataclass(frozen=True)
@@ -374,6 +429,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     tokmax = [0] * ncols                             # widest body word
     wordmax = [0] * ncols                            # most words in a body cell
     samples: list[list[int]] = [[] for _ in range(ncols)]   # every cell width
+    headings: list[list[int] | None] = [None] * ncols      # leaf heading words
     for level, hrow in enumerate(doc.head):
         cells = [''] * ncols
         leaf = level == n_head - 1
@@ -389,6 +445,12 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                 # a column of six-em numbers out to the width of its title
                 hmax[col] = max(hmax[col],
                                 _token_milli(hc, math_on, font, bold=True))
+                # a plain leaf heading's words, for balancing heading heights;
+                # math and markup set as boxes this count cannot see into
+                if leaf and hc.text and not (hc.math or hc.html or '$' in hc.text):
+                    headings[col] = [display_milli(word, math=False, font=font,
+                                                   bold=True)
+                                     for word in hc.text.split()]
             elif hc.text:
                 overlays.append((2 + level, col, hc.colspan, tex))
                 # an overlaid label carries no text width: it cannot wrap, so
@@ -477,6 +539,11 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     else:
         widths, scale = _fit_budget(style, naturals, floors, samples,
                                     prose_cap, csep_milli, geom)
+        budget = round(style.max_table_width_em * _EM)
+        spare = (round((budget - geom.unscaled(ncols, csep_milli)) / scale)
+                 - geom.inner(ncols, csep_milli) - sum(widths))
+        space = display_milli(' ', font=font, bold=True)
+        widths = _balance_headings(widths, headings, space, spare)
         apply_spans(widths)
 
     # A number never wraps. Each body cell of a column that does not wrap sits

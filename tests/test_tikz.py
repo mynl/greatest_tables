@@ -13,12 +13,14 @@ from greater_tables import (
     Etcher, HouseStyle, TableDoc, TableSpec, build, render_tikz,
 )
 from greater_tables.render import tikz as _tikz
+from greater_tables.render import tikz_layout
 from greater_tables.render.fonts import FACES
 from greater_tables.render.textlength import (
     text_display_len, token_display_len,
 )
 
 from exemplars import EXEMPLARS
+from registry import fixtures
 
 ROOT = Path(__file__).parent.parent
 IR = ROOT / 'tests' / 'golden' / 'ir'
@@ -27,6 +29,7 @@ NAMES = sorted(p.stem for p in IR.glob('*.json'))
 TECTONIC = shutil.which('tectonic')
 
 MATRIX = HouseStyle(tikz_engine='matrix')
+FIXTURES = fixtures()
 
 
 def widths(tikz: str) -> list[float]:
@@ -250,6 +253,47 @@ def test_budget_stops_narrowing_prose_at_its_minimum():
     style = HouseStyle(tikz_engine='matrix', max_table_width_em=24, min_prose_width_em=0)
     narrowest = float(re.search(r'scale=([\d.]+),', render_tikz(doc, style)).group(1))
     assert scale < narrowest
+
+
+def test_heading_lines_fill_greedily():
+    lines = tikz_layout._heading_lines
+    assert lines([3000, 2000, 2000], 250, 5250) == 2      # 3 | 2 2
+    assert lines([3000, 2000, 2000], 250, 7500) == 1
+    assert lines([3000, 2000, 2000], 250, 3000) == 3
+
+
+def test_tallest_heading_drops_to_the_next_tallest():
+    """Out of spare room, the one tallest heading widens until it is no
+    taller than the next; ties and a full line leave everything alone."""
+    balance, lines = tikz_layout._balance_headings, tikz_layout._heading_lines
+    pad = tikz_layout._WIDTH_PAD
+    short = [2000] * 4                                   # four lines at 2.1em
+    tall = [2000] * 7                                    # seven lines
+    widths = [2100, 2100]
+    out = balance(widths, [short, tall], 250, 50_000)
+    assert out[0] == 2100
+    assert lines(tall, 250, out[1] - pad) == 4
+    assert lines(tall, 250, out[1] - 1 - pad) > 4        # the least width that does it
+    assert balance(widths, [tall, tall], 250, 50_000) == widths
+    assert balance(widths, [short, tall], 250, 0) == widths
+    # seven 1em words beside a two-line heading: the room holds three words a
+    # line, not the four that two lines need, so three lines it is
+    seven = [1000] * 7
+    out = balance(widths, [[2000] * 2, seven], 250, 1500)
+    assert out[1] == 3600 and lines(seven, 250, out[1] - pad) == 3
+
+
+def test_budget_balances_long_headings():
+    """The long-head-ratios fixture: a seven-line heading beside five-line
+    ones drops to five under a budget; with no budget nothing moves."""
+    data, spec = FIXTURES['long-head-ratios']
+    doc = build(data, spec)
+    style = HouseStyle(max_table_width_em=41.4, tikz_scale=0.9)
+    natural = tikz_layout.layout(doc, HouseStyle(tikz_scale=0.9), tikz_layout.TABULAR_GEOMETRY)
+    budgeted = tikz_layout.layout(doc, style, tikz_layout.TABULAR_GEOMETRY)
+    grown = [b - n for b, n in zip(budgeted.widths, natural.widths)]
+    assert sum(1 for g in grown if g > 0) == 1          # one column widened
+    assert sum(budgeted.widths) > sum(natural.widths)
 
 
 def test_no_budget_is_unchanged():

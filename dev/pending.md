@@ -2,7 +2,7 @@
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-10-21 at 7.4.0.
+reviewed 2026-10-21 at 7.6.0.
 
 ## [gallery] Defects the gallery shows, not yet planned
 
@@ -21,19 +21,6 @@ detail and the fixture for each.
 4. The estimate is Times; under STIX Two prose wraps at its natural width,
    and so do labels held at it ("Unit 1" in `wide-lab`). The main defect left
    in house-style PDFs. `dev/plan-font-metrics.md`.
-
-## [head-balance] Long headings over narrow data — proposal, Steve to rule
-
-A column is as wide as its heading's longest word, so a six-word heading over
-a Y/N column stacks four or five lines deep however much room the table has
-(gallery section "Long headings", the `long-head-*` fixtures). Proposed rule
-for the TikZ layout: with a budget, spend spare width on the column whose
-heading has the most lines, widening it just enough to drop a line, until the
-room runs out or every heading fits in two lines; without a budget, widen
-each to the narrowest width that sets its heading in three. About 60 lines in
-`render/tikz_layout.py` plus tests; it changes widths, and so output, for any
-table with a long heading. HTML not yet compared: the browser sizes columns
-itself.
 
 ## [rtd-slug] Read the Docs slug — **open, Steve to decide**
 

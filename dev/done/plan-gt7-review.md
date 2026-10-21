@@ -307,3 +307,10 @@ Each is a defect seen in the rendered gallery, with the fixture that shows it.
   - 7.5.0: `min_prose_width_em`, default 8. Table 32 (wrap-low at 24em) narrowed prose to its
     longest word, set a word or two a line at full scale, ran a page and a half and off the
     bottom of the page. With the minimum it sets 8em prose at 0.75.
+  - 7.6.0: heading balance, the smaller rule Steve chose over the `[head-balance]` proposal in
+    `pending.md` (deleted). Under a budget, the one tallest leaf heading takes spare width until
+    it is no taller than the next tallest, or as near as the room allows; ties move nothing.
+    Line counts are greedy, which is TeX's count for a centered heading (every ragged line has
+    zero badness, so TeX minimizes lines). House budget: long-head-ratios 7 to 5 lines (Table
+    39), long-head-flags 7 to 6, long-head-counts 6 to 4. long-headings (Table 35) and
+    long-head-groups tie and do not move; long-head-many is scaled to 0.7 with nothing spare.
