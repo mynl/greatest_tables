@@ -145,3 +145,41 @@ def test_body_rules_follow_the_policy(engine, depth, pdf_dir):
         and style.hrule_widths[slot])
     _v, horizontals, _w = geometry('row-mi-3', engine, pdf_dir, max_rule_depth=depth)
     assert len(levels(horizontals)) == 3 + expected
+
+
+# shapes with a head: spanned ones put underlines between the frame and the
+# head rule, one rule height per level above the leaf
+HEADED = ['plain', 'row-mi-3', 'col-mi-2', 'col-mi-3', 'both-mi', 'loss-lab',
+          'long-spanner', 'long-headings']
+SPANNED = ['col-mi-2', 'col-mi-3', 'both-mi', 'loss-lab', 'long-spanner']
+
+
+def head_rule(name, horizontals):
+    """The head rule's (top, bottom): one level per header row below the frame."""
+    data, spec = FIX[name]
+    return levels(horizontals)[build(data, spec).n_head_levels]
+
+
+@pytest.mark.parametrize('name', HEADED)
+def test_engines_leave_the_same_room_under_the_head(name, pdf_dir):
+    """The tabular head once sat 1.7pt tighter on its rule than the matrix's."""
+    gaps = {}
+    for engine in ENGINES:
+        _v, horizontals, words = geometry(name, engine, pdf_dir)
+        top, _bottom = head_rule(name, horizontals)
+        gaps[engine] = top - max(w['bottom'] for w in words if w['bottom'] < top)
+    assert abs(gaps['tabular'] - gaps['matrix']) < 0.5, gaps
+
+
+@pytest.mark.parametrize('name', SPANNED)
+@pytest.mark.parametrize('engine', ENGINES)
+def test_spanner_underlines_reach_the_stub_rule(name, engine, pdf_dir):
+    """The first group's underline starts at the stub rule, not half an em in."""
+    verticals, horizontals, _w = geometry(name, engine, pdf_dir)
+    stub = min((v['x0'] + v['x1']) / 2 for v in verticals)
+    frame = levels(horizontals)[0]
+    top, _bottom = head_rule(name, horizontals)
+    under = [h for h in horizontals
+             if frame[1] + TOUCH < h['top'] and h['bottom'] < top - TOUCH]
+    left = min(h['x0'] for h in under)
+    assert abs(left - stub) <= TOUCH, f'underline starts at {left:.2f}, stub rule at {stub:.2f}'

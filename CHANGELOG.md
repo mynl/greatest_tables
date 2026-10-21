@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.1] - 2026-10-21
+
+### Fixed
+
+- Tabular TikZ engine: a group label's underline reaches the stub rule. With one stub column it
+  stopped half an em short.
+- Tabular TikZ engine: a heading has the matrix's room above the rule under it, about 3.4pt where
+  it had 1.8pt. Heads are about 1.6pt a row taller; tabular output changes for every table.
+
 ## [7.1.0] - 2026-10-21
 
 **Rendered output changes for the default `tabular` TikZ engine**: every table with a header row

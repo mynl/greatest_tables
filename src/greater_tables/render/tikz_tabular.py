@@ -80,6 +80,12 @@ _ARRAYSTRETCH = 0.92
 _HEAD_STRUT = 1.58
 _HEAD_DEPTH = 0.20
 _FRAME_PAD = 0.28
+# 5. (7.1.1) under a heading the matrix leaves about 3pt to the rule below
+#    and the tabular left 1.6pt, which read as cramped side by side. The gap
+#    is added after every header row rather than to the header strut, whose
+#    depth a heading that wraps does not reach. It makes a table's head about
+#    1.6pt a row taller than the calibration above.
+_HEAD_GAP = 0.15
 
 
 def _macros() -> str:
@@ -298,13 +304,21 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
                     w(hrule(width, start))
         w(row_tex(i))
         if i < n_head:
+            # the room the matrix leaves between a heading and the rule under
+            # it, which no header strut gives a heading that wraps
+            w(f'\\addlinespace[{_HEAD_GAP:.2f}em]')
             # a group label's underline: plain \cmidrule spans exactly one
-            # \tabcolsep each side, which is the ±gap the matrix draws
+            # \tabcolsep each side, which is the ±gap the matrix draws. A
+            # column after column 1's 2*csep gap has no \tabcolsep of its
+            # own, so there the underline is extended to the stub rule.
             sp = _rule_width(style.spanner_rule)
             if sp:
                 for level, c0, span in lay.spanners:
                     if level == i:
-                        w(f'\\cmidrule[{sp}]{{{c0 + 1}-{c0 + span}}}')
+                        trim = (f'(l{{-{gap:.2f}em}})'
+                                if c0 > 0 and gap_after(c0 - 1) != csep_milli
+                                else '')
+                        w(f'\\cmidrule[{sp}]{trim}{{{c0 + 1}-{c0 + span}}}')
     bottom = _rule_width(style.frame_rule)
     if bottom:
         w(f'\\bottomrule[{bottom}]')
@@ -317,10 +331,12 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         return float(width[:-2]) if width else 0.0
 
     # Header row pitch: the header strut's height over the array strut's
-    # depth, which is 0.3 \baselineskip (about 1.2em) times \arraystretch.
-    # Spanner labels never wrap (the layout widens their columns to fit), so
-    # every row above the leaf headers is exactly one of these.
-    head_row = _HEAD_STRUT - _HEAD_DEPTH + max(_HEAD_DEPTH, 0.36 * _ARRAYSTRETCH)
+    # depth, which is 0.3 \baselineskip (about 1.2em) times \arraystretch,
+    # and the space added under every heading. Spanner labels never wrap (the
+    # layout widens their columns to fit), so every row above the leaf
+    # headers is exactly one of these.
+    head_row = (_HEAD_STRUT - _HEAD_DEPTH
+                + max(_HEAD_DEPTH, 0.36 * _ARRAYSTRETCH) + _HEAD_GAP)
     spanner_rows = {level for level, _c0, _span in lay.spanners}
 
     def vrule(x_milli: int, line: str, rows_down: int = 0) -> None:
