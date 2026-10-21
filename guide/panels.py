@@ -1,16 +1,16 @@
-"""Gallery panels: one table shown as HTML and through both TikZ engines.
+"""Gallery panels: one table shown as HTML and as TikZ.
 
 ``show(name)`` takes a fixture from ``tests/registry.py`` (or a ``(data,
 spec)`` pair) and returns an object carrying three renderings, and Quarto
 keeps the one its format wants, as house style's ``GT`` does:
 
-- ``text/html``: three panels, the HTML table and each engine's TeX compiled
-  standalone by ``Etcher`` and converted to SVG with ``pdftocairo -svg``
-  (poppler, on PATH through MiKTeX), linked rather than embedded. The
-  standalone page is Times at 11pt, so these images are for structure (rules,
-  alignment, spans, wrapping), not for width against a text block;
-- ``text/latex``: the table twice, ``matrix`` above ``tabular``, placed ``H``
-  in the document's own text block, which is where width is judged;
+- ``text/html``: two panels, the HTML table and the TeX compiled standalone
+  by ``Etcher`` and converted to SVG with ``pdftocairo -svg`` (poppler, on
+  PATH through MiKTeX), linked rather than embedded. The standalone page is
+  Times at 11pt, so the image is for structure (rules, alignment, spans,
+  wrapping), not for width against a text block;
+- ``text/latex``: the table, placed ``H`` in the document's own text block,
+  which is where width is judged;
 - ``text/plain``: the text renderer.
 
 The style is house style's ``house_style()`` (its document budget and scale
@@ -51,7 +51,6 @@ from style import house_style  # noqa: E402
 
 CACHE = HERE / '_gallery'
 FIXTURES = fixtures()
-ENGINES = ('matrix', 'tabular')
 _NUMBER = itertools.count(1)
 
 
@@ -73,7 +72,7 @@ FACE = _face()
 def _svg(tex: str, alt: str) -> str:
     """An ``img`` of the TeX compiled standalone and converted to SVG.
 
-    A relative link, not a data URI: embedded, two SVGs cost 200 KB a table.
+    A relative link, not a data URI: embedded, an SVG costs 100 KB a table.
     The rendered HTML sits beside ``_gallery/``, so the link resolves. The
     width is set in points because pdftocairo writes the page size in points
     with no unit, which a browser takes as pixels, three quarters size.
@@ -93,24 +92,20 @@ class Panels:
     """One table in three renderings; see the module docstring."""
 
     def __init__(self, data, spec, style, title):
-        # no label: the table is emitted twice, and Quarto turns two tables
-        # carrying one tbl- label into a float nested inside a float
+        # no label: a fixture shown more than once, with different style
+        # changes, would carry one tbl- label into several tables
         self.doc = build(data, spec).model_copy(update={'label': None})
         self.style = style
         self.title = f'Table {next(_NUMBER)}', title
-        self.tex = {e: render_tikz(self.doc, replace(style, tikz_engine=e))
-                    for e in ENGINES}
+        self.tex = render_tikz(self.doc, style)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        cells = [('HTML', render_html(self.doc, style=self.style))]
-        cells += [(f'TikZ {e}', _svg(self.tex[e], f'TikZ {e}'))
-                  for e in ENGINES]
+        cells = [('HTML', render_html(self.doc, style=self.style)),
+                 ('TikZ', _svg(self.tex, 'TikZ'))]
         panels = ''.join(
             f'<figure class="gt-panel"><figcaption>{html.escape(label)}'
             f'</figcaption>{body}</figure>' for label, body in cells)
-        latex = '\n'.join(
-            f'\\par\\medskip\\noindent\\textit{{TikZ {e}}}\\par\n{self.tex[e]}'
-            for e in ENGINES)
+        latex = self.tex
         number, title = self.title
         head = (f'<p class="gt-panels-title"><strong>{number}</strong> '
                 f'<code>{html.escape(title)}</code></p>')

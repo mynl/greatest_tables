@@ -9,6 +9,7 @@ than by eye.
 
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +18,7 @@ import pytest
 from greater_tables import (
     Etcher, HouseStyle, TableDoc, TableSpec, build, render_tikz,
 )
+from greater_tables.render.tikz import table_width
 from greater_tables.render.tikz_tabular import W2RULE, render_tikz_tabular
 
 from exemplars import EXEMPLARS
@@ -68,14 +70,15 @@ def test_tabular_golden(name):
         (GOLDEN / f'{name}.tex').read_text(encoding='utf-8')
 
 
-def test_engine_dispatch():
-    """render_tikz honors the house style; the default is the tabular."""
+def test_render_tikz_is_the_tabular():
+    """render_tikz is the tabular emitter, and tikz_engine='matrix', retired
+    in 8.0.0, renders the same table."""
     doc = load('loss-dev')
     assert render_tikz(doc) == render_tikz(doc, HouseStyle())
-    assert render_tikz(doc) == render_tikz(doc, TABULAR)      # 6.2.0 default
-    assert '\\matrix (gt' in render_tikz(doc, HouseStyle(tikz_engine='matrix'))
+    assert render_tikz(doc) == render_tikz(doc, TABULAR)
     assert render_tikz(doc, TABULAR) == render_tikz_tabular(doc, TABULAR)
-    assert '\\matrix (gt' not in render_tikz(doc, TABULAR)
+    assert render_tikz(doc, HouseStyle(tikz_engine='matrix')) == \
+        render_tikz(doc, TABULAR)
 
 
 def test_empty_table_is_a_comment():
@@ -107,9 +110,9 @@ def test_every_header_cell_is_bottom_aligned(name):
 
 @pytest.mark.parametrize('name', NAMES)
 def test_header_alignment_is_centered_not_the_column(name):
-    """Headers are centered (stubs flush left) whatever the column align is:
-    in the matrix the row style beats the column style, and this engine has
-    to reproduce that, not 'fix' it."""
+    """Headers are centered (stubs flush left) whatever the column align is,
+    as they always have been; this is a convention to hold, not a defect to
+    'fix'."""
     doc = load(name)
     if not doc.columns or not doc.head:
         pytest.skip('no header')
@@ -181,7 +184,7 @@ def test_spanner_becomes_multicolumn_and_cmidrule():
 
 
 def test_body_colspan_is_a_multicolumn():
-    """A spanning body cell centers on its span, as the matrix overlay did."""
+    """A spanning body cell centers on its span."""
     tex = render_tikz(EXEMPLARS['loss-dev'](), TABULAR)
     span = next(c for c in cells(body_rows(tex)[-1]) if 'Total' in c)
     assert span.startswith('\\multicolumn{2}{')
@@ -207,8 +210,7 @@ def test_numbers_sit_in_a_box_of_the_column_width():
 
 def test_macros_travel_with_the_picture():
     """Both macros sit inside the tikzpicture, so lifting the picture alone
-    still carries them — the matrix engine's reliance on an externally
-    defined \\I is the defect this avoids."""
+    still carries them, and a host document need not define \\I."""
     tex = render_tikz(load('loss-dev'), TABULAR)
     picture = tex[tex.index('\\begin{tikzpicture}'):]
     assert '\\providecommand{\\I}{\\vphantom{lp}}' in picture
@@ -216,15 +218,15 @@ def test_macros_travel_with_the_picture():
 
 
 def test_rule_spacing_is_zeroed():
-    """booktabs' rule spacing would make table height depend on rule count;
-    the matrix draws rules into the row gap and adds none."""
+    """booktabs' rule spacing would make table height depend on rule count."""
     tex = render_tikz(load('fx-deep-stub'), TABULAR)
     for length in ('aboverulesep', 'belowrulesep', 'cmidrulesep'):
         assert f'\\setlength{{\\{length}}}{{0pt}}' in tex
 
 
-def test_rule_weights_match_the_matrix_ladder():
-    """Same house weight, same drawn width in both engines."""
+def test_rule_weights_match_the_pgf_ladder():
+    """Same house weight, same drawn width in a booktabs rule and a TikZ
+    vertical."""
     from greater_tables.render.tikz_layout import W2TIKZ
     assert set(W2RULE) == set(W2TIKZ)
     assert W2RULE[0] is None and W2TIKZ[0] is None
@@ -233,7 +235,7 @@ def test_rule_weights_match_the_matrix_ladder():
 
 
 def test_coincident_break_and_total_rules_merge():
-    """The matrix draws both at the same y so they overlap; consecutive
+    """A break rule and a total rule on one row are one rule; consecutive
     booktabs rules would stack, so they merge to one heavier rule."""
     doc = load('fx-totals')
     tex = render_tikz(doc, TABULAR)
@@ -257,7 +259,7 @@ def widths_of(tex: str) -> list[float]:
 @pytest.mark.parametrize('name', NAMES)
 def test_vertical_rules_land_on_column_boundaries(name):
     """Every vertical rule sits half a column separation left of some column
-    edge — the same place the matrix puts it."""
+    edge."""
     doc = load(name)
     if not doc.columns:
         pytest.skip('empty')
@@ -281,18 +283,18 @@ def test_vertical_rules_land_on_column_boundaries(name):
             f'{name}: rule at {value}em matches no column boundary'
 
 
-@pytest.mark.parametrize('name', ['fx-wrap-low', 'fx-both-mi', 'loss-dev'])
-@pytest.mark.parametrize('budget', [45, 30, 24])
+@pytest.mark.parametrize('name', ['fx-wrap-low', 'fx-wrap-high', 'fx-tex',
+                                  'fx-both-mi', 'loss-dev', 'fx-plain'])
+@pytest.mark.parametrize('budget', [45, 38, 30, 24])
 def test_budget_is_never_exceeded(name, budget, caplog):
-    """The width promise holds for this engine's geometry too."""
-    from greater_tables.render.tikz_layout import TABULAR_GEOMETRY
-    style = HouseStyle(tikz_engine='tabular', max_table_width_em=budget)
+    """The one hard promise: narrow, then scale, but do not overrun."""
+    style = HouseStyle(max_table_width_em=budget)
     tex = render_tikz(load(name), style)
     if 'ladder stops' in caplog.text:
-        return                                 # reported, not silent
+        return              # the documented dead end: reported, not silent
     scale = float(re.search(r'scale=([\d.]+)\]', tex).group(1))
     milli = [round(w * 1000) for w in widths_of(tex)]
-    total = TABULAR_GEOMETRY.table_width(
+    total = table_width(
         milli, scale, len(milli), round(style.tikz_column_sep * 1000)) / 1000
     assert total <= budget + 0.05, f'{name} at {budget}em came out {total}em'
 
@@ -310,3 +312,24 @@ def tex_dir(tmp_path_factory):
 def test_compiles(name, tex_dir):
     pdf = Etcher(render_tikz(load(name), TABULAR), base_path=tex_dir).compile()
     assert pdf.exists() and pdf.stat().st_size > 1000
+
+
+# the packages the quickstart names, and nothing else: no TikZ library, no
+# \I in the preamble
+BARE_DOC = r"""\documentclass{article}
+\usepackage{booktabs}\usepackage{array}\usepackage{tikz}
+\begin{document}
+%s
+\end{document}
+"""
+
+
+@pytest.mark.skipif(TECTONIC is None, reason='tectonic not available')
+def test_compiles_with_only_tikz_booktabs_and_array(tmp_path):
+    """Spanners, a stub rule, math and a total row, in the bare preamble."""
+    src = tmp_path / 'bare.tex'
+    src.write_text(BARE_DOC % render_tikz(load('loss-dev')), encoding='utf-8')
+    run = subprocess.run([TECTONIC, '--outdir', str(tmp_path), str(src)],
+                         capture_output=True, text=True, check=False)
+    assert run.returncode == 0, run.stderr[-2000:]
+    assert (tmp_path / 'bare.pdf').stat().st_size > 1000

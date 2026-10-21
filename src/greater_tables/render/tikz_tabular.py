@@ -1,10 +1,9 @@
 r"""One-node TikZ renderer: a real ``tabular`` inside a single node.
 
-The ``matrix of nodes`` emitter in :mod:`.tikz` costs about 290 ms of TeX per
-table, and the cost is materializing one pgf node per cell — not the matrix
-library, not the table package. GT does not need per-cell nodes: they exist
-only so rules can anchor to cell corners, and GT computes every column width
-itself. One node with known geometry serves the same purpose about 30x faster.
+GT computes every column width itself, so it needs no per-cell nodes to
+anchor rules to: one node with known geometry carries them all. A renderer
+with one pgf node per cell, retired in 8.0.0, cost about 190 ms of TeX per
+table against this one's 2.
 
 The division of labor that makes it work:
 
@@ -16,13 +15,12 @@ The division of labor that makes it work:
   restates its column as ``b{}`` through ``\multicolumn{1}{...}``. Verbose in
   the source, free in TeX, and non-negotiable in the output.
 - **Header alignment is centered** (stub columns flush left) regardless of the
-  column's own alignment. That is not an oversight: in the matrix emitter the
-  ``row N`` style beats the ``column N`` style, so headers have always
-  rendered centered over right-aligned numbers, and this engine reproduces it.
+  column's own alignment. That is not an oversight: headers have always
+  rendered centered over right-aligned numbers.
 
 The emitted body is a literal ``tabular``, which is also the point: the
 ``.tex`` goes to typesetters who do not use TikZ, and conversion is "delete
-the wrapper" rather than five transformations of a ``\&`` matrix.
+the wrapper".
 """
 
 from __future__ import annotations
@@ -33,8 +31,7 @@ from ..ir import Cell, TableDoc
 from ..spec import HouseStyle
 from .policy import rule_slot, vrule_slot
 from .tikz_layout import (
-    TABULAR_GEOMETRY, Layout, cell_tex, layout, placement, style_for,
-    tex_escape,
+    Layout, cell_tex, layout, placement, style_for, tex_escape,
 )
 
 __all__ = ['W2RULE', 'render_tikz_tabular']
@@ -42,9 +39,10 @@ __all__ = ['W2RULE', 'render_tikz_tabular']
 logger = logging.getLogger(__name__)
 
 # House float weight → booktabs rule width, matching pgf's line-width ladder
-# exactly, so the two engines draw the same weight for the same house style.
-# (pgf: ultra thin .1, very thin .2, thin .4, semithick .6, thick .8,
-# very thick 1.2, ultra thick 1.6 — see W2TIKZ for the name mapping.)
+# exactly, so a booktabs rule and a TikZ vertical of the same house weight
+# draw the same width. (pgf: ultra thin .1, very thin .2, thin .4,
+# semithick .6, thick .8, very thick 1.2, ultra thick 1.6; see W2TIKZ for the
+# name mapping.)
 W2RULE = {0: None, 0.25: '0.1pt', 0.5: '0.2pt', 0.75: '0.4pt', 1: '0.6pt',
           1.5: '0.8pt', 2: '1.2pt', 3: '1.6pt'}
 
@@ -56,48 +54,46 @@ _ALIGN = {'l': r'>{\raggedright\arraybackslash}',
 
 # ---------------------------------------------------------- vertical metrics
 #
-# Four numbers reproduce the matrix's vertical rhythm, calibrated against
-# compiled box heights across the fixture corpus (dev/tools/compare_engines.py
-# reports the residual). They were found in this order, biggest effect first:
+# Four numbers set the vertical rhythm. They were calibrated in 6.2.0 against
+# compiled box heights across the fixture corpus, to match the renderer this
+# one replaced, and found in this order, biggest effect first:
 #
-# 1. booktabs opens space around every rule where the matrix draws into the
-#    row gap and adds none, so height tracked *rule count*: a deeply ruled
-#    table ran 8% long. Zeroing \aboverulesep, \belowrulesep and \cmidrulesep
-#    removes the dependence entirely — see the \setlength block in _emit.
-# 2. header rows: the matrix gives them `minimum height=1.3em` plus inner
-#    ysep, which no tabular strut reproduces, so header cells carry their own
-#    (_HEAD_STRUT / _HEAD_DEPTH, the depth matching the matrix's inner ysep).
-# 3. the frame: the matrix's bounding box runs out to rules half a row
-#    separation beyond the cells (_FRAME_PAD).
-# 4. the row floor: a tabular row is at least one array strut tall where a
-#    matrix row is only as tall as its content, so _ARRAYSTRETCH trims the
-#    strut. A floor, not a height — rows with taller content still grow.
+# 1. booktabs opens space around every rule, so height tracked *rule count*:
+#    a deeply ruled table ran 8% long. Zeroing \aboverulesep, \belowrulesep
+#    and \cmidrulesep removes the dependence entirely; see the \setlength
+#    block in _emit.
+# 2. header rows: no tabular strut gives a header row its height, so header
+#    cells carry their own (_HEAD_STRUT, _HEAD_DEPTH).
+# 3. the frame: the frame rules sit _FRAME_PAD beyond the cells.
+# 4. the row floor: a tabular row is at least one array strut tall, so
+#    _ARRAYSTRETCH trims the strut. A floor, not a height: rows with taller
+#    content still grow.
 #
 # Result over 36 fixture and Fabricator tables: median +0.03%, p90 +1.35%.
-# Six run over the 2% target and every one of them is a two- or three-row
-# table where the absolute difference is under 5pt.
+# Six ran over the 2% target and every one of them was a two- or three-row
+# table where the absolute difference was under 5pt.
 
 _ARRAYSTRETCH = 0.92
 _HEAD_STRUT = 1.58
 _HEAD_DEPTH = 0.20
 _FRAME_PAD = 0.28
-# 5. (7.1.1) under a heading the matrix leaves about 3pt to the rule below
-#    and the tabular left 1.6pt, which read as cramped side by side. The gap
-#    is added after every header row rather than to the header strut, whose
-#    depth a heading that wraps does not reach. It makes a table's head about
-#    1.6pt a row taller than the calibration above.
+# 5. (7.1.1) a heading sat 1.6pt above the rule below it, which read as
+#    cramped; about 3pt reads right. The gap is added after every header row
+#    rather than to the header strut, whose depth a heading that wraps does
+#    not reach. It makes a table's head about 1.6pt a row taller than the
+#    calibration above.
 _HEAD_GAP = 0.15
 
 
 def _macros() -> str:
     r"""The two macros a table carries with it.
 
-    ``\I`` is the header strut the layout appends to every header cell; the
-    matrix emitter relies on the host document defining it, which is a
-    standing trap in Quarto PDF builds — undefined, it takes the enclosing
-    node down with it. ``\gtheadstrut`` sets the header row height the matrix
-    gets from ``minimum height``. Both are ``\providecommand``, so a document
-    that already defines them wins and nothing is clobbered.
+    ``\I`` is the header strut the layout appends to every header cell.
+    Carried with the table, it cannot be missing from a host document: left
+    undefined, it would take the enclosing node down with it.
+    ``\gtheadstrut`` sets the header row height. Both are
+    ``\providecommand``, so a document that already defines them wins and
+    nothing is clobbered.
     """
     return (r'\providecommand{\I}{\vphantom{lp}}%' '\n'
             r'\providecommand{\gtheadstrut}{\rule['
@@ -115,7 +111,7 @@ def render_tikz_tabular(doc: TableDoc, style: HouseStyle | None = None) -> str:
     style = style or HouseStyle()
     if len(doc.columns) == 0:
         return '% greater_tables: empty table\n'
-    lay = layout(doc, style, TABULAR_GEOMETRY)
+    lay = layout(doc, style)
     return _emit(doc, style, lay)
 
 
@@ -132,8 +128,8 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     widths = [10 * round(w / 10) for w in lay.widths]
 
     # ---- geometry, all of it derivable because every width is known here.
-    # Column 1 carried inner xsep=csep on *both* sides in the matrix, so the
-    # gap it opens before column 2 is 2*csep where every other gap is csep.
+    # Column 1 carries csep on *both* sides, so the gap it opens before
+    # column 2 is 2*csep where every other gap is csep.
     def gap_after(j: int) -> int:
         """Milli-em space following 0-based column ``j``."""
         return 2 * csep_milli if j == 0 else csep_milli
@@ -182,13 +178,12 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         return left + inner + right
 
     # ---- cells: the layout's grid, with spans folded back in as \multicolumn
-    rows = [list(r) for r in lay.grid[1:]]      # drop the matrix spacer row
-    for tikz_row, c0, span, tex in lay.overlays:
-        i = tikz_row - 2                        # grid index → tabular row
+    rows = [list(r) for r in lay.grid]
+    for i, c0, span, tex in lay.overlays:
         head = i < n_head
         # a header spanner is bold and bottom aligned like every other header
-        # cell; a body colspan is centered on its span, as the matrix overlay
-        # placed it, and sits with the rest of the body
+        # cell; a body colspan is centered on its span and sits with the rest
+        # of the body
         kind = 'b' if head else 'p'
         body = f'\\gtheadstrut \\bfseries {tex}' if head else tex
         pre = mc_preamble(c0, c0 + span - 1,
@@ -198,7 +193,7 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
             rows[i][j] = None                   # swallowed by the multicolumn
 
     # ---- header cells: b{} so they sit on the row's baseline, centered
-    # (stubs flush left) because that is what the matrix's row style does
+    # (stubs flush left) whatever the column's own alignment
     for i in range(n_head):
         for j, text in enumerate(rows[i]):
             if not text or text.startswith('\\multicolumn'):
@@ -252,23 +247,23 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     # tikzpicture on its own and it still carries its macros
     w(_macros())
     # \arraystretch sets the row *floor* (the array strut) and \extrarowheight
-    # adds the separation on top — between them they reproduce the matrix's
-    # `row sep` over content-sized rows. Neither touches \baselineskip, so
-    # line spacing inside a wrapped cell is unaffected by either.
+    # adds the separation on top: between them, `tikz_row_sep` over
+    # content-sized rows. Neither touches \baselineskip, so line spacing
+    # inside a wrapped cell is unaffected by either.
     w(f'\\setlength{{\\tabcolsep}}{{{gap:.2f}em}}%')
     w(f'\\renewcommand{{\\arraystretch}}{{{_ARRAYSTRETCH}}}%')
     w(f'\\setlength{{\\extrarowheight}}{{{rsep:.2f}em}}%')
-    # booktabs opens space around every rule; the matrix draws its rules into
-    # the row gap and adds none. Left alone, a table's height would depend on
-    # how many break rules it happens to carry — 8% on a deeply ruled table.
+    # booktabs opens space around every rule. Left alone, a table's height
+    # would depend on how many break rules it happens to carry: 8% on a
+    # deeply ruled table.
     w('\\setlength{\\aboverulesep}{0pt}\\setlength{\\belowrulesep}{0pt}%')
     w('\\setlength{\\cmidrulesep}{0pt}%')
     w(f'\\setlength{{\\abovetopsep}}{{{_FRAME_PAD:.2f}em}}'
       f'\\setlength{{\\belowbottomsep}}{{{_FRAME_PAD:.2f}em}}%')
     # 2*\tabcolsep already opens csep between adjacent columns, so an explicit
-    # @{} is needed only where that is wrong — after column 1 — and at the
-    # outer edges, which must match column 1's inner xsep for the frame rules
-    # to span the same width the matrix does
+    # @{} is needed only where that is wrong, after column 1, and at the
+    # outer edges, which take a full csep so the frame rules overhang the
+    # text by the same amount on both sides
     parts = [f'@{{\\hspace{{{em(csep_milli)}}}}}']
     for j in range(ncols):
         if j > 0 and gap_after(j - 1) != csep_milli:
@@ -288,10 +283,9 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
             w(f'\\midrule[{head}]')
         elif i > n_head:
             r = i - n_head
-            if r != n_body:                     # first foot row: matrix skips
+            if r != n_body:                     # no rule over the first foot row
                 row = lay.body_rows[r]
-                # The matrix draws a break rule and a total rule at the *same*
-                # y, so they land on top of each other and read as one rule of
+                # A break rule and a total rule on the same row mean one rule:
                 # the heavier weight across the wider extent. Consecutive
                 # booktabs rules stack instead of overlapping, so merge them.
                 weight, start = 0.0, ncols + 1
@@ -306,13 +300,13 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
                     w(hrule(width, start))
         w(row_tex(i))
         if i < n_head:
-            # the room the matrix leaves between a heading and the rule under
-            # it, which no header strut gives a heading that wraps
+            # room between a heading and the rule under it, which no header
+            # strut gives a heading that wraps
             w(f'\\addlinespace[{_HEAD_GAP:.2f}em]')
             # a group label's underline: plain \cmidrule spans exactly one
-            # \tabcolsep each side, which is the ±gap the matrix draws. A
-            # column after column 1's 2*csep gap has no \tabcolsep of its
-            # own, so there the underline is extended to the stub rule.
+            # \tabcolsep each side, out to the group verticals. A column
+            # after column 1's 2*csep gap has no \tabcolsep of its own, so
+            # there the underline is extended to the stub rule.
             sp = _rule_width(style.spanner_rule)
             if sp:
                 for level, c0, span in lay.spanners:
@@ -364,8 +358,8 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
 
     stub = style_for(style.stub_rule)
     if stub and n_stub > 0:
-        # the matrix anchors on the stub node's east, which for column 1
-        # includes its inner xsep
+        # half a gap past the last stub column, plus column 1's csep on its
+        # right when the stub is that one column
         x = xleft(n_stub) + widths[n_stub - 1] + gap_milli
         if n_stub == 1:
             x += csep_milli

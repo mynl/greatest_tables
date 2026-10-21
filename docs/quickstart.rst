@@ -211,21 +211,6 @@ html into the markdown. Pin the bundle for the whole build:
 those types. Members are validated at construction, so a typo raises rather
 than silently producing a bundle nothing can display.
 
-.. warning::
-
-   On the Quarto **PDF** path the ``'matrix'`` engine emits a ``\I`` strut in
-   every header cell but does not define it — ``Etcher``'s standalone template
-   does, an embedding document does not. Left undefined it raises
-   ``Undefined control sequence``, which takes the enclosing TikZ node with it
-   ("A node must have a (possibly empty) label text") and spills ``lp`` into
-   ``nullfont``: one missing macro, three unrelated-looking errors. Add::
-
-      \newcommand{\I}{\vphantom{lp}}
-
-   to the document preamble. The default ``'tabular'`` engine carries its own
-   macros inside each picture and needs nothing from the host, so this bites
-   only if you have asked for ``tikz_engine='matrix'``.
-
 ``repr()`` gives the text table too, which is what makes ``GT`` usable from a
 plain script or a REPL.
 
@@ -246,44 +231,24 @@ PDF from TikZ
 
 Outputs cache by content hash, so recompiling an unchanged table is free.
 
-.. _tikz-engines:
+.. _tikz-renderer:
 
-Two TikZ engines
-----------------
+The TikZ renderer
+-----------------
 
-``HouseStyle.tikz_engine`` picks how the LaTeX is built:
+The table is one real ``tabular`` inside a single TikZ node. Horizontal rules
+come from booktabs, where TeX already knows the row positions; vertical rules
+are drawn from the node's corners at offsets ``greater_tables`` computes
+itself. The node carries its own macros, so the document needs nothing beyond
+the packages below. The body is a literal ``tabular``, so a typesetter who
+does not use TikZ can lift it by deleting the wrapper.
 
-``'tabular'`` (default since 6.2.0)
-   One real ``tabular`` inside a single node. Horizontal rules come from
-   booktabs, where TeX already knows the row positions; vertical rules are
-   drawn from the node's corners at offsets ``greater_tables`` computes
-   itself. About 30x faster, visually equivalent — measured height drift over
-   the fixture corpus is ±2%.
+**Packages.** ``tikz``, ``booktabs`` and ``array``, and no TikZ library.
+:class:`~greater_tables.Etcher` supplies them. Quarto's default LaTeX
+template loads ``booktabs`` and ``array`` only when the document holds a
+markdown table, so a document should name them in its preamble.
 
-``'matrix'``
-   A pgf ``matrix of nodes`` — one addressable node per cell. Roughly 290 ms
-   of TeX per table. The cost is materializing the nodes, which is why
-   swapping in ``nicematrix`` or ``tabularray`` does not help: they give every
-   cell a node too. Ask for it when you need output byte-identical to 6.1.0,
-   or when ``tikz_post_process`` TeX addresses cells by node name — the
-   tabular has one node for the whole table.
-
-.. code:: python
-
-   from greater_tables import HouseStyle, render_tikz
-
-   render_tikz(doc, HouseStyle(tikz_engine='matrix'))
-
-The tabular engine also emits a body that is a literal ``tabular``, so a
-typesetter who does not use TikZ can lift it by deleting the wrapper.
-
-**Packages.** Both engines need ``tikz`` with the ``matrix``, ``calc`` and
-``fit`` libraries; the tabular engine additionally needs ``booktabs`` and
-``array``. :class:`~greater_tables.Etcher` supplies all of them, and Quarto's
-default LaTeX template already loads ``booktabs`` and ``array``. An embedding
-document that rolls its own preamble must provide them.
-
-**Neither engine breaks across pages** — a TikZ node is one unbreakable box.
+**It does not break across pages:** a TikZ node is one unbreakable box.
 
 **Name the face.** TeX needs the column widths before it sets the table, so
 ``greater_tables`` estimates them from glyph widths measured in the face the

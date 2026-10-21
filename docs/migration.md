@@ -86,7 +86,7 @@ Everything on `HouseStyle`, and who actually reads it:
 | `stub_rule`          | `1.0`                | TikZ               | the stub/body vertical divider (`--gt-rule-stub`)              |
 | `total_rule`         | `0.75`               | TikZ               | above rows flagged `total` (`--gt-rule-total`)                 |
 | `spanner_rule`       | `0.5`                | TikZ               | cmidrule under a column-group label (`--gt-rule-spanner`)      |
-| `tikz_scale`         | `1.0`                | TikZ               | `scale=` on the matrix nodes — **not** the whole picture        |
+| `tikz_scale`         | `1.0`                | TikZ               | `scale=` on the table's one node: the whole table scales       |
 | `tikz_column_sep`    | `1.0`                | TikZ               | column gap, em                                                 |
 | `tikz_row_sep`       | `0.25`               | TikZ               | row gap, em                                                    |
 | `tikz_container_env` | `'table'`            | TikZ               | `table` / `figure` / `sidewaysfigure`                          |
@@ -101,18 +101,16 @@ other thirteen are TikZ.** HTML's equivalents are CSS custom properties, and it
 has four more with no `HouseStyle` counterpart at all — `--gt-pad-v`,
 `--gt-pad-h`, `--gt-neg-color`, `--gt-caption-align`.
 
-`tikz_scale` deserves its footnote. It rides on the matrix *nodes*, so node
-contents scale and the matrix column separations do not — a table at
-`scale=0.5` is about 0.60 of its full width, not half. Measured, the emitted
-width is exactly
+`tikz_scale` deserves its footnote. It rides on the one node that holds the
+table, so everything inside scales, the column separations and rules
+included: a table at `scale=0.5` is half its full width. The emitted width is
 
 ```
-width(s) = s · (sum of column widths + 2 × tikz_column_sep) + ncols × tikz_column_sep + ~0.7em
+width(s) = s · (sum of column widths + (ncols + 2) × tikz_column_sep)
 ```
 
-which is the model `max_table_width_em` uses to pick an autoscale step. The
-`~0.7em` is the rules overhanging the matrix bounding box; it is flat in both
-column count and table width.
+(`2 × tikz_column_sep` for a single column), which is the model
+`max_table_width_em` uses to pick an autoscale step.
 
 ### Vertical rules
 

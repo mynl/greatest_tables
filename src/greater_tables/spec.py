@@ -8,6 +8,7 @@ populated as renderers arrive.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Hashable, Literal
@@ -15,6 +16,8 @@ from typing import Any, Hashable, Literal
 from .ir import FormatSpec
 
 __all__ = ['ColSelector', 'HouseStyle', 'TableSpec']
+
+logger = logging.getLogger(__name__)
 
 # 'all' | regex string | explicit list of column labels | None
 ColSelector = str | Sequence[Hashable] | None
@@ -179,19 +182,16 @@ class HouseStyle:
         it measure. Ems because every other geometry field here is ems: at
         11pt, 8 inches is about 52em.
     tikz_engine
-        Which TikZ emitter renders the table. ``'tabular'`` (default) puts one
-        real ``tabular`` inside a single node, taking horizontal rules from
-        booktabs and drawing only the vertical rules in TikZ; its body is a
+        The TikZ emitter, and ``'tabular'`` is the only one: one real
+        ``tabular`` inside a single node, taking horizontal rules from
+        booktabs and drawing only the vertical rules in TikZ. Its body is a
         literal ``tabular``, so the ``.tex`` lifts straight into a document
-        that does not use TikZ, and it needs ``booktabs`` and ``array`` in the
-        preamble. ``'matrix'`` is the original ``matrix of nodes`` renderer:
-        one addressable pgf node per cell, and about 290 ms of TeX per table
-        against the tabular's 9 — materializing the nodes *is* the cost, which
-        is why swapping table packages does not help. Keep ``'matrix'`` for
-        output that must stay byte-identical to 6.1.0, or for
-        ``tikz_post_process`` TeX that addresses cells by node name, which
-        only the matrix emits. The one thing neither can do is break across
-        pages — a node is one unbreakable box.
+        that does not use TikZ, and it needs ``booktabs`` and ``array`` in
+        the preamble. It cannot break across pages: a node is one
+        unbreakable box. ``'matrix'``, a pgf ``matrix of nodes`` with one node
+        per cell, was removed in 8.0.0; naming it logs a warning and renders
+        the tabular, which sets the same table. The field stays so that a
+        config naming either value still loads.
     tikz_font
         The face the document sets its tables in, which TikZ column widths
         are estimated in: ``'times'`` (default), ``'stix-two'``,
@@ -202,6 +202,11 @@ class HouseStyle:
         widths, roman and bold, are measured in ``render/fonts.py``. HTML is
         unaffected, because the browser measures. An unknown name raises
         ``ValueError``.
+    tikz_post_process
+        TeX appended inside the ``tikzpicture``, after the table and its
+        rules. The table is one node, named ``gt<hash>`` from the document
+        hash, so post-processing can address its anchors (``gt<hash>.north
+        west`` and the like).
     text_ascii_rules
         Draw the text rendering with ASCII only — ``=`` and ``-`` for heavy
         and light rules, ``|`` for the stub divider, ``<<flag>>`` for the row
@@ -223,7 +228,7 @@ class HouseStyle:
     # --- text renderer
     text_ascii_rules: bool = False
     # --- TikZ engine, geometry (em) and container
-    tikz_engine: Literal['matrix', 'tabular'] = 'tabular'
+    tikz_engine: Literal['tabular', 'matrix'] = 'tabular'
     tikz_font: str = 'times'
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0
@@ -243,3 +248,14 @@ class HouseStyle:
     def __post_init__(self):
         from .render.fonts import face
         face(self.tikz_font)            # fail at construction, not at render
+        if self.tikz_engine == 'matrix':
+            # a warning, not an error: the two engines set the same table, so
+            # a document that still names the matrix keeps building
+            logger.warning(
+                "tikz_engine='matrix' was removed in 8.0.0; the table renders "
+                "with 'tabular', the only TikZ engine. Drop the setting, or pin "
+                "greater-tables<8 to keep the matrix.")
+            self.tikz_engine = 'tabular'
+        elif self.tikz_engine != 'tabular':
+            raise ValueError(f"tikz_engine must be 'tabular', not "
+                             f"{self.tikz_engine!r}")

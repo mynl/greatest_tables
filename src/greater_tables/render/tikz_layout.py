@@ -1,16 +1,12 @@
-"""Shared TikZ layout: the grid, the column geometry, the width solve.
+"""TikZ layout: the grid, the column geometry, the width solve.
 
-Both TikZ emitters — the ``matrix of nodes`` renderer in :mod:`.tikz` and the
-one-node ``tabular`` renderer in :mod:`.tikz_tabular` — need the same answers
-before they can emit anything: which cell text goes where, how wide each
-column is, which cells are spanned, and what scale the table sets at. Only the
-*emission* differs, so all of that lives here and neither emitter repeats it.
+Everything the emitter in :mod:`.tikz_tabular` needs before it can emit
+anything: which cell text goes where, how wide each column is, which cells
+are spanned, and what scale the table sets at. Kept apart from the emission
+so the width arithmetic can be tested without parsing TeX.
 
-The one thing that genuinely differs is how a table's total width decomposes
-into the part the width solver may spend and the part it cannot — a matrix
-pays for its column separations outside the scaled node, a single node scales
-everything inside it. :class:`Geometry` names that difference and the two
-module constants supply it.
+The table is one node, so its whole width scales: column text plus the
+padding between and around the columns (:func:`table_width`).
 
 Widths are milli-ems everywhere below and divided only at emit time, so the
 arithmetic is exact on every interpreter (see textlength's module docstring).
@@ -20,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..ir import Cell, HeadCell, Row, TableDoc
@@ -29,8 +25,8 @@ from ..spec import HouseStyle
 from .textlength import display_milli, math_milli, token_milli
 from .widths import solve_widths
 
-__all__ = ['W2TIKZ', 'Geometry', 'Layout', 'MATRIX_GEOMETRY',
-           'TABULAR_GEOMETRY', 'layout', 'style_for', 'tex_escape']
+__all__ = ['W2TIKZ', 'Layout', 'layout', 'style_for', 'table_width',
+           'tex_escape']
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +45,6 @@ _MIN_COL = 2000                 # 2em floor on any column
 # document. 0.1em is invisible next to a column and costs under 1em across a
 # typical table.
 _WIDTH_PAD = 100
-
-# What a *matrix* table measures beyond its columns and its scaled node:
-#   width(scale) = scale * (sum(widths) + 2*csep) + ncols*csep + overhang
-# The 2*csep is column 1's inner xsep — a node option, so it scales; the matrix
-# column separations do not. Checked across every fixture against compiled page
-# widths: the residual is +0.68em on average, spread 0.56 to 0.72, flat in both
-# column count and table width, which is the rules overhanging the matrix
-# bounding box. Taking the top of that range keeps the estimate conservative.
-# The one-node emitter has no such residual — see TABULAR_GEOMETRY.
-_RULE_OVERHANG = 700
 
 # Coarse on purpose: two tables in one document landing on the same step look
 # deliberate, where 0.87 and 0.91 look like a mistake.
@@ -160,40 +146,35 @@ def _token_milli(cell: Cell | HeadCell, math: bool, font: str,
 
 # ------------------------------------------------------------------ geometry
 
-@dataclass(frozen=True)
-class Geometry:
-    """How an emitter's table width splits into scaled and unscaled parts.
+def _padding(ncols: int, csep_milli: int) -> int:
+    """Milli-em padding between and around ``ncols`` columns.
 
-    ``inner`` is the furniture that lives *inside* whatever the scale applies
-    to and so shrinks with it; ``unscaled`` is what sits outside and does not.
-    Both take ``(ncols, csep_milli)`` and return milli-ems.
+    Padding is csep at each outer edge plus csep between adjacent columns,
+    except after column 1, which opens 2*csep before column 2 (hence
+    ncols + 2, not ncols + 1). A single column has both outer pads and no
+    gap. All of it sits inside the one node, so it scales with the table, and
+    nothing overhangs: the frame rules are the tabular's own booktabs rules
+    and the vertical rules are interior.
     """
-
-    inner: Callable[[int, int], int]
-    unscaled: Callable[[int, int], int]
-
-    def table_width(self, widths: Sequence[int], scale: float, ncols: int,
-                    csep_milli: int) -> int:
-        """Emitted table width in milli-ems."""
-        return (round(scale * (sum(widths) + self.inner(ncols, csep_milli)))
-                + self.unscaled(ncols, csep_milli))
+    return (ncols + 2) * csep_milli if ncols >= 2 else 2 * csep_milli
 
 
-# A matrix scales its node contents and column 1's inner xsep; the matrix
-# column separations and the rules' overhang sit outside the scale.
-MATRIX_GEOMETRY = Geometry(
-    inner=lambda ncols, csep: 2 * csep,
-    unscaled=lambda ncols, csep: ncols * csep + _RULE_OVERHANG)
+def table_width(widths: Sequence[int], scale: float, ncols: int,
+                csep_milli: int) -> int:
+    """Emitted table width in milli-ems.
 
-# One node holds the whole tabular, so every separation scales with it and
-# nothing overhangs: the frame rules are the tabular's own booktabs rules and
-# the vertical rules are interior. Padding is csep at each outer edge plus
-# csep between adjacent columns — except column 1, which carries csep on both
-# sides and so contributes 2*csep before column 2 (hence ncols + 2, not
-# ncols + 1). A single column has both outer pads and no gap.
-TABULAR_GEOMETRY = Geometry(
-    inner=lambda ncols, csep: (ncols + 2) * csep if ncols >= 2 else 2 * csep,
-    unscaled=lambda ncols, csep: 0)
+    Parameters
+    ----------
+    widths
+        Column text widths, milli-ems.
+    scale
+        The scale the node is set at.
+    ncols
+        Number of columns.
+    csep_milli
+        Column separation, milli-ems.
+    """
+    return round(scale * (sum(widths) + _padding(ncols, csep_milli)))
 
 
 # ------------------------------------------------------------- width solving
@@ -250,13 +231,13 @@ def _grow(widths: list[int], naturals: list[int], budget: int) -> list[int]:
 
 
 def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
-                samples: list[list[int]], prose_cap: int, csep_milli: int,
-                geom: Geometry) -> tuple[list[int], float]:
+                samples: list[list[int]], prose_cap: int,
+                csep_milli: int) -> tuple[list[int], float]:
     """Narrow prose columns to meet ``max_table_width_em``; scale if it can't.
 
-    Returns the column widths and the scale to emit. The budget splits into
-    a part the solver can spend (column text plus the furniture that scales
-    with it) and a part it cannot — see :class:`Geometry`.
+    Returns the column widths and the scale to emit. The whole table scales,
+    so the budget at a scale is column text plus padding (:func:`_padding`)
+    times that scale.
 
     The budget is met at ``tikz_scale``, the scale the table is set at when
     nothing forces it lower. Meeting it at full size and then setting the
@@ -266,12 +247,11 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
     """
     ncols = len(naturals)
     budget = round(style.max_table_width_em * _EM)
-    unscaled = geom.unscaled(ncols, csep_milli)
-    inner = geom.inner(ncols, csep_milli)
+    inner = _padding(ncols, csep_milli)
     ceiling = style.tikz_scale
     # samples carry the same cap and pad the naturals do, so the solver's
     # idea of a column's natural width matches the one computed above
-    text_budget = round((budget - unscaled) / ceiling) - inner
+    text_budget = round(budget / ceiling) - inner
     capped = [[min(x + _WIDTH_PAD, prose_cap) for x in s] for s in samples]
     widths = list(solve_widths(capped, floors, text_budget).widths)
     if sum(widths) > text_budget:
@@ -288,11 +268,11 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
 
     # nothing left to narrow: shrink the scaled part until the whole fits
     scaled = sum(widths) + inner
-    needed = (budget - unscaled) / scaled if scaled > 0 else 1.0
+    needed = budget / scaled if scaled > 0 else 1.0
     step = next((s for s in _SCALE_STEPS if s <= needed), _SCALE_STEPS[-1])
     scale = min(ceiling, step)
-    full = geom.table_width(widths, 1.0, ncols, csep_milli) / _EM
-    total = geom.table_width(widths, scale, ncols, csep_milli) / _EM
+    full = table_width(widths, 1.0, ncols, csep_milli) / _EM
+    total = table_width(widths, scale, ncols, csep_milli) / _EM
     if needed < _SCALE_STEPS[-1]:
         # ERROR, not WARNING: a ladder step is the design working, but this
         # table really is wider than its budget, and callers that silence the
@@ -373,31 +353,30 @@ def _balance_headings(widths: list[int], headings: Sequence[Sequence[int] | None
 
 @dataclass(frozen=True)
 class Layout:
-    """Everything both emitters need, resolved once.
+    """Everything the emitter needs, resolved once.
 
-    ``grid`` carries the matrix's zero-height spacer row at index 0, so a grid
-    index maps to a TikZ matrix row as ``index + 1`` and the ``overlays`` /
-    ``body_start`` row numbers below are TikZ rows. A ``tabular`` emitter skips
-    ``grid[0]`` and subtracts one to get back to its own row numbering.
+    ``grid`` holds one row per tabular row: head rows at ``0 .. n_head - 1``,
+    then body and foot rows from ``body_start``. ``overlays`` index the same
+    rows.
     """
 
-    name: str                                   # tikz node/matrix name
+    name: str                                   # tikz node name
     ncols: int
     n_head: int                                 # header levels
     n_stub: int                                 # stub (index) columns
-    grid: list[list[str]]                       # spacer row, head rows, body
-    overlays: list[tuple[int, int, int, str]]   # (tikz row, c0, span, tex)
+    grid: list[list[str]]                       # head rows, then body
+    overlays: list[tuple[int, int, int, str]]   # (grid row, c0, span, tex)
     spanners: list[tuple[int, int, int]]        # (level, c0, span)
     widths: list[int]                           # milli-em column text widths
     aligns: list[str]                           # 'l' | 'r' | 'c' per column
     scale: float
-    body_start: int                             # tikz row of body row 0
+    body_start: int                             # grid row of body row 0
     body_rows: list[Row]                        # body + foot, in order
     n_body: int                                 # where foot starts within them
     csep_milli: int
 
 
-def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
+def layout(doc: TableDoc, style: HouseStyle) -> Layout:
     """Resolve a document into cell text and column geometry.
 
     Parameters
@@ -406,8 +385,11 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
         The table document.
     style
         House style; supplies separations, the scale ladder and the budget.
-    geom
-        The emitter's width decomposition — see :class:`Geometry`.
+
+    Returns
+    -------
+    Layout
+        The grid of cell TeX, the spans, the column widths and the scale.
     """
     ncols = len(doc.columns)
     name = f'gt{doc.hash or "x"}'
@@ -417,11 +399,11 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     math_on = doc.math != 'off'
     font = style.tikz_font
 
-    # ---- lay out cells into an ncols-wide text matrix + overlay spans;
+    # ---- lay out cells into an ncols-wide grid of text + overlay spans;
     # measure display widths at placement (true visual column known here)
-    # matrix rows: 1 spacer + n_head + body(+foot); tikz indices are 1-based
-    grid: list[list[str]] = [[''] * ncols]           # spacer row
-    overlays: list[tuple[int, int, int, str]] = []   # (tikz row, c0, span, tex)
+    # grid rows: n_head head rows, then body (+foot)
+    grid: list[list[str]] = []
+    overlays: list[tuple[int, int, int, str]] = []   # (grid row, c0, span, tex)
     spanners: list[tuple[int, int, int]] = []        # (level, c0, span)
     spans: list[tuple[int, int, int]] = []           # (c0, span, milli needed)
     wmax = [_MIN_COL] * ncols                        # body width, one line
@@ -452,7 +434,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                                                    bold=True)
                                      for word in hc.text.split()]
             elif hc.text:
-                overlays.append((2 + level, col, hc.colspan, tex))
+                overlays.append((level, col, hc.colspan, tex))
                 # an overlaid label carries no text width: it cannot wrap, so
                 # it constrains the whole group it spans
                 spans.append((col, hc.colspan,
@@ -460,7 +442,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
             col += hc.colspan
         grid.append(cells)
 
-    body_start = 2 + n_head                          # tikz row of body row 0
+    body_start = n_head                              # grid row of body row 0
     body_rows = list(doc.body) + list(doc.foot)
     pending = [0] * ncols
     for r, row in enumerate(body_rows):
@@ -538,10 +520,10 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
         widths, scale = naturals, style.tikz_scale
     else:
         widths, scale = _fit_budget(style, naturals, floors, samples,
-                                    prose_cap, csep_milli, geom)
+                                    prose_cap, csep_milli)
         budget = round(style.max_table_width_em * _EM)
-        spare = (round((budget - geom.unscaled(ncols, csep_milli)) / scale)
-                 - geom.inner(ncols, csep_milli) - sum(widths))
+        spare = (round(budget / scale) - _padding(ncols, csep_milli)
+                 - sum(widths))
         space = display_milli(' ', font=font, bold=True)
         widths = _balance_headings(widths, headings, space, spare)
         apply_spans(widths)
@@ -551,10 +533,9 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     # document set in a face other than tikz_font) the number runs into the
     # column gap on the side away from its alignment instead of breaking:
     # -1.95e-05 broke after its "e-" in Fira Sans. The width is the column's,
-    # in the same units the column itself is emitted in, so both emitters
-    # box alike.
+    # in the same units the column itself is emitted in.
     for r in range(len(body_rows)):
-        row = grid[body_start - 1 + r]
+        row = grid[body_start + r]
         for col, column in enumerate(doc.columns):
             if not column.wrap and row[col]:
                 row[col] = (f'\\makebox[{widths[col] / _EM:.2f}em]'

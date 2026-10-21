@@ -106,24 +106,21 @@ is an alternate property block. Default colors are ``currentColor`` and
 transparent: an embedded fragment has no opinion about your page's light or
 dark mode.
 
-**TikZ** is two emitters over one layout pass. ``render/tikz_layout.py``
-resolves cell text, spans, column widths and scale — and owns the only
+**TikZ** is one emitter over a layout pass. ``render/tikz_layout.py``
+resolves cell text, spans, column widths and scale, and owns the only
 character-based width estimation in the package (``TextLength``), since PDF
-has no browser to measure for it. ``render/tikz.py`` emits a pgf ``matrix of
-nodes``; ``render/tikz_tabular.py`` emits one ``tabular`` inside one node.
-``HouseStyle.tikz_engine`` chooses — ``'tabular'`` since 6.2.0 — and
-``render_tikz`` dispatches.
+has no browser to measure for it. ``render/tikz_tabular.py`` emits one
+``tabular`` inside one node, and ``render/tikz.py`` holds the public entry
+points.
 
-The split exists because the cost of the matrix is *per addressable pgf node*
-and nothing else — measured at about 290 ms per table, where the same table
-as a single node is about 9 ms. Reaching for a different table package does
-not help: ``nicematrix`` and ``tabularray`` also give every cell a node and
-land in the same band. What the nodes actually buy is rule anchoring, and
-``greater_tables`` computes every column width itself, so for vertical rules
-it already knows the x it needs. Row heights it cannot know — cells wrap — so
-the tabular engine hands horizontal rules to booktabs, which runs inside the
-tabular where TeX has the row positions. That division (x is ours, y is
-TeX's) is what makes one node sufficient.
+One node is enough because ``greater_tables`` computes every column width
+itself, so for vertical rules it already knows the x it needs. Row heights it
+cannot know, since cells wrap, so horizontal rules go to booktabs, which runs
+inside the tabular where TeX has the row positions. That division (x is ours,
+y is TeX's) is what makes one node sufficient. The first renderer, a pgf
+``matrix of nodes`` with one node per cell, was retired in 8.0.0: materializing
+the nodes cost about 190 ms of TeX per table, against about 2 ms for the
+single node, and ``nicematrix`` and ``tabularray`` give every cell a node too.
 
 ``Etcher`` compiles the result, tectonic first with a pdflatex fallback, and
 caches outputs by content hash.

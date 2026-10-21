@@ -90,5 +90,19 @@ def test_config_path(tmp_path, df):
 def test_tikz_renders(df):
     tikz = GT(df).tikz
     assert '\\begin{tikzpicture}' in tikz and '\\begin{tabular}' in tikz
-    matrix = GT(df, style=HouseStyle(tikz_engine='matrix')).tikz
-    assert '\\matrix' in matrix
+
+
+def test_matrix_engine_warns_and_renders_tabular(df, caplog):
+    """The matrix engine went in 8.0.0; naming it still builds, says so once,
+    and sets the tabular."""
+    with caplog.at_level('WARNING'):
+        style = HouseStyle(tikz_engine='matrix')
+    assert [r.levelname for r in caplog.records] == ['WARNING']
+    assert '8.0.0' in caplog.text and 'greater-tables<8' in caplog.text
+    assert style.tikz_engine == 'tabular'
+    assert GT(df, style=style).tikz == GT(df).tikz
+
+
+def test_unknown_engine_raises():
+    with pytest.raises(ValueError, match='tabular'):
+        HouseStyle(tikz_engine='tabularx')

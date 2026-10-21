@@ -28,23 +28,17 @@ def main() -> None:
     golden_ir = ROOT / 'tests' / 'golden' / 'ir'
     golden_text = ROOT / 'tests' / 'golden' / 'text'
     golden_ascii = ROOT / 'tests' / 'golden' / 'text-ascii'
-    golden_tikz = ROOT / 'tests' / 'golden' / 'tikz'
     golden_tabular = ROOT / 'tests' / 'golden' / 'tikz-tabular'
-    for d in (golden_ir, golden_text, golden_ascii, golden_tikz,
-              golden_tabular):
+    for d in (golden_ir, golden_text, golden_ascii, golden_tabular):
         d.mkdir(parents=True, exist_ok=True)
     ascii_style = HouseStyle(text_ascii_rules=True)
-    matrix_style = HouseStyle(tikz_engine='matrix')
-    tabular_style = HouseStyle(tikz_engine='tabular')   # the 6.2.0 default
 
     for name, make in EXEMPLARS.items():
         doc = make()
         (golden_ir / f'{name}.json').write_bytes(canonical_json(doc))
-        (golden_tikz / f'{name}.tex').write_text(
-            render_tikz(doc, matrix_style), encoding='utf-8', newline='\n')
         (golden_tabular / f'{name}.tex').write_text(
-            render_tikz(doc, tabular_style), encoding='utf-8', newline='\n')
-        print(f'wrote {name}.json + {name}.tex (both engines)')
+            render_tikz(doc), encoding='utf-8', newline='\n')
+        print(f'wrote {name}.json + {name}.tex')
 
     for name, (data, spec) in fixtures().items():
         doc = build(data, spec)
@@ -53,11 +47,9 @@ def main() -> None:
             render_text(doc), encoding='utf-8', newline='\n')
         (golden_ascii / f'{name}.txt').write_text(
             render_text(doc, ascii_style), encoding='utf-8', newline='\n')
-        (golden_tikz / f'fx-{name}.tex').write_text(
-            render_tikz(doc, matrix_style), encoding='utf-8', newline='\n')
         (golden_tabular / f'fx-{name}.tex').write_text(
-            render_tikz(doc, tabular_style), encoding='utf-8', newline='\n')
-        print(f'wrote fx-{name} ir + text + text-ascii + tikz (both engines)')
+            render_tikz(doc), encoding='utf-8', newline='\n')
+        print(f'wrote fx-{name} ir + text + text-ascii + tikz')
 
     schema_path = ROOT / 'schema' / 'ir-v1.json'
     schema = TableDoc.model_json_schema()

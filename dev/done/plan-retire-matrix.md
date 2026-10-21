@@ -168,3 +168,53 @@ document that asked for the matrix would stop with the message above; rebuilding
 dropping the setting, restores it.
 
 ## Execution log
+
+- 2026-10-21: reviewed at 7.6.2. **Blocker found:** the Consumers claim was false. Five KOG-blog
+  posts set `tikz_engine='matrix'` (2026-08-11 dice-of-dice, 2026-08-11 FFT-vs-Simulation,
+  2026-08-12 dice-of-dice-addendum, 2026-10-15 Exact-Finite-FFTs-in-aggregate, 2026-10-15
+  Aggregate-Recitations). The blog renders HTML only, so the setting did nothing there, but a
+  construction-time `ValueError` would have broken each post on its next edit. Steve ruled the same
+  day: warn and render tabular instead of raising, and strip the setting from the five posts.
+- 2026-10-22: executed as **8.0.0**, one commit, since the plan assigns one version and a split
+  would leave red commits between steps. Divergences:
+  - **[api] warns, not raises.** `tikz_engine: Literal['tabular', 'matrix']`; `'matrix'` logs a
+    WARNING naming 8.0.0 and the `<8` pin, and `__post_init__` sets the field to `'tabular'`. Any
+    other value raises `ValueError`. `test_compat.py` checks the warning, the fallback and the
+    raise.
+  - **KOG-blog.** The five post sources (not `docs/`) lose `, tikz_engine='matrix'`; left
+    uncommitted in KOG-blog, where a push deploys.
+  - **`tikz_post_process`** had no docstring entry of its own (the matrix sentence was in
+    `tikz_engine`'s); one is added, naming the `gt<hash>` node.
+  - **[layout]** `table_width` moved into `tikz_layout.py` and is re-exported from `tikz.py` with
+    its old signature; `_padding(ncols, csep_milli)` replaces `Geometry`. Tabular goldens were
+    byte-identical after this step and at the end.
+  - **[tests]** `test_engine_dispatch` in `test_tikz_tabular.py`, not listed, also asserted
+    matrix output; it became `test_render_tikz_is_the_tabular`. `test_budget_is_never_exceeded`
+    keeps one copy, in `test_tikz_tabular.py`, widened to the union of both parametrizations
+    (6 tables by 4 budgets) so no coverage is lost. `test_math_and_escaping` and
+    `test_nbsp_becomes_tie` stay in `test_tikz.py` on the default engine. The rule count regex in
+    `test_rules.py` excludes `\cmidrulesep`. `test_rule_weights_match_the_matrix_ladder` became
+    `..._pgf_ladder`.
+  - **Packages acceptance.** `FACE_DOC` and `SIDEWAYS_DOC` in `test_tikz_geometry.py` drop the
+    matrix libraries and `\I`, so five faces and the sideways test compile without them, and
+    `test_compiles_with_only_tikz_booktabs_and_array` compiles `loss-dev` in a preamble of exactly
+    those three packages.
+  - **Quarto claim corrected.** The quickstart and Etcher said Quarto's default template loads
+    `booktabs` and `array`; per the note in `notes/insurable-risk-portfolios/prefob.tex` it does
+    so only when the document holds a markdown table. Both now say to name them.
+  - **`rg -i matrix src/`** finds the warning and validation in `spec.py`, the `tikz_engine`
+    docstring, Etcher's library line (kept, as planned) and the word `matrix` in
+    `data/words-12.md`. The calibration comments in `tikz_tabular.py` now state the geometry
+    rather than cite the matrix; its module docstring keeps one line of history.
+  - Speed figures use this plan's measurement (190 ms against 2 ms), replacing the older 290
+    against 9 in the docs.
+- Acceptance, 2026-10-22: tabular goldens byte-identical (`tests/make_goldens.py` changed no
+  file); `uv run pytest` 890 passed, 10 skipped, no xfails (baseline 975 passed, 10 skipped, 13
+  xfailed); the bare-preamble compile passes; the gallery rendered in house-html, house-pdf, html
+  and pdf with exit 0 and no TeX errors, 51 tables each with one HTML and one TikZ panel (the
+  overfull boxes in the PDFs are the gallery's deliberately overrunning tables);
+  `src/greater_tables/render/` went from 1192 to 981 lines in the three TikZ modules.
+- Left for Steve: `D:\projects\CLAUDE.md` lines 141 to 144 ("Only the old `matrix` emitter still
+  bites"), the comment and `\usetikzlibrary{matrix}` in `prefob.tex`, the
+  `D:\projects\Hacks\aggregate\gt-related.ipynb` hack notebook, and `guide/cheatsheet.qmd` lines
+  51, 115 and 174.

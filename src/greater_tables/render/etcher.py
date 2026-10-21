@@ -1,9 +1,9 @@
 """Etcher: compile TikZ LaTeX to PDF (and optionally SVG).
 
-The standalone template carries what both TikZ engines need: ``tikz`` with
-the matrix/calc libraries for the ``matrix of nodes`` engine, and
-``booktabs`` + ``array`` for the one-node ``tabular`` engine. An embedding
-document must supply the same — Quarto's default template already does.
+The standalone template carries what a table needs: ``tikz``, ``booktabs``
+and ``array``. An embedding document must supply the same. The template
+also loads a handful of TikZ libraries the table itself does not use, for
+``tikz_post_process`` TeX that may.
 
 
 greater_tables salvage, modernized: **tectonic** is the default engine (fast,

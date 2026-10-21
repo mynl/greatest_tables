@@ -4,16 +4,6 @@ Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
 reviewed 2026-10-21 at 7.6.2.
 
-## [gallery] Defects the gallery shows, not yet planned
-
-From `dev/done/plan-gt7-review.md`, Findings (2026-10-21); the plan holds the
-detail and the fixture for each.
-
-1. Matrix engine: spanner labels ignore `tikz_scale`; verticals cross spanner
-   labels at break depth 1 or more and stop 1.4pt short of the bottom frame
-   (strict expected failures in `tests/test_tikz_geometry.py`). Steve ruled
-   2026-10-21: retire the engine, `dev/plan-retire-matrix.md`.
-
 ## [md-xref] A markdown string's `{#tbl-...}` label does not cross-reference in Quarto
 
 A markdown string ending `Table: Caption {#tbl-md}` sets the table's `id="tbl-md"`, but

@@ -1,6 +1,6 @@
 ---
 title: "greater_tables gallery"
-subtitle: "Every shape in HTML and both TikZ engines"
+subtitle: "Every shape in HTML and TikZ"
 author: "Stephen J. Mildenhall"
 date: today
 execute:
@@ -18,10 +18,6 @@ format:
     output-file: gallery-house.pdf
     include-in-header:
       text: |
-        % house style loads tikz for the tabular engine only; the matrix
-        % engine also needs its library and its row strut
-        \usetikzlibrary{matrix,calc,fit}
-        \providecommand{\I}{\vphantom{lp}}
         % sidewaystable, for the Sideways section
         \usepackage{rotating}
   html:
@@ -39,13 +35,11 @@ format:
       text: |
         \usepackage{newtxtext}
         \usepackage{tikz}
-        \usetikzlibrary{matrix,calc,fit,backgrounds}
         \usepackage{booktabs}
         \usepackage{array}
         \usepackage{xcolor}
         \usepackage{float}
         \floatplacement{table}{H}
-        \providecommand{\I}{\vphantom{lp}}
         \usepackage{rotating}
 ---
 
@@ -71,10 +65,10 @@ tables are set in, `tikz_font`: STIX Two in the house-style PDF, Times everywher
 section varies a `HouseStyle` field, the text says which. Every table is numbered in the order the document runs, and headed by its
 fixture name and any style changes, so a table can be named by its number.
 
-On the web each table appears three times: the HTML, then each TikZ engine's TeX compiled on its
-own and converted to SVG. Those images are set in Times at 11pt on a page with no margins, so judge
-rules, alignment, spans and wrapping there, and judge width against the margins in the PDF. The PDF
-shows the two engines, `matrix` above `tabular`, in the document's own text block. Render with:
+On the web each table appears twice: the HTML, then the TikZ TeX compiled on its own and converted
+to SVG. That image is set in Times at 11pt on a page with no margins, so judge rules, alignment,
+spans and wrapping there, and judge width against the margins in the PDF. The PDF shows the TikZ
+table in the document's own text block. Render with:
 
 ```powershell
 $env:QUARTO_PYTHON = "V:\dev\greatest-tables\.venv\Scripts\python.exe"
@@ -171,7 +165,7 @@ show('col-mi-2')
 ```
 
 Three levels. Vertical rules separate the outermost groups at `max_vrule_depth=1` (the default);
-look for where each vertical lands against the cells in both engines.
+look for where each vertical lands against the cells.
 
 ```{python}
 show('col-mi-3')

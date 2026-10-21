@@ -3,6 +3,29 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [8.0.0] - 2026-10-22
+
+**The `matrix` TikZ engine is gone; `tabular` is the only one.** Major version because
+`render_tikz_matrix` and the matrix geometry were public. Output of the tabular, the default since
+6.2.0, does not change by a byte.
+
+### Removed
+
+- The `matrix` engine and `render.tikz.render_tikz_matrix`. It cost about 190 ms of TeX per table
+  against the tabular's 2, and carried three rule defects the tabular does not. Pin
+  `greater-tables<8` to keep it.
+- `render.tikz_layout.Geometry`, `MATRIX_GEOMETRY` and `TABULAR_GEOMETRY`; `tikz_layout.layout`
+  loses its geometry argument.
+
+### Changed
+
+- `HouseStyle(tikz_engine='matrix')` still builds: it logs a warning naming 8.0.0 and renders the
+  tabular, which sets the same table. **Output changes** for a document that named the matrix. Any
+  other value but `'tabular'` raises `ValueError`.
+- `render.tikz.table_width` computes the tabular's width; it computed the matrix's.
+- The docs, quickstart and gallery describe one engine. A table needs `tikz`, `booktabs` and `array`
+  in the preamble and no TikZ library, now checked by a compile test.
+
 ## [7.6.2] - 2026-10-21
 
 ### Fixed
