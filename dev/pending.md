@@ -2,24 +2,21 @@
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-10-21 at 7.6.0.
+reviewed 2026-10-21 at 7.6.2.
 
 ## [gallery] Defects the gallery shows, not yet planned
 
 From `dev/done/plan-gt7-review.md`, Findings (2026-10-21); the plan holds the
 detail and the fixture for each.
 
-2. A headerless table gets a doubled top rule, both engines.
-3. Matrix engine: spanner labels ignore `tikz_scale`; verticals cross spanner
+1. Matrix engine: spanner labels ignore `tikz_scale`; verticals cross spanner
    labels at break depth 1 or more and stop 1.4pt short of the bottom frame
-   (strict expected failures in `tests/test_tikz_geometry.py`). Held because
-   the matrix output is byte-identical to 6.1.0 by design; fix or retire.
+   (strict expected failures in `tests/test_tikz_geometry.py`). Steve ruled
+   2026-10-21: retire the engine, `dev/plan-retire-matrix.md`.
 
 ## [md-xref] A markdown string's `{#tbl-...}` label does not cross-reference in Quarto
 
-`GT("""| ... |
-
-Table: Caption {#tbl-md}""")` sets the table's `id="tbl-md"`, but
+A markdown string ending `Table: Caption {#tbl-md}` sets the table's `id="tbl-md"`, but
 `@tbl-md` renders as `?@tbl-md`: Quarto's crossref takes a table's label from the cell option
 (`#| label: tbl-md`), and a raw HTML or LaTeX table that only carries the id is not registered.
 Found 2026-10-21 by a probe for 7.6.1, unchanged by it (it failed before too). The cell label

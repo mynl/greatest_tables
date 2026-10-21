@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.6.2] - 2026-10-21
+
+### Fixed
+
+- TikZ: a table with no header row has one rule above the body, not two. The rule under the
+  header was drawn under an empty header, doubling the top frame, in both engines.
+
 ## [7.6.1] - 2026-10-21
 
 ### Fixed

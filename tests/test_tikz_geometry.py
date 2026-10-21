@@ -149,6 +149,13 @@ def test_body_rules_follow_the_policy(engine, depth, pdf_dir):
     assert len(levels(horizontals)) == 3 + expected
 
 
+@pytest.mark.parametrize('engine', ENGINES)
+def test_headerless_table_has_one_top_rule(engine, pdf_dir):
+    """With no head there is no head rule: the frame alone above the body."""
+    _v, horizontals, _w = geometry('headerless', engine, pdf_dir)
+    assert len(levels(horizontals)) == 2
+
+
 # shapes with a head: spanned ones put underlines between the frame and the
 # head rule, one rule height per level above the leaf
 HEADED = ['plain', 'row-mi-3', 'col-mi-2', 'col-mi-3', 'both-mi', 'loss-lab',

@@ -167,7 +167,7 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
         w(f'\\path[draw, {top}] ({name}-1-1.north west) -- '
           f'({name}-1-{ncols + 1}.north east);')
     base = style_for(style.head_rule)
-    if base and body_rows:
+    if base and body_rows and n_head:   # no head: it would double the frame
         hpath(base, body_start, 1, ygap)
     n_body = lay.n_body
     for r, row in enumerate(body_rows):

@@ -283,7 +283,8 @@ def _emit(doc: TableDoc, style: HouseStyle, lay: Layout) -> str:
     head = _rule_width(style.head_rule)
     n_body = lay.n_body
     for i in range(len(rows)):
-        if i == n_head and head and lay.body_rows:
+        # no head, no rule under it: it would double the top frame
+        if i == n_head and n_head and head and lay.body_rows:
             w(f'\\midrule[{head}]')
         elif i > n_head:
             r = i - n_head
