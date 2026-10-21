@@ -19,6 +19,8 @@ format:
         % engine also needs its library and its row strut
         \usetikzlibrary{matrix,calc,fit}
         \providecommand{\I}{\vphantom{lp}}
+        % sidewaystable, for the Sideways section
+        \usepackage{rotating}
   html:
     theme: cosmo
     page-layout: full
@@ -41,6 +43,7 @@ format:
         \usepackage{float}
         \floatplacement{table}{H}
         \providecommand{\I}{\vphantom{lp}}
+        \usepackage{rotating}
 ---
 
 ```{=html}
@@ -50,6 +53,7 @@ format:
 .gt-panel { margin: 0; max-width: 100%; }
 .gt-panel figcaption { font-size: 0.8rem; opacity: 0.65; margin-bottom: 0.4rem; }
 .gt-panel img { max-width: 100%; height: auto; }
+.gt-panels-title { margin: 2.25rem 0 0.25rem; }
 </style>
 ```
 
@@ -60,7 +64,8 @@ from panels import show
 Each table comes from `tests/registry.py`, so every shape here is also a fixture with goldens, and
 the gallery and the test suite cannot drift apart. The style is house style's `house_style()`: the
 document budget of 41.4em and a scale ceiling of 0.9. Where a section varies a `HouseStyle` field,
-the text says which.
+the text says which. Every table is numbered in the order the document runs, and headed by its
+fixture name and any style changes, so a table can be named by its number.
 
 On the web each table appears three times: the HTML, then each TikZ engine's TeX compiled on its
 own and converted to SVG. Those images are set in Times at 11pt on a page with no margins, so judge
@@ -322,6 +327,63 @@ spilling over the rules on either side.
 
 ```{python}
 show('long-spanner')
+```
+
+## Long headings
+
+A long heading over narrow data. The column is as wide as the heading's longest word, so the
+heading stacks on as many lines as it needs, however much room the table has to spare. Look at
+each heading's line count against the room left on the line.
+
+Four ratio columns under headings of four to seven words.
+
+```{python}
+show('long-head-ratios')
+```
+
+Y/N flags, one character wide, under headings of three to seven words.
+
+```{python}
+show('long-head-flags')
+```
+
+Counts of at most three digits.
+
+```{python}
+show('long-head-counts')
+```
+
+Long leaf headings under column groups.
+
+```{python}
+show('long-head-groups')
+```
+
+Nine long headings over Y/N and counts: too wide for the budget even with every heading at its
+longest word, so the table also scales.
+
+```{python}
+show('long-head-many')
+```
+
+## Sideways
+
+A table too wide for the text block, set on a page of its own by
+`tikz_container_env='sidewaystable'`, with the budget at the text height, 62em. The document needs
+`\usepackage{rotating}`. The same Loss Lab shape upright first, scaled to the text width.
+
+```{python}
+show('wide-lab')
+```
+
+```{python}
+show('wide-lab', tikz_container_env='sidewaystable', max_table_width_em=62)
+```
+
+Twenty number columns, which overrun the upright budget, sideways.
+
+```{python}
+show('wide-numbers', tikz_container_env='sidewaystable', max_table_width_em=62)
 ```
 
 ## Math

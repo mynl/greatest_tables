@@ -16,12 +16,15 @@ keeps the one its format wants, as house style's ``GT`` does:
 The style is house style's ``house_style()`` (its document budget and scale
 ceiling) with any ``HouseStyle`` fields passed to ``show`` replaced. SVGs are
 cached under ``_gallery/`` by a hash of their TeX, so a re-render compiles
-only the tables that changed.
+only the tables that changed. Each ``show`` numbers its table, in the order
+the document calls it, and heads it with the fixture name and any style
+changes, so a table can be named in conversation by its number.
 """
 from __future__ import annotations
 
 import hashlib
 import html
+import itertools
 import re
 import shutil
 import subprocess
@@ -32,6 +35,7 @@ from pathlib import Path
 from greater_tables import (
     Etcher, TableSpec, build, render_html, render_text, render_tikz,
 )
+from greater_tables.render.tikz_layout import tex_escape
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'tests'))
@@ -41,6 +45,7 @@ from style import house_style  # noqa: E402
 CACHE = HERE / '_gallery'
 FIXTURES = fixtures()
 ENGINES = ('matrix', 'tabular')
+_NUMBER = itertools.count(1)
 
 
 def _svg(tex: str, alt: str) -> str:
@@ -65,11 +70,12 @@ def _svg(tex: str, alt: str) -> str:
 class Panels:
     """One table in three renderings; see the module docstring."""
 
-    def __init__(self, data, spec, style):
+    def __init__(self, data, spec, style, title):
         # no label: the table is emitted twice, and Quarto turns two tables
         # carrying one tbl- label into a float nested inside a float
         self.doc = build(data, spec).model_copy(update={'label': None})
         self.style = style
+        self.title = f'Table {next(_NUMBER)}', title
         self.tex = {e: render_tikz(self.doc, replace(style, tikz_engine=e))
                     for e in ENGINES}
 
@@ -83,7 +89,12 @@ class Panels:
         latex = '\n'.join(
             f'\\par\\medskip\\noindent\\textit{{TikZ {e}}}\\par\n{self.tex[e]}'
             for e in ENGINES)
-        return {'text/html': f'<div class="gt-panels">{panels}</div>',
+        number, title = self.title
+        head = (f'<p class="gt-panels-title"><strong>{number}</strong> '
+                f'<code>{html.escape(title)}</code></p>')
+        latex = (f'\\par\\bigskip\\noindent\\textbf{{{number}}}\\enspace'
+                 f'\\texttt{{{tex_escape(title, math=False)}}}\\par\n{latex}')
+        return {'text/html': f'{head}<div class="gt-panels">{panels}</div>',
                 'text/latex': latex,
                 'text/plain': render_text(self.doc)}
 
@@ -100,12 +111,16 @@ def show(fixture, spec=None, **style_changes) -> Panels:
     **style_changes
         ``HouseStyle`` fields replaced on house style's ``house_style()``.
         ``tikz_latex`` defaults to ``'H'`` so each table stays under its
-        heading.
+        heading, except in a sideways container, which takes a page of its
+        own and no placement.
     """
     if isinstance(fixture, str):
         data, fixture_spec = FIXTURES[fixture]
         spec = spec or fixture_spec
     else:
         data, spec = fixture, spec or TableSpec()
-    style_changes.setdefault('tikz_latex', 'H')
-    return Panels(data, spec, replace(house_style(), **style_changes))
+    title = ', '.join([fixture if isinstance(fixture, str) else 'data']
+                      + [f'{k}={v!r}' for k, v in style_changes.items()])
+    if not style_changes.get('tikz_container_env', '').startswith('sideways'):
+        style_changes.setdefault('tikz_latex', 'H')
+    return Panels(data, spec, replace(house_style(), **style_changes), title)

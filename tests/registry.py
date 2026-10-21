@@ -206,4 +206,42 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
         ('A Notably Long Group Label', 'incurred'),
         ('Short', 'paid'), ('Short', 'incurred')][:len(spanner.columns)])
     fx['long-spanner'] = (spanner, TableSpec())
+    # --- long headings over narrow data: the column is as wide as the
+    # heading's longest word, and the heading stacks on as many lines as it
+    # needs, however much room the table has to spare
+    fab = Fabricator(seed=124)
+    fx['long-head-ratios'] = (fab.make(6, 'rrrr', metric_name_spec='s5s6s4s7'),
+                              TableSpec(ratio_cols='all'))
+    rng = np.random.default_rng(125)
+    flags = Fabricator(seed=125).make(6, 'rrrrr', metric_name_spec='s6s4s7s5s3')
+    flags = flags.apply(lambda c: rng.choice(['Y', 'N'], size=len(c))).astype(str)
+    fx['long-head-flags'] = (flags, TableSpec())
+    counts = Fabricator(seed=126).make(6, 'iii', metric_name_spec='s4s6s5')
+    fx['long-head-counts'] = (counts.abs() // 1000, TableSpec())
+    fx['long-head-groups'] = (
+        Fabricator(seed=127).make(6, 'rr', column_groups=2, metric_name_spec='s5s6'),
+        TableSpec(ratio_cols='all'))
+    # nine long headings over Y/N and counts: wider than the budget even with
+    # every heading at its longest word
+    rng = np.random.default_rng(128)
+    many = Fabricator(seed=128).make(6, 'r' * 9, metric_name_spec='s5s4s6s5s7s4s5s6s4')
+    for k, c in enumerate(many.columns):
+        many[c] = (rng.choice(['Y', 'N'], size=len(many)) if k % 2 == 0
+                   else rng.integers(0, 400, size=len(many)))
+    fx['long-head-many'] = (many, TableSpec())
+    # --- sideways: the Loss Lab shape with five statistics a side, about
+    # 70em at full size, for a sidewaystable whose budget is the text height
+    rng = np.random.default_rng(129)
+    wide_cols = pd.MultiIndex.from_product(
+        [['Gross', 'Net'], ['Mean', 'SD', 'CV', 'VaR 99%', 'TVaR 99%']])
+    wide = pd.DataFrame(index=lab_idx, columns=wide_cols, dtype=float)
+    for side in ('Gross', 'Net'):
+        mean = rng.uniform(1e6, 3e7, 12)
+        cv = rng.uniform(0.2, 3.5, 12)
+        wide[(side, 'Mean')] = mean
+        wide[(side, 'SD')] = mean * cv
+        wide[(side, 'CV')] = cv
+        wide[(side, 'VaR 99%')] = mean * rng.uniform(2.5, 6, 12)
+        wide[(side, 'TVaR 99%')] = wide[(side, 'VaR 99%')] * rng.uniform(1.1, 1.6, 12)
+    fx['wide-lab'] = (wide, TableSpec())
     return fx
