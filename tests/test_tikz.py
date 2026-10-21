@@ -13,9 +13,9 @@ from greater_tables import (
     Etcher, HouseStyle, TableDoc, TableSpec, build, render_tikz,
 )
 from greater_tables.render import tikz as _tikz
-from greater_tables.render import tikz_layout
+from greater_tables.render.fonts import FACES
 from greater_tables.render.textlength import (
-    _WIDTH_TABLE, text_display_len, token_display_len,
+    text_display_len, token_display_len,
 )
 
 from exemplars import EXEMPLARS
@@ -92,9 +92,9 @@ def test_bold_rows_are_measured_bold():
                        'paid': [861054, 137763, 998817]})
     doc = build(df, TableSpec(show_index=False, row_flags={-1: ('subtotal',)}))
     line, paid = widths(render_tikz(doc, MATRIX))
-    roman = text_display_len('Subtotal')
-    assert line >= roman * tikz_layout._BOLD_PERCENT / 100
-    assert paid < text_display_len('998,817') * tikz_layout._BOLD_PERCENT / 100
+    assert line >= text_display_len('Subtotal', bold=True) >         text_display_len('Subtotal')
+    assert text_display_len('998,817', bold=True) == text_display_len('998,817')
+    assert paid == pytest.approx(text_display_len('998,817') + 0.1, abs=0.01)
 
 
 def test_alignment_is_flush():
@@ -118,8 +118,32 @@ def test_token_width_treats_math_as_one_token():
 
 def test_glyph_table_covers_table_furniture():
     """The characters a real table leans on must not take the 600 default."""
-    for ch in '—%µ−…':
-        assert ch in _WIDTH_TABLE, f'{ch!r} falls back to the default width'
+    for name, face in FACES.items():
+        for ch in '—%µ−…':
+            assert ch in face.roman and ch in face.bold,                 f'{name}: {ch!r} falls back to the default width'
+
+
+def test_every_face_covers_the_same_glyphs():
+    times = FACES['times'].roman.keys()
+    for name, face in FACES.items():
+        assert face.roman.keys() == times and face.bold.keys() == times, name
+
+
+def test_unknown_face_fails_at_construction():
+    with pytest.raises(ValueError, match='stix-two'):
+        HouseStyle(tikz_font='stix two')
+
+
+def test_face_sets_the_widths():
+    """STIX Two sets lowercase wider than Times: its columns are wider, and
+    the default face is Times, unchanged."""
+    doc = load('fx-loss-lab')
+    times = widths(render_tikz(doc, MATRIX))
+    assert widths(render_tikz(doc, HouseStyle(tikz_engine='matrix',
+                                              tikz_font='times'))) == times
+    stix = widths(render_tikz(doc, HouseStyle(tikz_engine='matrix',
+                                             tikz_font='stix-two')))
+    assert stix[1] > times[1]           # the unit column: 'Unit 1'
 
 
 # ------------------------------------------------------- max_table_width_em

@@ -184,6 +184,16 @@ class HouseStyle:
         ``tikz_post_process`` TeX that addresses cells by node name, which
         only the matrix emits. The one thing neither can do is break across
         pages — a node is one unbreakable box.
+    tikz_font
+        The face the document sets its tables in, which TikZ column widths
+        are estimated in: ``'times'`` (default), ``'stix-two'``,
+        ``'latin-modern'`` (the LaTeX default, a plain Quarto PDF's face),
+        ``'lato'`` or ``'fira-sans'``. TeX needs the widths before it sets the
+        table, so a mismatch shows: STIX Two sets lowercase about 5% wider
+        than Times, enough to wrap a label sized in Times. Each face's glyph
+        widths, roman and bold, are measured in ``render/fonts.py``. HTML is
+        unaffected, because the browser measures. An unknown name raises
+        ``ValueError``.
     text_ascii_rules
         Draw the text rendering with ASCII only — ``=`` and ``-`` for heavy
         and light rules, ``|`` for the stub divider, ``<<flag>>`` for the row
@@ -205,6 +215,7 @@ class HouseStyle:
     text_ascii_rules: bool = False
     # --- TikZ engine, geometry (em) and container
     tikz_engine: Literal['matrix', 'tabular'] = 'tabular'
+    tikz_font: str = 'times'
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0
     tikz_row_sep: float = 0.25
@@ -219,3 +230,7 @@ class HouseStyle:
     spanner_rule: float = 0.5           # cmidrule under column-group labels
     hrule_widths: tuple[float, float, float] = (0.5, 0.25, 0.25)
     vrule_widths: tuple[float, float, float] = (0.25, 0.25, 0.25)
+
+    def __post_init__(self):
+        from .render.fonts import face
+        face(self.tikz_font)            # fail at construction, not at render

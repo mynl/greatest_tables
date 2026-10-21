@@ -64,14 +64,8 @@ _RULE_OVERHANG = 700
 # deliberate, where 0.87 and 0.91 look like a mistake.
 _SCALE_STEPS = (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6)
 
-# header cells render bold (stubs bold-italic) and the glyph table is roman,
-# so header estimates carry a widening factor (GT's bold_adjustment). Measured
-# over the fixture corpus in newtx, bold/roman is 1.000 at the median and
-# 1.130 at p99; 118 covers the tail of real words without visibly padding the
-# common case, where bold and roman digits are the same width anyway.
-_BOLD_PERCENT = 118
-
-# row and cell flags that set a cell bold
+# row and cell flags that set a cell bold; header cells are always bold (stub
+# headers bold-italic, measured bold: italic is no wider)
 _BOLD_FLAGS = frozenset({'total', 'subtotal', 'emphasis'})
 
 # a wrapping column whose longest cell has at most this many words is a column
@@ -146,23 +140,22 @@ def _measured(cell: Cell | HeadCell) -> str:
     return _TAG_RE.sub('', cell.text) if cell.html else cell.text
 
 
-def _display_milli(cell: Cell | HeadCell, math: bool = True) -> int:
-    """Milli-em width of a cell's content set on one line."""
+def _display_milli(cell: Cell | HeadCell, math: bool, font: str,
+                   bold: bool = False) -> int:
+    """Milli-em width of a cell's content set on one line, in ``font``."""
     if cell.math:
-        return math_milli(cell.text)
-    return display_milli(_measured(cell), math=math and not cell.html)
+        return math_milli(cell.text, font)
+    return display_milli(_measured(cell), math=math and not cell.html,
+                         font=font, bold=bold)
 
 
-def _token_milli(cell: Cell | HeadCell, math: bool = True) -> int:
-    """Milli-em width of a cell's widest unbreakable token."""
+def _token_milli(cell: Cell | HeadCell, math: bool, font: str,
+                 bold: bool = False) -> int:
+    """Milli-em width of a cell's widest unbreakable token, in ``font``."""
     if cell.math:
-        return math_milli(cell.text)
-    return token_milli(_measured(cell), math=math and not cell.html)
-
-
-def _bold(milli: int) -> int:
-    """Bold text sets wider than the roman glyph table reports."""
-    return milli * _BOLD_PERCENT // 100
+        return math_milli(cell.text, font)
+    return token_milli(_measured(cell), math=math and not cell.html,
+                       font=font, bold=bold)
 
 
 # ------------------------------------------------------------------ geometry
@@ -367,6 +360,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     n_stub = doc.n_stub_levels
     csep = style.tikz_column_sep
     math_on = doc.math != 'off'
+    font = style.tikz_font
 
     # ---- lay out cells into an ncols-wide text matrix + overlay spans;
     # measure display widths at placement (true visual column known here)
@@ -393,13 +387,14 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                 # a header cell has a text width and wraps, so a long heading
                 # only floors its column at its widest word — it does not drag
                 # a column of six-em numbers out to the width of its title
-                hmax[col] = max(hmax[col], _bold(_token_milli(hc, math_on)))
+                hmax[col] = max(hmax[col],
+                                _token_milli(hc, math_on, font, bold=True))
             elif hc.text:
                 overlays.append((2 + level, col, hc.colspan, tex))
                 # an overlaid label carries no text width: it cannot wrap, so
                 # it constrains the whole group it spans
                 spans.append((col, hc.colspan,
-                              _bold(_display_milli(hc, math_on))))
+                              _display_milli(hc, math_on, font, bold=True)))
             col += hc.colspan
         grid.append(cells)
 
@@ -416,24 +411,20 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
             if col >= ncols:
                 break
             tex = cell_tex(cell, row.flags, math=math_on)
-            # a total row sets bold and the glyph table is roman. Bold digits
-            # are roman width in Times, so only a text column, where the bold
-            # is in the letters, takes the widening: "Subtotal" sets 0.28em
-            # wider than its roman estimate, past the column's pad
-            bolden = (_bold if (set(cell.flags) | set(row.flags)) & _BOLD_FLAGS
-                      and doc.columns[col].wrap else int)
+            # a total row sets bold: "Subtotal" is 0.28em wider bold in Times
+            bold = bool((set(cell.flags) | set(row.flags)) & _BOLD_FLAGS)
             if cell.colspan == 1:
                 cells[col] = tex
-                width = bolden(_display_milli(cell, math_on))
+                width = _display_milli(cell, math_on, font, bold)
                 samples[col].append(width)
                 wmax[col] = max(wmax[col], width)
                 tokmax[col] = max(tokmax[col],
-                                  bolden(_token_milli(cell, math_on)))
+                                  _token_milli(cell, math_on, font, bold))
                 wordmax[col] = max(wordmax[col], len(cell.text.split()))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
                 spans.append((col, cell.colspan,
-                               bolden(_display_milli(cell, math_on))))
+                              _display_milli(cell, math_on, font, bold)))
             for cc in range(col, min(ncols, col + cell.colspan)):
                 if cell.rowspan > 1:
                     pending[cc] = cell.rowspan

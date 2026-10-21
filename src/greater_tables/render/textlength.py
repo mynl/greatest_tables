@@ -2,16 +2,15 @@
 
 Lives in the TikZ renderer's orbit only — TeX genuinely needs geometry ahead
 of rendering; the HTML paths let the browser measure. Widths are em
-estimates from a serif glyph table; ``$...$`` spans are token-counted TeX.
+estimates from a per-face glyph table; ``$...$`` spans are token-counted TeX.
 
-**The table is Times metrics**, which is what ``Etcher`` compiles against
-(``newtxtext``): measured there, the estimate is exact — median actual /
-estimate 1.000 over the fixture corpus, p99 1.007. A document set in another
-face is a different measurement: Latin Modern, the LaTeX default that a
-plain Quarto PDF uses, runs about 11% wider for text (digits only 1.6%), so
-columns come out slightly tight and a long heading may hyphenate. Either
-load a Times-metric serif alongside the tables, or accept that. Re-measure
-any font with ``dev/tools/measure_glyphs.py``.
+**The tables are in** :mod:`.fonts`, roman and bold for each face, and every
+function here takes the face by name, ``'times'`` by default. Times is what
+``Etcher`` compiles against (``newtxtext``): measured there, the estimate is
+exact — median actual / estimate 1.000 over the fixture corpus, p99 1.007. A
+document set in another face needs that face's table: in Times metrics,
+STIX Two lowercase runs about 5% over and Latin Modern about 6%, so columns
+come out tight and labels wrap. ``HouseStyle.tikz_font`` names the face.
 
 Glyph widths are held as **integer milli-ems** and accumulated as integers,
 converted to ems only at the end. Summing the float ems directly is not
@@ -36,6 +35,7 @@ import html
 import re
 
 from ..mathspans import segments
+from .fonts import DEFAULT_WIDTH, face
 
 __all__ = ['display_milli', 'math_milli', 'text_display_len',
            'token_display_len', 'token_milli']
@@ -52,52 +52,28 @@ TEX_SPACING = {'quad', 'qquad', ',', ';', ' ', '!'}
 
 _EM = 1000                      # milli-ems per em
 
-# milli-em glyph widths (0.444em → 444), serif metrics
-_WIDTH_TABLE = {
-    'a': 444, 'b': 500, 'c': 444, 'd': 500, 'e': 444, 'f': 333,
-    'g': 500, 'h': 500, 'i': 278, 'j': 278, 'k': 500, 'l': 278,
-    'm': 778, 'n': 500, 'o': 500, 'p': 500, 'q': 500, 'r': 333,
-    's': 389, 't': 278, 'u': 500, 'v': 500, 'w': 722, 'x': 500,
-    'y': 500, 'z': 444,
-    'A': 722, 'B': 667, 'C': 667, 'D': 722, 'E': 611, 'F': 556,
-    'G': 722, 'H': 722, 'I': 333, 'J': 389, 'K': 722, 'L': 611,
-    'M': 889, 'N': 722, 'O': 722, 'P': 556, 'Q': 722, 'R': 667,
-    'S': 556, 'T': 611, 'U': 722, 'V': 722, 'W': 944, 'X': 722,
-    'Y': 722, 'Z': 611,
-    '0': 500, '1': 500, '2': 500, '3': 500, '4': 500, '5': 500, '6': 500,
-    '7': 500, '8': 500, '9': 500,
-    '.': 250, ',': 250, ':': 278, ';': 278, '(': 333, ')': 333,
-    '[': 333, ']': 333, '’': 333, '"': 444, '!': 333, '?': 444,
-    ' ': 250, '\xa0': 250, '|': 200, '‘': 333, '{': 480, '}': 480,
-    '-': 333,
-    # measured against newtx (dev/tools/measure_glyphs.py). These were all
-    # missing before 6.0.0a5 and took the 600 default: '—' is the missing-value
-    # marker, '%' rides every ratio column and 'µ' every SI-suffixed one, so
-    # the three that matter most to a real table were also the most wrong.
-    '#': 500, '%': 833, '&': 778, '*': 500, '+': 564, '/': 278,
-    '<': 564, '=': 564, '>': 564, '@': 921, '_': 500,
-    '£': 500, '€': 500, '§': 500, '¶': 453, '†': 500, '‡': 500,
-    '°': 400, '±': 564, 'µ': 500, '×': 564, '÷': 564, '−': 564,
-    'ª': 276, 'º': 310, '•': 350, '–': 500, '—': 1000,
-    '…': 1000, '‰': 1000,
-}
-_DEFAULT_WIDTH = 600
 _TAG_RE = re.compile(r'<[^>]*>')
 _TOKEN_RE = re.compile(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.')
 
 
-def _char(c: str) -> int:
-    return _WIDTH_TABLE.get(c, _DEFAULT_WIDTH)
+def _glyphs(font: str, bold: bool) -> dict[str, int]:
+    """The milli-em glyph table for a face, roman or bold."""
+    f = face(font)
+    return f.bold if bold else f.roman
 
 
-def text_display_len(s: str) -> float:
+def _sum(text: str, glyphs: dict[str, int]) -> int:
+    return sum(glyphs.get(c, DEFAULT_WIDTH) for c in text)
+
+
+def text_display_len(s: str, font: str = 'times', bold: bool = False) -> float:
     """Estimate display width in ems: plain text, ``$math$``, HTML entities."""
-    return display_milli(s) / _EM
+    return display_milli(s, font=font, bold=bold) / _EM
 
 
-def token_display_len(s: str) -> float:
+def token_display_len(s: str, font: str = 'times', bold: bool = False) -> float:
     """Em width of the widest unbreakable token — a wrap column's floor."""
-    return token_milli(s) / _EM
+    return token_milli(s, font=font, bold=bold) / _EM
 
 
 def estimate_math_width(tex: str) -> float:
@@ -105,53 +81,59 @@ def estimate_math_width(tex: str) -> float:
     return math_milli(tex) / _EM
 
 
-def display_milli(s: str, math: bool = True) -> int:
+def display_milli(s: str, math: bool = True, font: str = 'times',
+                  bold: bool = False) -> int:
     """Display width in milli-ems — the exact, integer accumulation.
 
     ``math`` gates ``$``-span interpretation (mathspans, the same rule the
     renderers emit by, so what is measured is what is set); pass False for a
     ``TableDoc.math='off'`` document or html-flag text, where every ``$``
-    is a glyph.
+    is a glyph. ``font`` names the face (``render.fonts``) and ``bold``
+    picks its bold table; math spans are priced from the roman one.
     """
     if not isinstance(s, str):
         s = str(s)
+    glyphs = _glyphs(font, bold)
     if '$' not in s and '<' not in s and '&' not in s:
-        return sum(_char(c) for c in s)
+        return _sum(s, glyphs)
     if not math:
-        return _milli_prose(s)
-    return sum(math_milli(run) if is_math else _milli_prose(run)
+        return _milli_prose(s, glyphs)
+    return sum(math_milli(run, font) if is_math else _milli_prose(run, glyphs)
                for is_math, run in segments(s))
 
 
-def token_milli(s: str, math: bool = True) -> int:
+def token_milli(s: str, math: bool = True, font: str = 'times',
+                bold: bool = False) -> int:
     """Widest whitespace-delimited token in milli-ems.
 
     A ``$...$`` span counts as one token: math is set as a box and does not
-    break at spaces the way surrounding prose does.
+    break at spaces the way surrounding prose does. ``font`` and ``bold`` as
+    for :func:`display_milli`.
     """
     if not isinstance(s, str):
         s = str(s)
+    glyphs = _glyphs(font, bold)
     if '$' not in s and '<' not in s and '&' not in s:
-        return max((sum(_char(c) for c in tok) for tok in s.split()), default=0)
+        return max((_sum(tok, glyphs) for tok in s.split()), default=0)
     widest = 0
     for is_math, run in (segments(s) if math else [(False, s)]):
         if is_math:
-            widest = max(widest, math_milli(run))
+            widest = max(widest, math_milli(run, font))
         else:
             decoded = html.unescape(_TAG_RE.sub('', run))
             for tok in decoded.split():
-                widest = max(widest, sum(_char(c) for c in tok))
+                widest = max(widest, _sum(tok, glyphs))
     return widest
 
 
-def _milli_prose(run: str) -> int:
+def _milli_prose(run: str, glyphs: dict[str, int]) -> int:
     """Prose width: tags stripped, entities decoded, glyphs accumulated."""
-    decoded = html.unescape(_TAG_RE.sub('', run))
-    return sum(_char(c) for c in decoded)
+    return _sum(html.unescape(_TAG_RE.sub('', run)), glyphs)
 
 
-def math_milli(tex: str) -> int:
-    """TeX math fragment width in milli-ems."""
+def math_milli(tex: str, font: str = 'times') -> int:
+    """TeX math fragment width in milli-ems, letters priced from ``font``."""
+    glyphs = _glyphs(font, False)
     width = 0
     for tok in _TOKEN_RE.findall(tex):
         if tok.startswith('\\'):
@@ -169,5 +151,5 @@ def math_milli(tex: str) -> int:
         elif tok in '^_':
             width += 300
         else:
-            width += _char(tok)
+            width += glyphs.get(tok, DEFAULT_WIDTH)
     return width

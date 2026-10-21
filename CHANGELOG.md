@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.2.0] - 2026-10-21
+
+**Rendered TikZ output changes for most tables with a header**: column widths move by a fraction
+of an em. Set `tikz_font` to the document's face; see below.
+
+### Added
+
+- `HouseStyle.tikz_font` names the face a TikZ table is set in, so column widths are estimated
+  in its glyph widths: `'times'` (default), `'stix-two'`, `'latin-modern'`, `'lato'`,
+  `'fira-sans'`. In its own face no label wraps and no heading hyphenates; sized in Times, STIX
+  Two broke "Unit 1" and hyphenated headings. HTML is unaffected.
+- `dev/tools/measure_glyphs.py` measures a face from its font file and checks it against whole
+  fixture cells; every face is within 1% at the median and 0.7% at p99.
+
+### Changed
+
+- Bold text (headers, total rows) is measured in each face's bold widths, not as 118% of roman.
+  Headers in Times are narrower than before, and exact. A document in another face that leaves
+  `tikz_font` at `'times'` hyphenates headings more than it did, as the old factor padded them
+  by accident.
+
 ## [7.1.5] - 2026-10-21
 
 ### Fixed

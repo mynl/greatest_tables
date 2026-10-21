@@ -271,12 +271,13 @@ prose, and:
   the columns that must not be narrowed, so the browser narrows exactly the
   prose ones. No solver runs on that path and none should.
 
-One caveat with teeth: the TikZ estimate is **Times metrics**, exact against
-`newtxtext` (what `Etcher` compiles with) and about 11% tight against Latin
-Modern, the LaTeX default a plain Quarto PDF uses — where a long heading may
-hyphenate. Load a Times-metric serif alongside the tables, or expect slightly
-tight columns. Use `newtxtext` alone; `newtxmath` collides with Quarto's math
-setup.
+One caveat with teeth: the TikZ estimate is measured glyph widths, so it is
+exact only in the face it was measured in. Since 7.2.0 `HouseStyle.tikz_font`
+names that face: `'times'` (the default, exact against `newtxtext`, what
+`Etcher` compiles with), `'stix-two'`, `'latin-modern'` (the LaTeX default a
+plain Quarto PDF uses), `'lato'` or `'fira-sans'`. Leave it at Times in a
+document set in another face and columns come out tight: labels wrap and long
+headings hyphenate.
 
 | 5.x option | Default | What it did | 6.0 home | Notes |
 |---|---|---|---|---|

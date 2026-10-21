@@ -285,6 +285,14 @@ document that rolls its own preamble must provide them.
 
 **Neither engine breaks across pages** — a TikZ node is one unbreakable box.
 
+**Name the face.** TeX needs the column widths before it sets the table, so
+``greater_tables`` estimates them from glyph widths measured in the face the
+table will be set in. Set ``HouseStyle.tikz_font`` to the document's face:
+``'times'`` (the default, and what ``Etcher`` compiles with), ``'stix-two'``,
+``'latin-modern'`` (a plain Quarto PDF), ``'lato'`` or ``'fira-sans'``. Left
+at Times, a table in STIX Two or Latin Modern wraps labels and hyphenates
+headings, because lowercase there sets about 5% wider.
+
 In the browser
 --------------
 
