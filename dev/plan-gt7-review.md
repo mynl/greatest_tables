@@ -6,7 +6,8 @@ Steps are independent of one another except where a step says it depends on the 
 
 ## Goal
 
-greater_tables 7.0 works, is used daily through the house-style kit and the aggregate Loss Lab,
+greater_tables 7.0 works, is used daily through house style (`D:\Projects\house-style`, whose
+`house_style()` returns a `HouseStyle`; the two names are distinct) and the aggregate Loss Lab,
 and has not been looked at as a whole since the 6.0 rewrite. Four things want doing:
 
 1. Steve needs to be able to use it without asking. The 6.0 rewrite replaced the 5.3 constructor
@@ -16,6 +17,9 @@ and has not been looked at as a whole since the 6.0 rewrite. Four things want do
    there needs to be one place to look at every shape rendered to HTML and PDF side by side.
 3. Vertical rules in the default `tabular` TikZ engine have been seen landing in the wrong place.
 4. PDF tables have been seen coming out too wide.
+
+Inline markdown in cells (`*em*`, `**strong**`, `` `code` ``) is a separate plan,
+`dev/plan-markdown-cells.md`.
 
 ## Current behavior
 
@@ -37,8 +41,8 @@ and has not been looked at as a whole since the 6.0 rewrite. Four things want do
   booktabs rules inside the tabular, so TeX places them. The tests compile every fixture and check
   the TeX structurally; nothing measures where a drawn rule lands against the cells.
 - **Widths.** `HouseStyle.max_table_width_em` defaults to None, so a bare `GT(df)` in a PDF gets
-  natural widths and no narrowing at all. The house-style kit sets it to the text width with
-  `tikz_scale=0.9`. The estimator assumes Times metrics and runs tight in other faces, and a
+  natural widths and no narrowing at all. House style sets it to the text width, 41.4em for a
+  document and 34.7em for a slide, with `tikz_scale=0.9`. The estimator assumes Times metrics and runs tight in other faces, and a
   number can break at a hyphen when an estimate falls short. Those two are the subject of
   `dev/plan-font-metrics.md`, drafted 2026-10-19 and unruled.
 
@@ -58,16 +62,16 @@ line to add or an API smell to fix.
 
 ### [gallery] One Quarto document rendering every shape to HTML and PDF
 
-A new `dev/gallery/` holding `gallery.qmd` and a committed copy of the house kit under
+A new `dev/gallery/` holding `gallery.qmd` and a committed copy of house style under
 `_extensions/house/`, installed with `quarto add D:\Projects\house-style` from that directory, as
-the kit prescribes for a standalone note. The kit does not live in the GT repo in spirit, but a
-standalone note has no other way to find it, and the kit's own README says to commit the installed
-copy. `dev/gallery/_output/` and the freeze directories are gitignored.
+house style prescribes for a standalone note. House style does not live in the GT repo in spirit,
+but a standalone note has no other way to find it, and house style's own README says to commit the
+installed copy. `dev/gallery/_output/` and the freeze directories are gitignored.
 
 The document declares four formats: `house-pdf`, `house-html`, `pdf` and `html`. The first two
-render through the kit, the last two through the blog's generic setup, the preamble lifted from
-`dev/check-widths.qmd`. The Python setup cell tries `from style import GT`, the kit's wrapper with
-the house budget, and falls back to `greater_tables.GT` with an explicit
+render through house style, the last two through the blog's generic setup, the preamble lifted
+from `dev/check-widths.qmd`. The Python setup cell tries `from style import GT`, house style's
+wrapper with the house budget, and falls back to `greater_tables.GT` with an explicit
 `HouseStyle(max_table_width_em=...)` for the generic formats. Render one format at a time:
 
 ```powershell
@@ -94,13 +98,29 @@ The shapes, all seeded so the file reproduces exactly:
 - math in body, header, caption and notes beside currency
 - a 60-column-wide-ish stress table, and a 250-row table truncated at `max_rows`
 
+**Every table is shown in all three renderings: HTML, TikZ `matrix`, and TikZ `tabular`** (the
+default since 6.2.0). A helper in the setup cell takes one `(data, spec)` pair and emits, per
+format:
+
+- **PDF formats:** the table twice, labeled, `HouseStyle(tikz_engine='matrix')` above
+  `tikz_engine='tabular'`, in the real text block, so width against the margins is judged here.
+- **HTML formats:** a three-panel row: the HTML table, then each engine's TeX compiled
+  standalone by `Etcher` and converted to SVG with `pdftocairo -svg` (poppler; on PATH through
+  MiKTeX). The helper calls `pdftocairo` itself, because `Etcher.compile(svg=True)` expects a
+  two-argument `pdf2svg`. `Etcher` sets its standalone page in Times at 11pt, so the images are
+  for structure (rules, alignment, spans, wrapping), not for width against a text block.
+
+Compiles cache by content hash, so a re-render recompiles only the tables that changed. The
+gallery shows 7.x only; there is no 5.3 comparison (Steve, 2026-10-21: judge afresh).
+
 Every shape in the gallery that is not already a fixture becomes one in `tests/registry.py`, with
 goldens blessed by `tests/make_goldens.py`, so the gallery and the suite cannot drift. The
 Fabricator vocabulary file (`data/tex_list.csv`, half the wheel) stays as it is.
 
 Replaces `dev/check-widths.qmd`, whose sections move into the gallery, and
 `dev/tools/make_example_qmd.py`, whose recipes do the same. Both are deleted when the gallery
-renders in all four formats.
+renders in all four formats. `dev/tools/compare_engines.py` stays for its timing report; its
+matrix-above-tabular PDF is superseded by the gallery.
 
 ### [vrules] Vertical rule placement in the tabular engine, measured
 
@@ -124,16 +144,25 @@ the only change is a fix, 7.1.0 if the emitter's geometry changes visibly.
 
 ### [widths] Why PDF tables come out too wide
 
-Three causes, in the order to check them, and "just look and see" is the brief:
+Four causes, in the order to check them, and "just look and see" is the brief:
 
-1. **No budget.** A call outside the kit gets `max_table_width_em=None`. Decision for Steve: keep
-   None as the default and document it loudly on the cheat sheet, or default to a text width. A
-   default of about 39em (the kit's A4 text block at 11pt is 455pt, which is 41em; the blog's
-   letter page at 10pt is wider) would narrow prose in every PDF without being asked, which is a
-   rendered-output change and so a minor bump and a CHANGELOG callout. Recommendation: keep None.
-   The kit and the blog each know their own text width, and a library guess is wrong somewhere.
-2. **The estimate is tight in a non-Times face.** `dev/plan-font-metrics.md` [font-metrics].
-3. **A number breaks at a hyphen.** `dev/plan-font-metrics.md` [numbers-hold].
+1. **No budget.** A call outside house style gets `max_table_width_em=None`. **Ruled (Steve,
+   2026-10-21): the default stays None and the budget is set by the target output.** House style
+   already does this, 41.4em for a document and 34.7em for a slide. A library number is wrong
+   somewhere: the stock `article` class at 11pt is about 33em, a US letter page with 1-inch
+   margins about 43em, and 5.3's 8 inches (about 52em) was wider than both, a sanity cap rather
+   than a fit. The cheat sheet and the blog post say to set it.
+2. **A silent overrun.** Numbers never wrap, so a table of enough number columns overruns its
+   budget once the scale ladder reaches 0.6. Measured at 7.0.0 through house style's `GT`, a 4-row
+   table of values in the millions against 41.4em: 8 columns set at scale 0.9, 12 at 0.65, 16 at
+   0.6, and 20 at 0.6 overruns, at 46.8em of column width before separations.
+   `tikz_layout._fit_budget` logs both the ladder step and the overrun at WARNING, and house style
+   sets the `greater_tables` logger to ERROR to hide the ladder steps, which its comment calls
+   "the design working, not a fault". That hides the overrun too. Fix: the overrun logs at ERROR,
+   the ladder step stays at WARNING. One line, a patch bump, with a test that the overrun record
+   is at ERROR.
+3. **The estimate is tight in a non-Times face.** `dev/plan-font-metrics.md` [font-metrics].
+4. **A number breaks at a hyphen.** `dev/plan-font-metrics.md` [numbers-hold].
 
 The gallery's width section is where "look and see" happens. Then execute the font-metrics plan,
 once its open questions are ruled; the questions are at its foot and are short.
@@ -168,6 +197,7 @@ gallery; tracked here so the sequence is visible.
 | `dev/check-widths.qmd`, `dev/tools/make_example_qmd.py` | [gallery] | deleted when superseded |
 | `tests/test_tikz_geometry.py`, `pyproject.toml` | [vrules] | new module; `pdfplumber` in the dev group |
 | `src/greater_tables/render/tikz_tabular.py` | [vrules] | whatever the measurements say |
+| `src/greater_tables/render/tikz_layout.py`, `tests/test_widths.py` | [widths] | overrun at ERROR |
 | `dev/plan-font-metrics.md` | [widths] | executes as its own plan |
 | `dev/done/plan-column-widths.md`, `dev/pending.md`, `human-hints.md`, `CLAUDE.md` | [housekeeping] | move, prune, delete |
 
@@ -179,9 +209,15 @@ gallery; tracked here so the sequence is visible.
   every new shape has a fixture whose goldens pass.
 - [vrules] The geometry tests pass on every fixture in both engines, and a deliberate one-step
   error in the x arithmetic makes them fail.
-- [widths] A ruling on the default budget; the font-metrics plan executed or explicitly deferred.
+- [widths] An overrun logs at ERROR and shows through house style's logger setting; the
+  font-metrics plan executed or explicitly deferred.
 - [housekeeping] `git status` clean of the three untracked files; `dev/` holds only unstarted plans.
 
 ## Execution log
 
 - 2026-10-20: plan written; [guide] delivered the same session as a docs commit.
+- 2026-10-21: [widths] default budget ruled (stays None, set per target) and the silent
+  overrun added as cause 2; [gallery] shows every table in HTML and both TikZ engines; markdown
+  in cells split out to `dev/plan-markdown-cells.md`. The cheat sheet has moved to
+  `guide/cheatsheet.qmd` with house style installed beside it, uncommitted: Steve's work in
+  progress.
