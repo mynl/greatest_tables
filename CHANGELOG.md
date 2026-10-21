@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.3] - 2026-10-21
+
+### Changed
+
+- A TikZ width budget no longer narrows a column of labels, one whose longest cell is at most
+  three words ("Portfolio A", "40M xs 10M"); the table scales instead. Prose still narrows first.
+  Budgeted tables whose stub or label columns used to wrap now keep them on one line and may set
+  at a smaller scale, or report an overrun where narrowing used to hide one.
+
 ## [7.1.2] - 2026-10-21
 
 ### Fixed

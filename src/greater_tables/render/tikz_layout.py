@@ -71,6 +71,10 @@ _SCALE_STEPS = (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6)
 # common case, where bold and roman digits are the same width anyway.
 _BOLD_PERCENT = 118
 
+# a wrapping column whose longest cell has at most this many words is a column
+# of labels, which a width budget does not narrow (see layout's floors)
+_LABEL_WORDS = 3
+
 _TEX_SPECIALS = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%',
                  '$': r'\$', '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
                  '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
@@ -356,6 +360,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
     wmax = [_MIN_COL] * ncols                        # body width, one line
     hmax = [0] * ncols                               # header floor
     tokmax = [0] * ncols                             # widest body word
+    wordmax = [0] * ncols                            # most words in a body cell
     samples: list[list[int]] = [[] for _ in range(ncols)]   # every cell width
     for level, hrow in enumerate(doc.head):
         cells = [''] * ncols
@@ -399,6 +404,7 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                 samples[col].append(width)
                 wmax[col] = max(wmax[col], width)
                 tokmax[col] = max(tokmax[col], _token_milli(cell, math_on))
+                wordmax[col] = max(wordmax[col], len(cell.text.split()))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
                 spans.append((col, cell.colspan, _display_milli(cell, math_on)))
@@ -422,9 +428,13 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
 
     naturals = [sized(w, h) for w, h in zip(wmax, hmax)]
     # how narrow a column may go: prose down to its widest single word, since
-    # TeX will not hyphenate inside one; anything unbreakable, not at all
-    floors = [sized(t, h) if c.wrap else n
-              for t, h, n, c in zip(tokmax, hmax, naturals, doc.columns)]
+    # TeX will not hyphenate inside one; anything unbreakable, not at all. A
+    # column of labels, no cell longer than _LABEL_WORDS words, counts as
+    # unbreakable too: wrapping "40M xs 10M" or "Portfolio A" costs a line in
+    # every row it touches and saves an em or two, so a budget scales the
+    # table instead and keeps the narrowing for prose, which can afford it
+    floors = [sized(t, h) if c.wrap and k > _LABEL_WORDS else n
+              for t, h, n, k, c in zip(tokmax, hmax, naturals, wordmax, doc.columns)]
     # the prose cap is a ceiling, not a target — but a single word beats it,
     # because the alternative is an overfull box
     naturals = [max(min(n, prose_cap), f) if c.wrap else n
