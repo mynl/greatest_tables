@@ -7,6 +7,9 @@ Also home to :func:`golden_bytes`, the byte form the engine-built goldens are
 written and compared in.
 """
 
+from dataclasses import replace
+
+import numpy as np
 import pandas as pd
 
 from greater_tables import Fabricator, TableSpec, canonical_json
@@ -106,4 +109,70 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
         ': Simple table {#tbl-md}\n\n'
         '| item | count |\n|:-----|------:|\n| apples | 3 |\n| pears | 12 |\n',
         TableSpec())
+    # --- the gallery shapes (dev/done/plan-gt7-review.md [gallery]). Indexes
+    # are hand-built because Fabricator's outer levels come out singleton at
+    # these row counts with simplify=False, and dropped with simplify=True.
+    rng = np.random.default_rng(118)
+    idx4 = pd.MultiIndex.from_product(
+        [['North', 'South'], ['Auto', 'Property'], ['Primary', 'Excess'],
+         [2023, 2024, 2025]], names=['region', 'line', 'layer', 'year'])
+    fx['row-mi-4'] = (
+        pd.DataFrame({'premium': rng.integers(200_000, 4_000_000, 24),
+                      'loss': rng.integers(100_000, 3_000_000, 24),
+                      'loss ratio': rng.uniform(0.45, 0.95, 24)}, index=idx4),
+        TableSpec(year_cols=['year'], ratio_cols=['loss ratio']))
+    data, spec = fx['row-mi-3']
+    fx['row-mi-3-dense'] = (data, replace(spec, sparsify=False))
+    # subtotals inside the groups of a 2-level index, and a grand total
+    rng = np.random.default_rng(119)
+    parts = []
+    for group in ('Casualty', 'Property'):
+        g = pd.DataFrame(rng.uniform(1e4, 9e5, (3, 3)).round(0),
+                         columns=['paid', 'case', 'IBNR'],
+                         index=pd.MultiIndex.from_product(
+                             [[group], ['Auto', 'Marine', 'Other']]))
+        sub = g.sum().to_frame().T
+        sub.index = pd.MultiIndex.from_tuples([(group, 'Subtotal')])
+        parts += [g, sub]
+    body = pd.concat(parts)
+    total = body[body.index.get_level_values(1) != 'Subtotal'].sum()
+    total = total.to_frame().T
+    total.index = pd.MultiIndex.from_tuples([('Total', '')])
+    subtotals = pd.concat([body, total])
+    subtotals.index.names = ['segment', 'line']
+    fx['subtotals'] = (subtotals, TableSpec(
+        row_flags={3: ('subtotal',), 7: ('subtotal',), -1: ('total',)}))
+    rng = np.random.default_rng(120)
+    cols3 = pd.MultiIndex.from_product(
+        [['Gross', 'Net'], ['Paid', 'Incurred'], ['Count', 'Amount']])
+    col3 = pd.DataFrame(rng.uniform(1e3, 5e6, (6, 8)), columns=cols3,
+                        index=pd.Index(range(2020, 2026), name='year'))
+    for c in col3.columns:
+        if c[2] == 'Count':
+            col3[c] = rng.integers(100, 5000, 6)
+    fx['col-mi-3'] = (col3, TableSpec(year_cols=['year']))
+    # the aggregate Loss Lab shape: a 3-level row index under 2-level columns
+    rng = np.random.default_rng(121)
+    lab_cols = pd.MultiIndex.from_product(
+        [['Gross', 'Net'], ['Mean', 'CV', 'VaR 99%']])
+    lab_idx = pd.MultiIndex.from_product(
+        [['Portfolio A', 'Portfolio B'], ['Unit 1', 'Unit 2'],
+         ['0 xs 0', '5M xs 5M', '40M xs 10M']],
+        names=['portfolio', 'unit', 'layer'])
+    lab = pd.DataFrame(index=lab_idx, columns=lab_cols, dtype=float)
+    for side in ('Gross', 'Net'):
+        mean = rng.uniform(1e6, 3e7, 12)
+        lab[(side, 'Mean')] = mean
+        lab[(side, 'CV')] = rng.uniform(0.2, 3.5, 12)
+        lab[(side, 'VaR 99%')] = mean * rng.uniform(2.5, 6, 12)
+    fx['loss-lab'] = (lab, TableSpec())
+    # numbers only, too many columns for a 41.4em budget even at scale 0.6:
+    # the overrun case (house style's document budget)
+    rng = np.random.default_rng(122)
+    fx['wide-numbers'] = (
+        pd.DataFrame(rng.uniform(1e6, 1e7, (4, 20)),
+                     columns=[f'Column {i}' for i in range(20)]),
+        TableSpec())
+    fx['long'] = (Fabricator(seed=123).make(250, 's2ff'),
+                  TableSpec(max_rows=30))
     return fx

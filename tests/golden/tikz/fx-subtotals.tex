@@ -1,0 +1,46 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=flush center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=flush left}},
+	row 2 column 2/.style={nodes={font=\bfseries\itshape, align=flush left}},
+	column  1/.style={nodes={align=flush left  }, inner xsep=1.0em, inner ysep=0, text width=4.03em},
+	column  2/.style={nodes={align=flush left  }, nosep, text width=3.43em},
+	column  3/.style={nodes={align=flush right }, nosep, text width=4.10em},
+	column  4/.style={nodes={align=flush right }, nosep, text width=4.10em},
+	column  5/.style={nodes={align=flush right }, nosep, text width=4.10em},
+	column  6/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt1508506d9cdd) [table, ampersand replacement=\&]{
+                 \&                    \&                     \&                     \&                     \& \\
+ segment\I       \& line\I             \&              paid\I \&              case\I \&              IBNR\I \& \\
+ Casualty        \& Auto               \&             861,054 \&             661,580 \&             738,926 \& \\
+                 \& Marine             \&             137,763 \&             683,407 \&              31,249 \& \\
+                 \& Other              \&             511,423 \&              24,844 \&             508,324 \& \\
+                 \& \bfseries Subtotal \& \bfseries 1,510,240 \& \bfseries 1,369,831 \& \bfseries 1,278,499 \& \\
+ Property        \& Auto               \&             879,799 \&             130,324 \&             794,041 \& \\
+                 \& Marine             \&             186,011 \&             607,319 \&             554,227 \& \\
+                 \& Other              \&             331,635 \&             123,193 \&             169,993 \& \\
+                 \& \bfseries Subtotal \& \bfseries 1,397,445 \&   \bfseries 860,836 \& \bfseries 1,518,261 \& \\
+ \bfseries Total \& \bfseries          \& \bfseries 2,907,685 \& \bfseries 2,230,667 \& \bfseries 2,796,760 \& \\
+};
+\path[draw, semithick] (gt1508506d9cdd-1-1.north west) -- (gt1508506d9cdd-1-6.north east);
+\path[draw, semithick] ([yshift=0.125em]gt1508506d9cdd-3-6.north -| gt1508506d9cdd-3-1.west) -- ([yshift=0.125em]gt1508506d9cdd-3-6.north -| gt1508506d9cdd-3-6.east);
+\path[draw, thin] ([yshift=0.125em]gt1508506d9cdd-6-6.north -| gt1508506d9cdd-6-1.west) -- ([yshift=0.125em]gt1508506d9cdd-6-6.north -| gt1508506d9cdd-6-6.east);
+\path[draw, very thin] ([yshift=0.125em]gt1508506d9cdd-7-6.north -| gt1508506d9cdd-7-1.west) -- ([yshift=0.125em]gt1508506d9cdd-7-6.north -| gt1508506d9cdd-7-6.east);
+\path[draw, thin] ([yshift=0.125em]gt1508506d9cdd-10-6.north -| gt1508506d9cdd-10-1.west) -- ([yshift=0.125em]gt1508506d9cdd-10-6.north -| gt1508506d9cdd-10-6.east);
+\path[draw, very thin] ([yshift=0.125em]gt1508506d9cdd-11-6.north -| gt1508506d9cdd-11-1.west) -- ([yshift=0.125em]gt1508506d9cdd-11-6.north -| gt1508506d9cdd-11-6.east);
+\path[draw, thin] ([yshift=0.125em]gt1508506d9cdd-11-6.north -| gt1508506d9cdd-11-1.west) -- ([yshift=0.125em]gt1508506d9cdd-11-6.north -| gt1508506d9cdd-11-6.east);
+\path[draw, semithick] ([yshift=-0.125em]gt1508506d9cdd-1-1.south west |- gt1508506d9cdd.south) -- ([yshift=-0.125em]gt1508506d9cdd-1-6.south east |- gt1508506d9cdd.south);
+\path[draw, semithick] ([xshift=0.5em]gt1508506d9cdd-1-2.south east) -- ([xshift=0.5em]gt1508506d9cdd-1-2.south east |- gt1508506d9cdd.south);
+\end{tikzpicture}
+\end{table}
