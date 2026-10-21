@@ -475,6 +475,20 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
                                     prose_cap, csep_milli, geom)
         apply_spans(widths)
 
+    # A number never wraps. Each body cell of a column that does not wrap sits
+    # in a box of the column's width, so where an estimate falls short (a
+    # document set in a face other than tikz_font) the number runs into the
+    # column gap on the side away from its alignment instead of breaking:
+    # -1.95e-05 broke after its "e-" in Fira Sans. The width is the column's,
+    # in the same units the column itself is emitted in, so both emitters
+    # box alike.
+    for r in range(len(body_rows)):
+        row = grid[body_start - 1 + r]
+        for col, column in enumerate(doc.columns):
+            if not column.wrap and row[col]:
+                row[col] = (f'\\makebox[{widths[col] / _EM:.2f}em]'
+                            f'[{column.align}]{{{row[col]}}}')
+
     return Layout(
         name=name, ncols=ncols, n_head=n_head, n_stub=n_stub, grid=grid,
         overlays=overlays, spanners=spanners, widths=widths,

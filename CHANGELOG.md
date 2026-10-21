@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.3.0] - 2026-10-21
+
+**TikZ source changes for every table with a number column**; the page does not, wherever the
+widths already fit.
+
+### Changed
+
+- A number never wraps. Each body cell of a column that does not wrap (numbers, dates,
+  `unbreakable`) sits in a box of the column's width, so where an estimate falls short it runs
+  into the column gap, keeping its alignment, instead of breaking. `-1.95e-05` broke after its
+  `e-` in a Fira Sans document; now it holds whatever `tikz_font` says.
+
 ## [7.2.0] - 2026-10-21
 
 **Rendered TikZ output changes for most tables with a header**: column widths move by a fraction

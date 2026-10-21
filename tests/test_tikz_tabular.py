@@ -189,6 +189,22 @@ def test_body_colspan_is_a_multicolumn():
     assert 'centering' in spec and 'p{' in spec and 'b{' not in spec
 
 
+def test_numbers_sit_in_a_box_of_the_column_width():
+    """A cell of a column that does not wrap is boxed at the column's width,
+    so it cannot break; prose and headers are left to wrap."""
+    df = pd.DataFrame({'note': ['a short note', 'another'], 'err': [-1.95e-05, 3.2e-06]})
+    doc = build(df, TableSpec(show_index=False, formatters={'err': '.2e'}))
+    tex = render_tikz(doc, TABULAR)
+    note_w, err_w = re.findall(r'p\{([\d.]+)em\}', tex)[:2]
+    head, *rows = body_rows(tex)
+    assert 'makebox' not in head
+    for row in rows:
+        note, err = cells(row)
+        assert 'makebox' not in note
+        assert err.startswith(f'\\makebox[{err_w}em][r]{{')
+    assert note_w != err_w
+
+
 def test_macros_travel_with_the_picture():
     """Both macros sit inside the tikzpicture, so lifting the picture alone
     still carries them — the matrix engine's reliance on an externally

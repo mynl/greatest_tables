@@ -270,6 +270,25 @@ def test_text_holds_in_its_face(face, engine, tmp_path):
 
 
 @pytest.mark.parametrize('engine', ENGINES)
+@pytest.mark.parametrize('face', ['lato', 'fira-sans'])
+def test_a_number_holds_in_the_wrong_face(face, engine, tmp_path):
+    """Sized in Times and set in a face whose digits run wider, a number
+    overruns into the column gap rather than breaking, and keeps its right
+    edge in line with the rest of its column."""
+    data, spec = SCIENTIFIC
+    tex = render_tikz(build(data, spec), HouseStyle(tikz_engine=engine, tikz_latex='H'))
+    src = tmp_path / f'{face}.tex'
+    src.write_text(FACE_DOC % (FACE_PREAMBLES[face], tex), encoding='utf-8')
+    subprocess.run([shutil.which('tectonic'), '--outdir', str(tmp_path), str(src)],
+                   capture_output=True, check=False)
+    with pdfplumber.open(tmp_path / f'{face}.pdf') as p:
+        words = {w['text'].replace('‐', '-'): w
+                 for w in p.pages[0].extract_words(x_tolerance=1)}
+    assert '-1.95e-05' in words
+    assert words['-1.95e-05']['x1'] == pytest.approx(words['3.20e-06']['x1'], abs=0.3)
+
+
+@pytest.mark.parametrize('engine', ENGINES)
 def test_sideways_table_survives_an_h_default(engine, tmp_path):
     """Left without a placement, the sidewaystable took H and vanished."""
     data, spec = FIX['wide-lab']

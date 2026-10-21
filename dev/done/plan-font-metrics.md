@@ -210,3 +210,14 @@ Question 4 was already done (`2f9b005`).
 - A consequence to know: with the exact bold, a document in another face that leaves
   `tikz_font` at `'times'` hyphenates headings more than it did under 118%, which had been
   padding them by accident. The CHANGELOG says to set the field.
+
+### 7.3.0 [numbers-hold] - 2026-10-21
+
+- The box is applied once, in `tikz_layout.layout` after the widths are final, to every body and
+  foot cell of a non-wrap column, so both emitters inherit it: `\makebox[<width>em][<align>]{...}`.
+  Headers and colspan cells are untouched.
+- Goldens: 76 moved (every number-bearing fixture, both engines). Stripping the 2,126 boxes and
+  collapsing whitespace gives back the 7.2.0 goldens exactly, checked mechanically.
+- `test_a_number_holds_in_the_wrong_face`: sized in Times, set in Lato and in Fira Sans,
+  `-1.95e-05` stays whole and its right edge matches `3.20e-06` within 0.3pt. Before the box,
+  both faces broke it at the hyphen.
