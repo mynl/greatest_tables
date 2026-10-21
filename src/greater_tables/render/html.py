@@ -88,7 +88,11 @@ def render_html(doc: TableDoc, *, css: str = 'embed',
     if doc.label:
         attrs.append(f'id="{_esc(doc.label)}"')
     out.append(f'<div {" ".join(attrs)}{sty.attr(".gt")}>')
-    out.append(f'<table{sty.attr("table")}>')
+    # Quarto re-parses every raw HTML table on a page and writes it out again
+    # with Bootstrap's table-striped and small classes: zebra shading and
+    # smaller type on a table that promises neither. This is its opt-out.
+    # The walker's tables are built in the browser, after Quarto has run.
+    out.append(f'<table data-quarto-disable-processing="true"{sty.attr("table")}>')
 
     if doc.caption is not None:
         cap = doc.caption if isinstance(doc.caption, Cell) else Cell(text=doc.caption)

@@ -141,3 +141,10 @@ def test_third_vertical_slot_is_stamped():
     doc = build(pd.DataFrame([range(16)], columns=cols), TableSpec())
     html = render_html(doc, style=HouseStyle(max_vrule_depth=2), css='none')
     assert 'gt-vbreak-2' in html
+
+
+def test_quarto_leaves_the_table_alone():
+    """Quarto restyles any raw HTML table it parses (Bootstrap's striping and
+    small type) unless the table opts out."""
+    doc = build(pd.DataFrame({'a': [1, 2]}), TableSpec())
+    assert '<table data-quarto-disable-processing="true"' in render_html(doc, css='none')

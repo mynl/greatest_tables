@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.6.1] - 2026-10-21
+
+### Fixed
+
+- In a Quarto HTML page, a GT table is no longer striped or set in small type. Quarto re-parsed
+  every raw HTML table and added Bootstrap's `table-striped` and `small` classes; GT's table now
+  carries Quarto's opt-out, `data-quarto-disable-processing="true"`, and reaches the page as GT
+  wrote it. Cross-references through a cell's `#| label: tbl-...` still resolve.
+
 ## [7.6.0] - 2026-10-21
 
 ### Changed
