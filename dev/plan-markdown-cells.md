@@ -1,7 +1,7 @@
 # [markdown-cells] Inline markdown in table cells: `*em*`, `**strong**`, `` `code` ``
 
-Status: drafted 2026-10-21 at 7.0.0, at Steve's request. Rulings already made are marked as such;
-the two still open are at the foot.
+Status: drafted 2026-10-21 at 7.0.0, at Steve's request. Every design question is ruled; ready to
+execute.
 
 ## Goal
 
@@ -53,6 +53,11 @@ The precedent for markup in cells is `TableSpec.html_cols`: a column selector th
   looking, so a DataFrame needs an explicit argument.
 - **`markdown_cols`**, a `TableSpec` column selector parallel to `html_cols`. A markdown string
   input defaults it to every column; a DataFrame defaults it to none.
+- **A selected column's header is markdown too.** `markdown_cols` marks a column's body cells and
+  its leaf header cell, and an index level's stub cells and stub header.
+- **The caption follows the same rule.** A markdown string input's caption (its `Table:` line) is
+  markdown; any other caption is markdown only when the caller says so, with
+  `markdown_caption=True`.
 - **The text renderer shows markdown as typed.** Markdown is plain text already, and the box
   drawing reads fine around it.
 
@@ -95,13 +100,19 @@ Cases the tests pin, input on the left:
 
 ### [engine] Spec field, IR flag, build
 
-- `spec.py`: `markdown_cols: ColSelector = None`, documented beside `html_cols`.
+- `spec.py`: `markdown_cols: ColSelector = None`, documented beside `html_cols`, and
+  `markdown_caption: bool | None = None`, where None means "markdown when the input is a markdown
+  string".
 - `ir.py`: `markdown: bool = False` on `Cell` and `HeadCell`. The field is additive and canonical
   JSON omits defaults, so `ir_version` stays 1 and no existing golden changes. `schema/ir-v1.json`
   is regenerated.
 - `engine/build.py`:
-  - `_from_markdown` fills `markdown_cols='all'` when the caller left it None, the way it already
-    fills caption, label and aligners. An explicit `markdown_cols=[]` turns it off.
+  - `_from_markdown` fills `markdown_cols='all'` and `markdown_caption=True` when the caller left
+    them None, the way it already fills caption, label and aligners. An explicit
+    `markdown_cols=[]` or `markdown_caption=False` turns either off.
+  - A markdown caption is emitted as `Cell(text=..., markdown=True)`; `TableDoc.caption` already
+    accepts a `Cell`, so the IR needs no caption field. Notes stay plain strings: the only note a
+    markdown string produces is the engine's own truncation note.
   - A selected column marks its body cells and its leaf header cell; a selected index level
     (selected by its name) marks its stub cells and its stub header. Upper column-group header
     levels are never marked. A markdown string has one header level and no index, so for that
@@ -117,6 +128,9 @@ Cases the tests pin, input on the left:
 | strong | `\textbf{...}` | `<strong>...</strong>` | as typed |
 | code | `\texttt{...}`, every TeX special escaped | `<code>...</code>`, escaped | as typed |
 
+- Captions: `render/tikz.py` and `render/tikz_tabular.py` (`\caption`), `render/html.py`
+  (`<caption>`, already routed through `_cell_content`) and the walker's caption path apply the
+  same mapping to a markdown caption `Cell`.
 - `render/tikz_layout.py` `cell_tex`: a markdown cell goes through `runs`, each run escaped by the
   existing `_escape_run` (`_TEX_SPECIALS` covers `\`, `&`, `%`, `$`, `#`, `_`, `{`, `}`, `~`,
   `^`). A total row's `\bfseries` around a `\emph` gives bold italic, which is right.
@@ -157,7 +171,7 @@ the aggregate Loss Lab, which uses the walker, would show asterisks that the Pyt
 |---|---|---|
 | `src/greater_tables/markdownspans.py` | [rule] | new |
 | `src/greater_tables/spec.py`, `ir.py`, `engine/build.py`, `schema/ir-v1.json` | [engine] | field, flag, build, schema |
-| `src/greater_tables/render/tikz_layout.py`, `html.py`, `css.py`, `textlength.py` | [renderers] | emit and measure |
+| `src/greater_tables/render/tikz_layout.py`, `tikz.py`, `tikz_tabular.py`, `html.py`, `css.py`, `textlength.py` | [renderers] | emit and measure |
 | `js/src/gt-render.js` | [walker] | port |
 | `tests/test_markdown_spans.py`, `tests/registry.py`, `tests/golden/*` | [tests] | new and re-blessed |
 | `CHANGELOG.md`, `src/greater_tables/_version.py` | all | one minor bump for the plan |
@@ -171,18 +185,13 @@ CHANGELOG says so anyway, since a rebuilt document changes.
 ## Acceptance
 
 - The Goal's example renders italic, bold and code in HTML, in TeX through both TikZ engines, and
-  as typed in text.
+  as typed in text; a `Table: *x*` caption on it renders italic in HTML and TeX.
+- A DataFrame with `caption='*x*'` and no `markdown_caption` keeps its literal stars.
 - Every case in the [rule] table holds in Python and in the walker (conformance goldens).
 - A DataFrame with no `markdown_cols` renders byte-identically to 7.0.0: every pre-existing golden
   passes unchanged except `markdown`.
 - A code column's TikZ width estimate is within 1% of its compiled width in the `Etcher` preamble.
 
-## Open questions
-
-1. A selected DataFrame column marks its leaf header too (proposed above). Yes, or body cells only,
-   as `html_cols` does?
-2. Captions and notes are left out: a `Table: *x*` caption stays literal. Follow-up, or in scope?
-
 ## Execution log
 
-- 2026-10-21: drafted.
+- 2026-10-21: drafted; header and caption questions ruled the same day.
