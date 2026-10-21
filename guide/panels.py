@@ -14,7 +14,12 @@ keeps the one its format wants, as house style's ``GT`` does:
 - ``text/plain``: the text renderer.
 
 The style is house style's ``house_style()`` (its document budget and scale
-ceiling) with any ``HouseStyle`` fields passed to ``show`` replaced. SVGs are
+ceiling) with any ``HouseStyle`` fields passed to ``show`` replaced, and
+``tikz_font`` set to the face the target sets its tables in: STIX Two for the
+house-style PDF, Times for the plain PDF and for the SVGs, which ``Etcher``
+compiles in Times. The target comes from Quarto's ``QUARTO_EXECUTE_INFO``;
+the gallery turns the Jupyter daemon off so a reused kernel cannot carry one
+format's answer into the next format's pass. SVGs are
 cached under ``_gallery/`` by a hash of their TeX, so a re-render compiles
 only the tables that changed. Each ``show`` numbers its table, in the order
 the document calls it, and heads it with the fixture name and any style
@@ -25,6 +30,8 @@ from __future__ import annotations
 import hashlib
 import html
 import itertools
+import json
+import os
 import re
 import shutil
 import subprocess
@@ -46,6 +53,21 @@ CACHE = HERE / '_gallery'
 FIXTURES = fixtures()
 ENGINES = ('matrix', 'tabular')
 _NUMBER = itertools.count(1)
+
+
+def _face() -> str:
+    """The face this render's tables are set in: house style's PDF sets
+    STIX Two; everything else here is Times."""
+    try:
+        with open(os.environ['QUARTO_EXECUTE_INFO'], encoding='utf-8') as f:
+            fmt = json.load(f)['format']['identifier']
+    except (KeyError, OSError, ValueError):
+        return 'times'
+    house = fmt.get('target-format', '').startswith('house')
+    return 'stix-two' if house and fmt.get('base-format') in ('pdf', 'latex') else 'times'
+
+
+FACE = _face()
 
 
 def _svg(tex: str, alt: str) -> str:
@@ -123,4 +145,5 @@ def show(fixture, spec=None, **style_changes) -> Panels:
                       + [f'{k}={v!r}' for k, v in style_changes.items()])
     if not style_changes.get('tikz_container_env', '').startswith('sideways'):
         style_changes.setdefault('tikz_latex', 'H')
-    return Panels(data, spec, replace(house_style(), **style_changes), title)
+    style = replace(house_style(), tikz_font=FACE, **style_changes)
+    return Panels(data, spec, style, title)

@@ -18,9 +18,6 @@ detail and the fixture for each.
    labels at break depth 1 or more and stop 1.4pt short of the bottom frame
    (strict expected failures in `tests/test_tikz_geometry.py`). Held because
    the matrix output is byte-identical to 6.1.0 by design; fix or retire.
-4. The estimate is Times; under STIX Two prose wraps at its natural width,
-   and so do labels held at it ("Unit 1" in `wide-lab`). The main defect left
-   in house-style PDFs. `dev/plan-font-metrics.md`.
 
 ## [rtd-slug] Read the Docs slug — **open, Steve to decide**
 

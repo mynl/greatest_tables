@@ -5,6 +5,9 @@ author: "Stephen J. Mildenhall"
 date: today
 execute:
   echo: false
+  # a fresh kernel per render: panels.py reads the target format, and a
+  # reused kernel would carry the last format's answer
+  daemon: false
 format:
   house-html:
     output-file: gallery-house.html
@@ -63,8 +66,9 @@ from panels import show
 
 Each table comes from `tests/registry.py`, so every shape here is also a fixture with goldens, and
 the gallery and the test suite cannot drift apart. The style is house style's `house_style()`: the
-document budget of 41.4em and a scale ceiling of 0.9. Where a section varies a `HouseStyle` field,
-the text says which. Every table is numbered in the order the document runs, and headed by its
+document budget of 41.4em and a scale ceiling of 0.9. Column widths are measured in the face the
+tables are set in, `tikz_font`: STIX Two in the house-style PDF, Times everywhere else. Where a
+section varies a `HouseStyle` field, the text says which. Every table is numbered in the order the document runs, and headed by its
 fixture name and any style changes, so a table can be named by its number.
 
 On the web each table appears three times: the HTML, then each TikZ engine's TeX compiled on its
@@ -269,7 +273,8 @@ show('tex')
 ## Width
 
 The two-prose-column table under three budgets. At 45em it fits by narrowing alone; at 30em it
-narrows further; at 24em the prose has reached its floors and the scale drops.
+narrows further; at 24em the prose has reached its minimum, 8em (`min_prose_width_em`), and the
+table scales instead of setting the prose a word or two a line.
 
 ```{python}
 show('wrap-low', max_table_width_em=45)
@@ -332,8 +337,9 @@ show('long-spanner')
 ## Long headings
 
 A long heading over narrow data. The column is as wide as the heading's longest word, so the
-heading stacks on as many lines as it needs, however much room the table has to spare. Look at
-each heading's line count against the room left on the line.
+heading stacks on as many lines as it needs. Under a budget, the column with the tallest heading
+then takes spare width until that heading is no taller than the next tallest; when two tie,
+nothing moves.
 
 Four ratio columns under headings of four to seven words.
 
