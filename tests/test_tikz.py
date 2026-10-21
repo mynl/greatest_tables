@@ -111,9 +111,10 @@ def test_glyph_table_covers_table_furniture():
 
 # ------------------------------------------------------- max_table_width_em
 
-def emitted(doc, budget):
+def emitted(doc, budget, tikz_scale=1.0):
     """Render at a budget; return (predicted width em, scale, column widths)."""
-    style = HouseStyle(tikz_engine='matrix', max_table_width_em=budget)
+    style = HouseStyle(tikz_engine='matrix', max_table_width_em=budget,
+                       tikz_scale=tikz_scale)
     tikz = render_tikz(doc, style)
     cols = widths(tikz)
     scale = float(re.search(r'scale=([\d.]+),', tikz).group(1))
@@ -137,6 +138,25 @@ def test_budget_is_never_exceeded(name, budget, caplog):
     if 'ladder stops' in caplog.text:
         return              # the documented dead end: reported, not silent
     assert total <= budget + 0.05, f'{name} at {budget}em came out {total}em'
+
+
+@pytest.mark.parametrize('budget', [45, 41.4, 38, 30])
+def test_budget_is_met_at_the_scale_ceiling(budget):
+    """A 0.9 ceiling gives the columns the budget's room at 0.9, not at 1.0.
+
+    Meeting the budget at full size and then setting the table at 0.9 used to
+    narrow columns for width the table never took: the Loss Lab fixture's
+    layer labels wrapped while a tenth of the line stood empty.
+    """
+    doc = load('fx-loss-lab')
+    natural = widths(render_tikz(doc, MATRIX))
+    total, scale, cols = emitted(doc, budget, tikz_scale=0.9)
+    assert total <= budget + 0.05
+    assert scale <= 0.9
+    full = _tikz.table_width([round(w * 1000) for w in natural], 0.9,
+                             len(doc.columns), 1000) / 1000
+    if full <= budget:
+        assert cols == natural          # fits at the ceiling: nothing narrows
 
 
 def test_budget_narrows_prose_before_scaling():
@@ -177,7 +197,7 @@ def test_impossible_budget_errors_and_says_why(caplog):
         render_tikz(doc, HouseStyle(tikz_engine='matrix',
                                     max_table_width_em=6))
     assert 'ladder stops' in caplog.text
-    assert 'sidewaysfigure' in caplog.text      # tells the user the way out
+    assert 'sidewaystable' in caplog.text       # tells the user the way out
     # ERROR, so a caller that silences the routine ladder steps still sees it
     assert [r.levelname for r in caplog.records] == ['ERROR']
 

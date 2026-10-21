@@ -208,7 +208,7 @@ class HouseStyle:
     tikz_scale: float = 1.0
     tikz_column_sep: float = 1.0
     tikz_row_sep: float = 0.25
-    tikz_container_env: str = 'table'   # 'table' | 'figure' | 'sidewaysfigure'
+    tikz_container_env: str = 'table'   # 'table' | 'figure' | 'sidewaystable' | 'sidewaysfigure'
     tikz_latex: str | None = None       # placement, e.g. 'ht'
     tikz_post_process: str = ''
     # --- rule weights (w2tikz scale)

@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.2] - 2026-10-21
+
+### Fixed
+
+- A TikZ width budget is met at `tikz_scale`, the scale the table is set at. Below 1, as house
+  style's 0.9 ceiling is, columns were narrowed to fit the budget at full size and the table then
+  set at 0.9: a tenth of the line went empty while short labels wrapped (the Loss Lab layer
+  column broke "40M xs 10M" over three lines). Such tables now wrap less and run up to a tenth
+  wider, never past the budget.
+- An overrun suggests `sidewaystable`, with the budget at the text height, not `sidewaysfigure`.
+
 ## [7.1.1] - 2026-10-21
 
 ### Fixed

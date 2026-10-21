@@ -242,14 +242,21 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
     Returns the column widths and the scale to emit. The budget splits into
     a part the solver can spend (column text plus the furniture that scales
     with it) and a part it cannot — see :class:`Geometry`.
+
+    The budget is met at ``tikz_scale``, the scale the table is set at when
+    nothing forces it lower. Meeting it at full size and then setting the
+    table at 0.9 narrowed and wrapped columns to fit a width the table never
+    used: a tenth of the line went empty while a three-word stub label broke
+    over three lines.
     """
     ncols = len(naturals)
     budget = round(style.max_table_width_em * _EM)
     unscaled = geom.unscaled(ncols, csep_milli)
     inner = geom.inner(ncols, csep_milli)
+    ceiling = style.tikz_scale
     # samples carry the same cap and pad the naturals do, so the solver's
     # idea of a column's natural width matches the one computed above
-    text_budget = budget - unscaled - inner
+    text_budget = round((budget - unscaled) / ceiling) - inner
     capped = [[min(x + _WIDTH_PAD, prose_cap) for x in s] for s in samples]
     widths = list(solve_widths(capped, floors, text_budget).widths)
     if sum(widths) > text_budget:
@@ -262,13 +269,13 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
     elif sum(widths) < text_budget:
         widths = _grow(widths, naturals, text_budget)
     if sum(widths) <= text_budget:
-        return widths, style.tikz_scale
+        return widths, ceiling
 
     # nothing left to narrow: shrink the scaled part until the whole fits
     scaled = sum(widths) + inner
     needed = (budget - unscaled) / scaled if scaled > 0 else 1.0
     step = next((s for s in _SCALE_STEPS if s <= needed), _SCALE_STEPS[-1])
-    scale = min(style.tikz_scale, step)
+    scale = min(ceiling, step)
     full = geom.table_width(widths, 1.0, ncols, csep_milli) / _EM
     total = geom.table_width(widths, scale, ncols, csep_milli) / _EM
     if needed < _SCALE_STEPS[-1]:
@@ -280,14 +287,15 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
             'table wants %.1fem of columns that cannot be narrowed against a '
             'max_table_width_em of %.1f; that needs scale %.2f and the ladder '
             'stops at %.2f, so it overruns at %.1fem. Shorten the headings, '
-            'drop a column, or set tikz_container_env="sidewaysfigure".',
+            'drop a column, or set it sideways: tikz_container_env='
+            '"sidewaystable" with max_table_width_em at the text height.',
             full, style.max_table_width_em, needed, _SCALE_STEPS[-1], total)
     else:
         logger.warning(
-            'table does not fit max_table_width_em=%.1f at full size — its '
-            'columns that cannot be narrowed want %.1fem — so tikz_scale '
-            'drops to %.2f for a final %.1fem.',
-            style.max_table_width_em, full, scale, total)
+            'table does not fit max_table_width_em=%.1f at tikz_scale %.2f — '
+            'its columns that cannot be narrowed want %.1fem at full size — so '
+            'the scale drops to %.2f for a final %.1fem.',
+            style.max_table_width_em, ceiling, full, scale, total)
     return widths, scale
 
 
