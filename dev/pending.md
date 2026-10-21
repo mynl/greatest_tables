@@ -1,8 +1,8 @@
-# Pending — greater_tables (GT2)
+# Pending — greater_tables
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-08-01 at 6.0.0a4.
+reviewed 2026-10-21 at 7.1.0.
 
 ## [formats] Batch — small format/style gaps (agreed, not yet scheduled)
 
@@ -26,21 +26,32 @@ Collected as they come up; do them together rather than one version each.
    emit non-default weights as custom properties on the `.gt` wrapper, so one
    `HouseStyle` governs both renderers. Keep the CSS route primary — a
    document theme should still beat a per-table setting.
+4. **`formatters` keys that match no column are silently ignored**, `'all'`
+   included: `formatters={'all': lambda x: ...}` changes nothing and says
+   nothing (`dev/writedown-examples.qmd`), though `ratio_cols='all'` works.
+   Warn on an unmatched key, or accept `'all'` as the column selectors do.
+5. **Small floats print as `0.000`.** A float column with values near
+   0.002 (Fabricator `'v'`) gets 3 decimals, so 0.00033 prints `0.000`. Seen in
+   `dev/writedown-examples.qmd`; check the decimals inference below 0.01.
 
-## [rtd] Set up Read the Docs — **PENDING, Steve to action**
+## [gallery] Defects the gallery shows, not yet planned
 
-The docs tree, `.readthedocs.yaml`, and the `docs` extra are all in place and
-build clean locally (`uv sync --extra docs`, then `docs\make.bat html`).
-What remains is account-side and cannot be done from here:
+From `dev/done/plan-gt7-review.md`, Findings (2026-10-21); the plan holds the
+detail and the fixture for each.
 
-1. Make `mynl/greatest_tables` **public** — RTD needs it. The repo is already
-   pushed; the blocker is visibility, not the push.
-2. Confirm the build picks up `.readthedocs.yaml` (Python 3.13, `pip install
-   .[docs]`, PDF format on), and leave RTD's *Default branch* empty now that
-   GitHub's default is `main`.
-3. Add the RTD webhook (automatic on GitHub import) so pushes rebuild.
+1. Quarto adds `table table-sm table-striped small` to GT's HTML table, and
+   `gt.css` does not reset Bootstrap's striping shadow or the smaller font:
+   every Quarto HTML page with a GT table is striped. Emit
+   `data-quarto-disable-processing="true"`, or reset in `render/css.py`.
+2. A headerless table gets a doubled top rule, both engines.
+3. Matrix engine: spanner labels ignore `tikz_scale`; verticals cross spanner
+   labels at break depth 1 or more and stop 1.4pt short of the bottom frame
+   (strict expected failures in `tests/test_tikz_geometry.py`). Held because
+   the matrix output is byte-identical to 6.1.0 by design; fix or retire.
+4. The estimate is Times; under STIX Two prose wraps at its natural width.
+   `dev/plan-font-metrics.md`.
 
-### The slug — deferred to the next release
+## [rtd-slug] Read the Docs slug — **open, Steve to decide**
 
 The 6.0 docs publish under the existing **`greater-tables-project`** slug, so
 every URL in `pyproject.toml`, `README.md` and `docs/index.rst` points there.
@@ -57,8 +68,8 @@ so it has to be overridden at that moment), then repointing five URLs:
 - `docs/index.rst` — the RTD badge
 
 Because the first two are PyPI release metadata, that change needs a version
-bump; PyPI will not accept a re-upload of an existing version. Hence next
-release, not this one.
+bump; PyPI will not accept a re-upload of an existing version. 6.0.0 and
+7.0.0 both shipped under the old slug.
 
 ## [artwork] Optional: an example figure for the docs landing page
 
@@ -68,23 +79,6 @@ missing is a `docs/img/` example figure — the 5.x docs led with one — now
 that the demo tables are settled. `demo.html` and `demo2.html` are the
 obvious sources. Nice to have, not a release blocker.
 
-## [publish] greater-tables 6.0 on PyPI — **in flight**
-
-`6.0.0` is cut and tagged `v6.0.0` locally. Remaining, all Steve's:
-
-1. `git push mynl main` and `git push mynl v6.0.0`.
-2. Flip the repo public.
-3. Import on Read the Docs (see `[rtd]`), leaving RTD's *Default branch*
-   empty now that GitHub's default is `main`.
-4. `twine check dist/*`, confirm the README renders on the PyPI preview,
-   then upload.
-5. Confirm 5.3's frozen repo banner still points at the right place.
-
-`uv build` and the sdist/wheel content check are done — the sdist carries
-`src`, `tests`, `schema`, `js`, `docs` and no `dev/`; the wheel is about
-930 KB, half of it `data/tex_list.csv`. **Steve uploads; Claude never
-publishes.**
-
 ## [ci] GitHub Actions
 
 Nothing runs on push yet, and the docs no longer claim otherwise (6.0.0b1
@@ -92,11 +86,7 @@ reworded two "in CI" claims to "the test suite"). Minimum useful workflow:
 `uv sync`, `pytest` (428 tests, ~25 s) on 3.12/3.13/3.14, `npm run build` +
 a walker transcript check, and the `schema/ir-v1.json` diff guard. The 3.12
 floor in `pyproject.toml` is **declared but untested** — a matrix build is
-what would actually verify it. Unblocked once the repo is public.
+what would actually verify it. Unblocked: the repo is public. The suite now
+compiles TeX (tectonic) and reads PDFs (pdfplumber), so CI needs tectonic
+or must skip those tests, as they already do when it is missing.
 
-## [cookbook] Consider a docs page from the qmd generator
-
-`dev/tools/make_example_qmd.py` already builds a 20-recipe, hierarchy-heavy
-Quarto example. Those recipes are the missing "how do I do X" page in the
-Sphinx docs — worth wiring up rather than maintaining two example sets.
-Blocked on nothing; just a decision about whether the docs want it.

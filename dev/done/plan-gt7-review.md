@@ -272,3 +272,15 @@ Each is a defect seen in the rendered gallery, with the fixture that shows it.
   `tests/test_tikz_geometry.py`; against the pre-fix emitter 7 tabular cases fail. The matrix
   engine keeps both of its defects (finding 2 and a 1.4pt short bottom), held byte-identical to
   6.1.0 and marked as strict expected failures; whether to fix the matrix too is Steve's call.
+- 2026-10-21: [widths] closed with the font-metrics plan **explicitly deferred**: it is unruled
+  (its open questions are Steve's), and finding 1 now measures the defect it fixes.
+- 2026-10-21: [housekeeping]. `plan-column-widths.md` moved to `dev/done/`. `pending.md` pruned:
+  [publish] gone (6.0.0 and 7.0.0 are on PyPI), [rtd] reduced to the open slug question (the repo
+  is public and the docs build), [cookbook] gone (the gallery answers it), [ci] updated, and this
+  session's open defects added as [formats] 4 and 5 and a [gallery] section. `human-hints.md` was
+  already gone; the project `CLAUDE.md` line about it now describes `guide/` instead.
+  `dev/writedown-examples.qmd` is **kept**, against the plan: the gallery does not cover its cases,
+  and they show two defects ([formats] 4 and 5 in `pending.md`). It is Steve's untracked scratch
+  file, so deleting it is his call.
+- 2026-10-21: plan complete except [blog], which waits on Steve, and [guide], whose page is
+  Steve's work in progress at `guide/cheatsheet.qmd`.
