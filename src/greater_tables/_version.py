@@ -1,3 +1,3 @@
 """Single source of truth for the package version (hatchling reads it too)."""
 
-__version__ = '7.1.4'
+__version__ = '7.1.5'

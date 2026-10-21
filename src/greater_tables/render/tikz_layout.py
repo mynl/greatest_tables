@@ -71,6 +71,9 @@ _SCALE_STEPS = (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6)
 # common case, where bold and roman digits are the same width anyway.
 _BOLD_PERCENT = 118
 
+# row and cell flags that set a cell bold
+_BOLD_FLAGS = frozenset({'total', 'subtotal', 'emphasis'})
+
 # a wrapping column whose longest cell has at most this many words is a column
 # of labels, which a width budget does not narrow (see layout's floors)
 _LABEL_WORDS = 3
@@ -131,7 +134,7 @@ def cell_tex(cell: Cell | HeadCell, row_flags: tuple = (),
             text = cell.text
         tex = tex_escape(text, math).replace(chr(0xa0), '~')
     flags = set(cell.flags) | set(row_flags)
-    if flags & {'total', 'subtotal', 'emphasis'}:
+    if flags & _BOLD_FLAGS:
         tex = f'\\bfseries {tex}'
     if 'muted' in flags:
         tex = f'\\textcolor{{gray}}{{{tex}}}'
@@ -413,16 +416,24 @@ def layout(doc: TableDoc, style: HouseStyle, geom: Geometry) -> Layout:
             if col >= ncols:
                 break
             tex = cell_tex(cell, row.flags, math=math_on)
+            # a total row sets bold and the glyph table is roman. Bold digits
+            # are roman width in Times, so only a text column, where the bold
+            # is in the letters, takes the widening: "Subtotal" sets 0.28em
+            # wider than its roman estimate, past the column's pad
+            bolden = (_bold if (set(cell.flags) | set(row.flags)) & _BOLD_FLAGS
+                      and doc.columns[col].wrap else int)
             if cell.colspan == 1:
                 cells[col] = tex
-                width = _display_milli(cell, math_on)
+                width = bolden(_display_milli(cell, math_on))
                 samples[col].append(width)
                 wmax[col] = max(wmax[col], width)
-                tokmax[col] = max(tokmax[col], _token_milli(cell, math_on))
+                tokmax[col] = max(tokmax[col],
+                                  bolden(_token_milli(cell, math_on)))
                 wordmax[col] = max(wordmax[col], len(cell.text.split()))
             elif cell.text:
                 overlays.append((body_start + r, col, cell.colspan, tex))
-                spans.append((col, cell.colspan, _display_milli(cell, math_on)))
+                spans.append((col, cell.colspan,
+                               bolden(_display_milli(cell, math_on))))
             for cc in range(col, min(ncols, col + cell.colspan)):
                 if cell.rowspan > 1:
                     pending[cc] = cell.rowspan

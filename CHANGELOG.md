@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.1.5] - 2026-10-21
+
+### Fixed
+
+- TikZ: text in a bold row (`total`, `subtotal`, `emphasis`) is measured bold. A subtotal label
+  set its column from its roman width and ran almost to the rule beside it, 0.2pt from the stub
+  rule in STIX Two. Number columns are unchanged, since bold digits are roman width. Output
+  changes for tables with text in a bold row.
+
 ## [7.1.4] - 2026-10-21
 
 ### Fixed

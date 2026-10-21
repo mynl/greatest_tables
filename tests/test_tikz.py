@@ -13,6 +13,7 @@ from greater_tables import (
     Etcher, HouseStyle, TableDoc, TableSpec, build, render_tikz,
 )
 from greater_tables.render import tikz as _tikz
+from greater_tables.render import tikz_layout
 from greater_tables.render.textlength import (
     _WIDTH_TABLE, text_display_len, token_display_len,
 )
@@ -82,6 +83,18 @@ def test_spanner_label_widens_its_group():
     # the span covers both columns plus the separation between them
     assert sum(widths(tikz)) + MATRIX.tikz_column_sep \
         >= text_display_len(label)
+
+
+def test_bold_rows_are_measured_bold():
+    """A subtotal label sets bold, wider than its roman estimate; its column
+    must hold the bold width, while bold digits keep their roman width."""
+    df = pd.DataFrame({'line': ['Auto', 'Marine', 'Subtotal'],
+                       'paid': [861054, 137763, 998817]})
+    doc = build(df, TableSpec(show_index=False, row_flags={-1: ('subtotal',)}))
+    line, paid = widths(render_tikz(doc, MATRIX))
+    roman = text_display_len('Subtotal')
+    assert line >= roman * tikz_layout._BOLD_PERCENT / 100
+    assert paid < text_display_len('998,817') * tikz_layout._BOLD_PERCENT / 100
 
 
 def test_alignment_is_flush():
