@@ -171,13 +171,24 @@ def test_no_budget_is_unchanged():
         render_tikz(doc, HouseStyle(tikz_engine='matrix'))
 
 
-def test_impossible_budget_warns_and_says_why(caplog):
+def test_impossible_budget_errors_and_says_why(caplog):
     doc = load('fx-both-mi')
     with caplog.at_level('WARNING'):
         render_tikz(doc, HouseStyle(tikz_engine='matrix',
                                     max_table_width_em=6))
     assert 'ladder stops' in caplog.text
     assert 'sidewaysfigure' in caplog.text      # tells the user the way out
+    # ERROR, so a caller that silences the routine ladder steps still sees it
+    assert [r.levelname for r in caplog.records] == ['ERROR']
+
+
+def test_ladder_step_is_only_a_warning(caplog):
+    """A table the ladder brings inside its budget is the design working."""
+    doc = load('fx-both-mi')
+    with caplog.at_level('WARNING'):
+        _total, scale, _cols = emitted(doc, 24)
+    assert scale < 1.0
+    assert [r.levelname for r in caplog.records] == ['WARNING']
 
 
 @pytest.fixture(scope='session')

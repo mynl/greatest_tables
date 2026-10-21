@@ -165,7 +165,8 @@ class HouseStyle:
         the prose columns, which it does with one shared quantile so every
         one of them carries the same chance of wrapping
         (``render.widths``). When even the floors do not fit, TikZ steps
-        ``tikz_scale`` down a fixed ladder and says so through ``logging``;
+        ``tikz_scale`` down a fixed ladder, logging each step at WARNING and
+        a table still too wide at the ladder's foot at ERROR;
         HTML hands the number to the browser as a CSS ``max-width`` and lets
         it measure. Ems because every other geometry field here is ems: at
         11pt, 8 inches is about 52em.

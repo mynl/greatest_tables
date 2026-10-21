@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [7.0.1] - 2026-10-21
+
+### Fixed
+
+- A TikZ table still wider than `max_table_width_em` at the foot of the scale ladder logs at
+  ERROR, not WARNING. House style sets the `greater_tables` logger to ERROR to hide the routine
+  ladder steps, which hid real overruns too; those now show. Rendered output is unchanged.
+
 ## [7.0.0] - 2026-08-10
 
 **TeX math just works — inline, in headers, everywhere.** GT5 could set

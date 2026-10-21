@@ -1,6 +1,6 @@
 # [gt7-review] Get 7.0 sorted: a guide, a gallery, correct rules, correct widths
 
-Status: drafted 2026-10-20 at 7.0.0 (`fe22956`). The punch list Steve asked for after a long gap
+Status: drafted 2026-10-20 at 7.0.0 (`fe22956`); executing from 2026-10-21. The punch list Steve asked for after a long gap
 away from the project, written so a fresh reader can execute any step without the conversation.
 Steps are independent of one another except where a step says it depends on the gallery.
 
@@ -221,3 +221,5 @@ gallery; tracked here so the sequence is visible.
   in cells split out to `dev/plan-markdown-cells.md`. The cheat sheet has moved to
   `guide/cheatsheet.qmd` with house style installed beside it, uncommitted: Steve's work in
   progress.
+- 2026-10-21: execution started (Steve: "run the GT7 plan"). [widths] cause 2, the silent
+  overrun, fixed in 7.0.1.

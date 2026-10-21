@@ -272,7 +272,11 @@ def _fit_budget(style: HouseStyle, naturals: list[int], floors: list[int],
     full = geom.table_width(widths, 1.0, ncols, csep_milli) / _EM
     total = geom.table_width(widths, scale, ncols, csep_milli) / _EM
     if needed < _SCALE_STEPS[-1]:
-        logger.warning(
+        # ERROR, not WARNING: a ladder step is the design working, but this
+        # table really is wider than its budget, and callers that silence the
+        # routine steps (house style sets the package logger to ERROR) must
+        # still hear about it
+        logger.error(
             'table wants %.1fem of columns that cannot be narrowed against a '
             'max_table_width_em of %.1f; that needs scale %.2f and the ladder '
             'stops at %.2f, so it overruns at %.1fem. Shorten the headings, '
