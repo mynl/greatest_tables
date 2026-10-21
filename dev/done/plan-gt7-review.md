@@ -284,3 +284,17 @@ Each is a defect seen in the rendered gallery, with the fixture that shows it.
   file, so deleting it is his call.
 - 2026-10-21: plan complete except [blog], which waits on Steve, and [guide], whose page is
   Steve's work in progress at `guide/cheatsheet.qmd`.
+- 2026-10-21, tweaks after Steve's look at the gallery:
+  - 7.1.1: tabular spanner underlines reach the stub rule (they stopped half an em short after a
+    single stub column, for the same missing `\tabcolsep`), and `\addlinespace[0.15em]` after each
+    header row gives headings the matrix's room above their rule (3.4pt against 3.5pt; was 1.8pt).
+  - 7.1.2: the budget is met at `tikz_scale`. With house style's 0.9 ceiling, columns were narrowed
+    to fit 41.4em at full size and then set at 0.9: the Loss Lab layer column wrapped "40M xs 10M"
+    over three lines in a table using 37.3 of 41.4em.
+  - 7.1.3: a column of labels (no cell over three words) is not narrowed by a budget; the table
+    scales instead. Upright `wide-lab` had broken "Portfolio A" and "Unit 1".
+  - 7.1.4: sideways containers default to `[p]`. Under house style's `\floatplacement{table}{H}`
+    a bare `sidewaystable` vanished from the PDF without an error.
+  - Gallery: tables numbered; long-heading section (five fixtures) and sideways section added.
+  - Engine timing on DOOB, 48 tables, tectonic: matrix 9.56s, tabular 0.73s, empty document
+    0.63s: about 190ms against 2ms per table per TeX pass.
