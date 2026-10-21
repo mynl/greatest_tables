@@ -2,7 +2,7 @@
 \centering
 \caption{Simple table}\label{tbl-md}
 \begin{tikzpicture}[transform shape]
-\node[inner sep=0pt, scale=1.0] (gta97aff0e8d91) {%
+\node[inner sep=0pt, scale=1.0] (gtfb3ac23600c5) {%
 \providecommand{\I}{\vphantom{lp}}%
 \providecommand{\gtheadstrut}{\rule[-0.20em]{0pt}{1.58em}}%
 \setlength{\tabcolsep}{0.50em}%
@@ -11,13 +11,15 @@
 \setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \setlength{\cmidrulesep}{0pt}%
 \setlength{\abovetopsep}{0.28em}\setlength{\belowbottomsep}{0.28em}%
-\begin{tabular}{@{\hspace{1.00em}}>{\raggedright\arraybackslash}p{2.66em}@{\hspace{2.00em}}>{\raggedleft\arraybackslash}p{2.49em}@{\hspace{1.00em}}}
+\begin{tabular}{@{\hspace{1.00em}}>{\raggedright\arraybackslash}p{2.66em}@{\hspace{2.00em}}>{\raggedleft\arraybackslash}p{2.49em}>{\raggedright\arraybackslash}p{6.95em}>{\raggedleft\arraybackslash}p{4.27em}@{\hspace{1.00em}}}
 \toprule[0.6pt]
-\multicolumn{1}{@{\hspace{1.00em}}>{\centering\arraybackslash}b{2.66em}@{\hspace{2.00em}}}{\gtheadstrut \bfseries item\I} & \multicolumn{1}{@{}>{\centering\arraybackslash}b{2.49em}@{\hspace{1.00em}}}{\gtheadstrut \bfseries count\I} \\
+\multicolumn{1}{@{\hspace{1.00em}}>{\centering\arraybackslash}b{2.66em}@{\hspace{2.00em}}}{\gtheadstrut \bfseries item\I} & \multicolumn{1}{@{}>{\centering\arraybackslash}b{2.49em}}{\gtheadstrut \bfseries count\I} & \multicolumn{1}{>{\centering\arraybackslash}b{6.95em}}{\gtheadstrut \bfseries \emph{Note}\I} & \multicolumn{1}{>{\centering\arraybackslash}b{4.27em}@{\hspace{1.00em}}}{\gtheadstrut \bfseries Revenue*\I} \\
 \addlinespace[0.15em]
 \midrule[0.6pt]
-apples &  3 \\
-pears  & 12 \\
+apples       &  3 & plain                            &   1.25 \\
+pears        & 12 & uses \texttt{col\_name}          &    2.5 \\
+\emph{alpha} &  7 & \textbf{beta} and \emph{see $x$} & 0.23** \\
+$\psi$       &  1 & \texttt{\$x\$} stays code        &      3 \\
 \bottomrule[0.6pt]
 \end{tabular}};
 \end{tikzpicture}

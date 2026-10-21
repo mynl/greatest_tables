@@ -42,6 +42,19 @@ class TableSpec:
     html_cols
         String columns whose cells carry raw HTML (sets the cell
         ``html`` flag; renderers still gate on their own allow-html option).
+    markdown_cols
+        Columns whose cells carry inline markdown, ``*em*``, ``**strong**``
+        and ```code``` (the rule is :mod:`greater_tables.markdownspans`).
+        A selected column's leaf header is markdown too, and an index level
+        selected by its name marks its stub cells and stub header. A
+        markdown string input defaults to every column outside
+        ``html_cols``; anything else defaults to none, since a star in a
+        DataFrame may be a significance star, a footnote marker or a
+        product. Naming a column here and in ``html_cols`` raises.
+    markdown_caption
+        Whether the caption is inline markdown. None (default) means yes for
+        a markdown string input, whose ``Table:`` line is markdown, and no
+        otherwise.
     unbreakable
         Columns forced to ``wrap=False`` regardless of dtype.
     aligners
@@ -110,6 +123,8 @@ class TableSpec:
     date_cols: ColSelector = None
     raw_cols: ColSelector = None
     html_cols: ColSelector = None
+    markdown_cols: ColSelector = None
+    markdown_caption: bool | None = None
     unbreakable: ColSelector = None
     aligners: str | Mapping[Hashable, str] | None = None
     formatters: Mapping[Hashable, FormatSpec | Mapping | str | int

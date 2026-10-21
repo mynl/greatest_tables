@@ -4,7 +4,9 @@ Renders a TableDoc with render_html (css='none', allow_html=False — matching
 the walker harness defaults: html cells as source text, math as \\(tex\\))
 and parses the fragment with stdlib html.parser into the same JSONL format:
 meta line, then one line per cell {s, r, c, tag, [rowspan], [colspan],
-classes(sorted), text}. Byte-compared against tests/golden/transcript.
+classes(sorted), text, [inline]}, inline being the cell's em, strong and
+code elements as [tag, text] in document order. Byte-compared against
+tests/golden/transcript.
 """
 
 import json
@@ -14,6 +16,7 @@ from greater_tables import Cell, HouseStyle, TableDoc
 from greater_tables.render.html import render_html
 
 _SECTION = {'thead': 'head', 'tbody': 'body', 'tfoot': 'foot'}
+_INLINE = ('em', 'strong', 'code')
 
 
 class _Walk(HTMLParser):
@@ -25,10 +28,15 @@ class _Walk(HTMLParser):
         self.col = 0
         self.cell = None
         self.text = []
+        self.inline = []            # [tag, text] per inline element
+        self.open = []              # indices into inline still open
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
-        if tag in _SECTION:
+        if tag in _INLINE and self.cell is not None:
+            self.inline.append([tag, ''])
+            self.open.append(len(self.inline) - 1)
+        elif tag in _SECTION:
             self.section = _SECTION[tag]
             self.row = -1
         elif tag == 'tr' and self.section:
@@ -45,11 +53,16 @@ class _Walk(HTMLParser):
             rec['classes'] = sorted((a.get('class') or '').split())
             self.cell = rec
             self.text = []
+            self.inline, self.open = [], []
             self.col += colspan
 
     def handle_endtag(self, tag):
-        if tag in ('td', 'th') and self.cell is not None:
+        if tag in _INLINE and self.open:
+            self.open.pop()
+        elif tag in ('td', 'th') and self.cell is not None:
             self.cell['text'] = ''.join(self.text)
+            if self.inline:
+                self.cell['inline'] = self.inline
             self.records.append(self.cell)
             self.cell = None
         elif tag in _SECTION:
@@ -58,6 +71,8 @@ class _Walk(HTMLParser):
     def handle_data(self, data):
         if self.cell is not None:
             self.text.append(data)
+            for k in self.open:
+                self.inline[k][1] += data
 
 
 def transcribe(doc: TableDoc, style: HouseStyle | None = None) -> str:

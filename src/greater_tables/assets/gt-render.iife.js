@@ -28,12 +28,13 @@ var GtRender = (() => {
     N_VRULE_SLOTS: () => N_VRULE_SLOTS,
     default: () => gt_render_default,
     irToGridInput: () => irToGridInput,
+    markdownRuns: () => markdownRuns,
     renderTable: () => renderTable,
     ruleSlot: () => ruleSlot,
     solveWidths: () => solveWidths,
     vruleSlot: () => vruleSlot
   });
-  var GT_RENDER_VERSION = "7.0.0";
+  var GT_RENDER_VERSION = "8.1.0";
   var IR_VERSION_SUPPORTED = 1;
   var N_RULE_SLOTS = 3;
   var N_VRULE_SLOTS = 3;
@@ -85,6 +86,90 @@ var GtRender = (() => {
       out.push([false, text.slice(pos).replace(/\\\$/g, "$")]);
     }
     return out;
+  }
+  var CODE_RE = new RegExp("(?<![\\\\`])`([^`]*[^`\\\\])`(?!`)", "g");
+  var MD_OPEN = `(?<![^\\s(\\[{"'\u201C\u2018])`;
+  var MD_CLOSE = `(?![^\\s.,;:!?)\\]}"'\u201D\u2019\u2026/\u2013\u2014-])`;
+  var STRONG_RE = new RegExp(
+    MD_OPEN + "\\*\\*(?=\\S)(.+?)(?<=[^\\s\\\\])\\*\\*" + MD_CLOSE,
+    "gs"
+  );
+  var EM_RE = new RegExp(
+    MD_OPEN + "\\*(?=[^\\s*])(.+?)(?<=[^\\s\\\\*])\\*" + MD_CLOSE,
+    "gs"
+  );
+  var MD_ATOM = 57344;
+  var MD_ATOM_SPLIT = /([-])/;
+  var MD_ATOM_ONLY = /^[-]$/;
+  var MD_ESCAPE_RE = /\\([*`])/g;
+  function markdownRuns(text, mathOn = true) {
+    const tokens = [];
+    let pos = 0;
+    let m;
+    CODE_RE.lastIndex = 0;
+    while ((m = CODE_RE.exec(text)) !== null) {
+      tokens.push(...mdMathTokens(text.slice(pos, m.index), mathOn));
+      tokens.push(["code", null, m[1]]);
+      pos = m.index + m[0].length;
+    }
+    tokens.push(...mdMathTokens(text.slice(pos), mathOn));
+    const out = [];
+    if (MD_ATOM_SPLIT.test(text)) {
+      for (const t of tokens) {
+        if (typeof t !== "string") out.push(t);
+        else if (t !== "") out.push(["text", null, mdUnescape(t)]);
+      }
+      return out.length ? out : [["text", null, ""]];
+    }
+    const atoms = tokens.filter((t) => typeof t !== "string");
+    let flat = "";
+    let k = 0;
+    for (const t of tokens) {
+      flat += typeof t === "string" ? t : String.fromCharCode(MD_ATOM + k++);
+    }
+    for (const [style, chunk] of mdStyled(flat)) {
+      for (const piece of chunk.split(MD_ATOM_SPLIT)) {
+        if (!piece) continue;
+        if (MD_ATOM_ONLY.test(piece)) {
+          const [kind, , atomText] = atoms[piece.charCodeAt(0) - MD_ATOM];
+          out.push([kind, style, atomText]);
+        } else {
+          out.push(["text", style, mdUnescape(piece)]);
+        }
+      }
+    }
+    return out.length ? out : [["text", null, ""]];
+  }
+  function mdMathTokens(text, mathOn) {
+    if (!mathOn || !text.includes("$")) return [text];
+    return mathSegments(text).map(([isMath, run]) => isMath ? ["math", null, run] : run);
+  }
+  function mdStyled(flat) {
+    const out = [];
+    for (const [strong, chunk] of mdSplit(STRONG_RE, flat)) {
+      if (strong) {
+        out.push(["strong", chunk]);
+      } else {
+        for (const [em, c] of mdSplit(EM_RE, chunk)) out.push([em ? "em" : null, c]);
+      }
+    }
+    return out;
+  }
+  function mdSplit(re, text) {
+    const out = [];
+    let pos = 0;
+    let m;
+    re.lastIndex = 0;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > pos) out.push([false, text.slice(pos, m.index)]);
+      out.push([true, m[1]]);
+      pos = m.index + m[0].length;
+    }
+    if (pos < text.length) out.push([false, text.slice(pos)]);
+    return out;
+  }
+  function mdUnescape(text) {
+    return text.replace(MD_ESCAPE_RE, "$1");
   }
   function renderTable(doc, opts = {}) {
     if (doc.ir_version !== IR_VERSION_SUPPORTED) {
@@ -273,6 +358,28 @@ var GtRender = (() => {
     } else if (cell.html) {
       if (opts.allowHtml) node.innerHTML = cell.text;
       else node.textContent = cell.text;
+    } else if (cell.markdown) {
+      let group = null;
+      for (const [kind, style, text] of markdownRuns(cell.text, mathOn)) {
+        if (!style) {
+          group = null;
+        } else if (!group || group.tagName.toLowerCase() !== style) {
+          group = node.appendChild(d.createElement(style));
+        }
+        const parent = group || node;
+        if (kind === "math") {
+          const span = d.createElement("span");
+          span.className = "gt-math";
+          renderMath(d, span, text, opts);
+          parent.appendChild(span);
+        } else if (kind === "code") {
+          const code = d.createElement("code");
+          code.textContent = text;
+          parent.appendChild(code);
+        } else if (text) {
+          parent.appendChild(d.createTextNode(text));
+        }
+      }
     } else if (mathOn && cell.text.includes("$")) {
       for (const [isMath, run] of mathSegments(cell.text)) {
         if (isMath) {

@@ -24,5 +24,6 @@
 .gt.gt .gt-muted { opacity: 0.6; }
 .gt.gt .gt-neg { color: var(--gt-neg-color); }
 .gt.gt .gt-math { white-space: nowrap; }
+.gt.gt code { color: inherit; background: transparent; padding: 0; }
 .gt.gt .gt-notes { font-size: 0.85em; opacity: 0.75; padding-top: 0.3em; }
 .gt.gt.gt-fit td, .gt.gt.gt-fit th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

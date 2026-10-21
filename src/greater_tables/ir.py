@@ -81,7 +81,9 @@ class Cell(BaseModel):
     :mod:`greater_tables.mathspans`. ``raw`` is only present when the owning
     column advertises ``raw: true``; an explicit JSON ``null`` there means a
     missing value, which is distinct from the field being absent (tracked
-    via pydantic's fields-set).
+    via pydantic's fields-set). ``markdown`` marks inline ``*em*``,
+    ``**strong**`` and ```code``` in ``text``, split by the shared rule in
+    :mod:`greater_tables.markdownspans`.
     """
 
     model_config = _FROZEN
@@ -93,6 +95,7 @@ class Cell(BaseModel):
     flags: tuple[CellFlag, ...] = ()
     math: bool = False
     html: bool = False
+    markdown: bool = False
 
 
 class HeadCell(BaseModel):
@@ -106,6 +109,7 @@ class HeadCell(BaseModel):
     flags: tuple[CellFlag, ...] = ()
     math: bool = False
     html: bool = False
+    markdown: bool = False
 
 
 class Row(BaseModel):

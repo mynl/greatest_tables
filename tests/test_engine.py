@@ -91,7 +91,7 @@ def test_markdown_ingest():
     assert doc.caption == 'Simple table'
     assert doc.label == 'tbl-md'
     cols = doc.columns
-    assert [c.align for c in cols] == ['l', 'r']   # from :--- / ---:
+    assert [c.align for c in cols] == ['l', 'r', 'l', 'r']   # from :--- / ---:
     assert doc.body[1].cells[1].text == '12'
 
 

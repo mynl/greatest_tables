@@ -20,6 +20,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..markdownspans import Run, grouped, runs
 from ..mathspans import segments
 from ..spec import HouseStyle
 from .textlength import display_milli, math_milli, token_milli
@@ -57,6 +58,16 @@ _BOLD_FLAGS = frozenset({'total', 'subtotal', 'emphasis'})
 # a wrapping column whose longest cell has at most this many words is a column
 # of labels, which a width budget does not narrow (see layout's floors)
 _LABEL_WORDS = 3
+
+# Markdown code sets in the document's monospace font, which tikz_font does
+# not name, so it takes one advance per character. Measured \texttt
+# advances: 0.525em in Latin Modern Mono, which Etcher's newtx preamble sets
+# code in, and 0.602em in house style's DejaVu Sans Mono. Rounded up from the
+# widest, an estimate never runs short, at the cost of up to 16% slack in
+# the narrower.
+_MONO_MILLI = 610
+
+_MARKDOWN_TEX = {None: '{}', 'em': '\\emph{{{}}}', 'strong': '\\textbf{{{}}}'}
 
 _TEX_SPECIALS = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%',
                  '$': r'\$', '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
@@ -101,11 +112,31 @@ def tex_escape(text: str, math: bool = True) -> str:
                    for is_math, run in segments(text))
 
 
+def markdown_tex(text: str, math: bool = True) -> str:
+    """TeX for inline markdown: ``\\emph``, ``\\textbf`` and ``\\texttt``.
+
+    Each run is escaped as it would be outside markdown, code included, so
+    ```col_name``` sets as ``\\texttt{col\\_name}``.
+    """
+    def one(run: Run) -> str:
+        if run.kind == 'math':
+            return f'${run.text}$'
+        if run.kind == 'code':
+            return f'\\texttt{{{_escape_run(run.text)}}}'
+        return _escape_run(run.text)
+
+    return ''.join(_MARKDOWN_TEX[style].format(''.join(one(r) for r in group))
+                   for style, group in grouped(runs(text, math)))
+
+
 def cell_tex(cell: Cell | HeadCell, row_flags: tuple = (),
              math: bool = True) -> str:
-    """TeX for one cell: math re-wrapped, html stripped, flags styled."""
+    """TeX for one cell: math re-wrapped, html stripped, markdown set,
+    flags styled."""
     if cell.math:
         tex = f'${cell.text}$'
+    elif cell.markdown and not cell.html:
+        tex = markdown_tex(cell.text, math).replace(chr(0xa0), '~')
     else:
         if cell.html:
             # user markup: strip tags, never segment — its $s are literal
@@ -126,11 +157,56 @@ def _measured(cell: Cell | HeadCell) -> str:
     return _TAG_RE.sub('', cell.text) if cell.html else cell.text
 
 
+def _is_markdown(cell: Cell | HeadCell) -> bool:
+    return cell.markdown and not (cell.math or cell.html)
+
+
+def _run_milli(run: Run, font: str, bold: bool) -> int:
+    """Milli-em width of one markdown run, markers removed.
+
+    Strong text is measured in the face's bold table; em text in its roman
+    one, since italic is no wider (0.94 to 0.99 of roman across the five
+    faces); code at ``_MONO_MILLI`` a character.
+    """
+    if run.kind == 'math':
+        return math_milli(run.text, font)
+    if run.kind == 'code':
+        return _MONO_MILLI * len(run.text)
+    return display_milli(run.text, math=False, font=font,
+                         bold=bold or run.style == 'strong')
+
+
+def _markdown_words(text: str, math: bool, font: str, bold: bool) -> list[int]:
+    """Milli-em width of each word of markdown ``text``, as it sets.
+
+    A word may run across runs (``*alpha*,`` is an italic word and a comma)
+    and ends only at whitespace; a math run is one unbreakable box.
+    """
+    words: list[int] = []
+    width, open_word = 0, False
+    for run in runs(text, math):
+        if run.kind == 'math':
+            width, open_word = width + _run_milli(run, font, bold), True
+            continue
+        for k, piece in enumerate(re.split(r'\s+', run.text)):
+            if k > 0 and open_word:
+                words.append(width)
+                width, open_word = 0, False
+            if piece:
+                width += _run_milli(run._replace(text=piece), font, bold)
+                open_word = True
+    if open_word:
+        words.append(width)
+    return words
+
+
 def _display_milli(cell: Cell | HeadCell, math: bool, font: str,
                    bold: bool = False) -> int:
     """Milli-em width of a cell's content set on one line, in ``font``."""
     if cell.math:
         return math_milli(cell.text, font)
+    if _is_markdown(cell):
+        return sum(_run_milli(r, font, bold) for r in runs(cell.text, math))
     return display_milli(_measured(cell), math=math and not cell.html,
                          font=font, bold=bold)
 
@@ -140,6 +216,8 @@ def _token_milli(cell: Cell | HeadCell, math: bool, font: str,
     """Milli-em width of a cell's widest unbreakable token, in ``font``."""
     if cell.math:
         return math_milli(cell.text, font)
+    if _is_markdown(cell):
+        return max(_markdown_words(cell.text, math, font, bold), default=0)
     return token_milli(_measured(cell), math=math and not cell.html,
                        font=font, bold=bold)
 
@@ -428,11 +506,14 @@ def layout(doc: TableDoc, style: HouseStyle) -> Layout:
                 hmax[col] = max(hmax[col],
                                 _token_milli(hc, math_on, font, bold=True))
                 # a plain leaf heading's words, for balancing heading heights;
-                # math and markup set as boxes this count cannot see into
+                # math and markup set as boxes this count cannot see into,
+                # and markdown is measured as it sets, markers removed
                 if leaf and hc.text and not (hc.math or hc.html or '$' in hc.text):
-                    headings[col] = [display_milli(word, math=False, font=font,
-                                                   bold=True)
-                                     for word in hc.text.split()]
+                    headings[col] = (
+                        _markdown_words(hc.text, math_on, font, bold=True)
+                        if hc.markdown else
+                        [display_milli(word, math=False, font=font, bold=True)
+                         for word in hc.text.split()])
             elif hc.text:
                 overlays.append((level, col, hc.colspan, tex))
                 # an overlaid label carries no text width: it cannot wrap, so

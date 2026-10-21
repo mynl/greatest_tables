@@ -55,6 +55,8 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
     df, spec = _ingest(data, spec)
 
     caption, notes = spec.caption, list(spec.notes)
+    if caption is not None and spec.markdown_caption and _has_markers(caption):
+        caption = Cell(text=caption, markdown=True)
     total = len(df)
     if spec.max_rows is not None and total > spec.max_rows:
         df = df.iloc[:spec.max_rows]
@@ -90,6 +92,10 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
     tags = {name: _sel(getattr(spec, f'{name}_cols'))
             for name in ('ratio', 'year', 'date', 'raw')}
     html_set = _sel(spec.html_cols)
+    markdown_set = _sel(spec.markdown_cols)
+    if both := html_set & markdown_set:
+        raise ValueError('a column cannot be both html and markdown: '
+                         f'{sorted(map(str, both))} are in html_cols and markdown_cols')
     unbreakable = _sel(spec.unbreakable)
     aligners = dt.build_aligner_map(spec, stub_names, data_cols)
 
@@ -133,10 +139,17 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
             if level < n_head - 1:
                 cells.append(HeadCell(colspan=n_stub))
             else:
-                cells.extend(_head_cell(str(n)) for n in stub_names)
+                cells.extend(_head_cell(str(n), markdown=n in markdown_set)
+                             for n in stub_names)
         merge = spec.sparsify_columns and level < n_head - 1
-        cells.extend(_head_cell(t, s)
-                     for t, s in st.head_groups(data_names, level, merge))
+        groups = st.head_groups(data_names, level, merge)
+        if level == n_head - 1:
+            # the leaf level has one cell per column; group labels above it
+            # are never markdown
+            cells.extend(_head_cell(t, s, markdown=label in markdown_set)
+                         for (t, s), label in zip(groups, data_cols))
+        else:
+            cells.extend(_head_cell(t, s) for t, s in groups)
         head.append(tuple(cells))
 
     # --- body assembly
@@ -153,12 +166,13 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
             span = layout[i][level]
             cells.append(_make_cell(
                 index_tuples[i][level], col_specs[level], col_dtypes[level],
-                spec, html=stub_names[level] in html_set, rowspan=span))
+                spec, html=stub_names[level] in html_set,
+                markdown=stub_names[level] in markdown_set, rowspan=span))
         for j, label in enumerate(data_cols):
             k = n_stub + j
             cells.append(_make_cell(
                 df.iloc[i, j], col_specs[k], col_dtypes[k], spec,
-                html=label in html_set,
+                html=label in html_set, markdown=label in markdown_set,
                 raw_dtype=col_dtypes[k] if label in raw_set else None,
                 extra=_user_cell_flags(spec, i, label, df.iloc[i, j])))
         body.append(Row(cells=tuple(cells),
@@ -201,7 +215,8 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
     """Parse a markdown pipe table (greater_tables MD2DF salvage).
 
     Extracted caption / ``{#tbl-label}`` / alignment markers fill spec
-    fields the user left unset.
+    fields the user left unset, and so do the markdown fields: every column
+    outside ``html_cols`` is markdown, and so is the caption.
     """
     table_m = re.search(r'((?:\|.*\|\s*(?:\n|$))+)', txt, re.DOTALL)
     if table_m is None:
@@ -217,7 +232,9 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
 
     lines = re.sub(r'^\||\|$', '', table_m.group(1).strip(),
                    flags=re.MULTILINE).split('\n')
-    lines[0] = '|'.join(re.sub(r'^\*\*?|\*\*?$', '', c.strip())
+    # a header set bold whole is bold already; any other star in a header
+    # (*Note*, Revenue*) is left for the markdown rule
+    lines[0] = '|'.join(re.sub(r'^\*\*(.+)\*\*$', r'\1', c.strip())
                         for c in lines[0].split('|'))
     align_row = lines.pop(1)
     aligners = ''
@@ -230,12 +247,20 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
             aligners += 'r'
     rows = [[c.strip() for c in line.split('|')] for line in lines]
     df = pd.DataFrame(rows[1:], columns=rows[0])
+    if spec.markdown_cols is None:
+        html = dt.resolve_cols(spec.html_cols, list(df.columns))
+        markdown_cols = [c for c in df.columns if c not in html]
+    else:
+        markdown_cols = spec.markdown_cols
 
     return df, replace(
         spec,
         caption=spec.caption if spec.caption is not None else caption,
         label=spec.label if spec.label is not None else label,
         aligners=spec.aligners if spec.aligners is not None else (aligners or None),
+        markdown_cols=markdown_cols,
+        markdown_caption=(spec.markdown_caption
+                          if spec.markdown_caption is not None else True),
     )
 
 
@@ -339,9 +364,9 @@ def _resolve_format(label, ser, dtype, tag, spec, defaults):
 
 
 def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
-               rowspan: int = 1, raw_dtype: str | None = None,
-               extra: tuple = ()) -> Cell:
-    """Format one value into a Cell, stamping neg/math/html as needed."""
+               markdown: bool = False, rowspan: int = 1,
+               raw_dtype: str | None = None, extra: tuple = ()) -> Cell:
+    """Format one value into a Cell, stamping neg/math/html/markdown as needed."""
     if callable(fspec):
         # user-supplied formatter (compat facade path); it owns NaN handling
         try:
@@ -361,15 +386,27 @@ def _make_cell(value, fspec, dtype, spec, *, html: bool = False,
     if raw_dtype is not None:
         kwargs['raw'] = _json_raw(value, raw_dtype)
     return Cell(text=text, rowspan=rowspan, flags=flags, math=math_flag,
-                html=html, **kwargs)
+                html=html, markdown=markdown and not math_flag and _has_markers(text),
+                **kwargs)
 
 
-def _head_cell(text: str, colspan: int = 1) -> HeadCell:
+def _head_cell(text: str, colspan: int = 1, markdown: bool = False) -> HeadCell:
     """Header text gets the same whole-cell math detection body cells do."""
     tex = whole_cell(text)
     if tex is not None:
         return HeadCell(text=tex, colspan=colspan, math=True)
-    return HeadCell(text=text, colspan=colspan)
+    return HeadCell(text=text, colspan=colspan,
+                    markdown=markdown and _has_markers(text))
+
+
+def _has_markers(text: str) -> bool:
+    """Whether markdown could change how ``text`` sets.
+
+    Text with no star and no backtick splits into one plain run, which sets
+    exactly as unmarked text does, so it carries no flag and the IR keeps
+    its bare-string cells.
+    """
+    return '*' in text or '`' in text
 
 
 def _is_negative(value, dtype) -> bool:

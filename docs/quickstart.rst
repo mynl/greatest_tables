@@ -72,8 +72,12 @@ Telling the engine what the columns mean
 
 :class:`~greater_tables.spec.TableSpec` is the whole user-facing surface.
 Column selectors (``ratio_cols``, ``year_cols``, ``date_cols``, ``raw_cols``,
-``html_cols``, ``unbreakable``) each accept a list of labels, the string
-``'all'``, or a regex matched against column names:
+``html_cols``, ``markdown_cols``, ``unbreakable``) each accept a list of
+labels, the string ``'all'``, or a regex matched against column names.
+``markdown_cols`` sets ``*em*``, ``**strong**`` and ```code``` in its cells;
+a markdown string input is markdown throughout, caption included, while a
+DataFrame is markdown only where it says so, since its stars may be
+significance stars or footnote markers:
 
 .. code:: python
 

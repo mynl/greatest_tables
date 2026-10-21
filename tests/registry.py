@@ -105,10 +105,25 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
                 [list('AB'), list('cd'), list('ef'), list('gh'), list('ij')],
                 names=[f'L{k}' for k in range(5)])),
         TableSpec())
+    # inline markdown: em, strong, code, math inside emphasis, code holding
+    # dollars, a whole math cell; an italic header beside a footnote star,
+    # and a significance star that stays a star
     fx['markdown'] = (
         ': Simple table {#tbl-md}\n\n'
-        '| item | count |\n|:-----|------:|\n| apples | 3 |\n| pears | 12 |\n',
+        '| item | count | *Note* | Revenue* |\n'
+        '|:-----|------:|:-------|---------:|\n'
+        '| apples | 3 | plain | 1.25 |\n'
+        '| pears | 12 | uses `col_name` | 2.5 |\n'
+        '| *alpha* | 7 | **beta** and *see $x$* | 0.23** |\n'
+        '| $\\psi$ | 1 | `$x$` stays code | 3 |\n',
         TableSpec())
+    # a DataFrame says which columns are markdown; the sig column's stars
+    # are significance stars and stay literal
+    fx['markdown-df'] = (
+        pd.DataFrame({'model': ['*base*', '**full**', 'with `lag_1`'],
+                      'estimate': [1.25, 2.5, 3.75],
+                      'sig': ['0.23**', '0.05*', 'n.s.']}),
+        TableSpec(show_index=False, markdown_cols=['model']))
     # --- the gallery shapes (dev/done/plan-gt7-review.md [gallery]). Indexes
     # are hand-built because Fabricator's outer levels come out singleton at
     # these row counts with simplify=False, and dropped with simplify=True.

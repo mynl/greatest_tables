@@ -1,0 +1,13 @@
+{"caption":null,"label":null,"hash":"99d21af32501","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-data","gt-l"],"text":"model"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"estimate"}
+{"s":"head","r":0,"c":2,"tag":"th","classes":["gt-data","gt-l"],"text":"sig"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"base","inline":[["em","base"]]}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1.250"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"0.23**"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"full","inline":[["strong","full"]]}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"2.500"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"0.05*"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"with lag_1","inline":[["code","lag_1"]]}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"3.750"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"n.s."}

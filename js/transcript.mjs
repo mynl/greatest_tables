@@ -1,8 +1,10 @@
 /* DOM-transcript conformance harness.
  *
  * Renders every golden IR fixture with gt-render.js under linkedom and emits
- * one JSON line per cell: {s, r, c, tag, rowspan?, colspan?, classes, text}
- * (classes sorted; span fields only when > 1), preceded by a meta line with
+ * one JSON line per cell: {s, r, c, tag, rowspan?, colspan?, classes, text,
+ * inline?} (classes sorted; span fields only when > 1; inline, the cell's
+ * em, strong and code elements as [tag, text], only when it has any),
+ * preceded by a meta line with
  * caption/label/hash/notes. The Python HTML renderer must byte-match these
  * transcripts in [notebook-html] — that is the shared conformance contract.
  *
@@ -54,6 +56,11 @@ function transcribe(doc, maxRuleDepth) {
                 rec.classes = (cell.className || '').split(/\s+/)
                     .filter(Boolean).sort();
                 rec.text = cell.textContent;
+                // markdown's elements, in document order, so the goldens
+                // hold em, strong and code apart and not only their text
+                const inline = [...cell.querySelectorAll('em, strong, code')]
+                    .map(e => [e.tagName.toLowerCase(), e.textContent]);
+                if (inline.length) rec.inline = inline;
                 lines.push(JSON.stringify(rec));
                 c += colspan;
             }

@@ -3,6 +3,29 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [8.1.0] - 2026-10-22
+
+### Added
+
+- Inline markdown in cells: `*em*`, `**strong**` and `` `code` `` set as italic, bold and code in
+  HTML and TeX, and as typed in text. A markdown string input is markdown throughout, caption
+  included. A DataFrame names its markdown columns with `TableSpec.markdown_cols` (index levels by
+  name), and its caption with `markdown_caption=True`. A star that does not wrap a word, as in
+  `0.23**`, `Revenue*` or `a*b*c`, stays a star.
+- `markdown` on `Cell` and `HeadCell` in the IR (`ir_version` stays 1), and the walker sets it as
+  the Python HTML does.
+- TikZ widths measure markdown as it sets: markers removed, bold in the face's bold table, code at
+  0.61em a character.
+
+### Changed
+
+- **Output changes** for markdown string input whose cells hold `*`, `**` or backticks: the
+  markers printed literally, and TeX set backticks as quotes.
+- **Output changes** for markdown string headers: only a whole `**...**` wrapper is stripped now.
+  `*Note*` sets bold italic and `Revenue*` keeps its star, where both lost their stars.
+- The stylesheet resets `code` color, background and padding inside a table, so a page theme does
+  not shade it.
+
 ## [8.0.0] - 2026-10-22
 
 **The `matrix` TikZ engine is gone; `tabular` is the only one.** Major version because

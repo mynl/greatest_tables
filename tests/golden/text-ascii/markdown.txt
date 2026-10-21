@@ -1,8 +1,10 @@
 Simple table {#tbl-md}
 
-=============
-item    count
-=============
-apples      3
-pears      12
-=============
+================================================
+item     count  *Note*                  Revenue*
+================================================
+apples       3  plain                       1.25
+pears       12  uses `col_name`              2.5
+*alpha*      7  **beta** and *see $x$*    0.23**
+$\psi$       1  `$x$` stays code               3
+================================================

@@ -118,6 +118,13 @@ RULES: dict[str, dict[str, str]] = {
     '.gt.gt .gt-muted': {'opacity': '0.6'},
     '.gt.gt .gt-neg': {'color': 'var(--gt-neg-color)'},
     '.gt.gt .gt-math': {'white-space': 'nowrap'},
+    # markdown code: page themes (Quarto's cosmo among them) color and shade
+    # code, and a table carries no color
+    '.gt.gt code': {
+        'color': 'inherit',
+        'background': 'transparent',
+        'padding': '0',
+    },
     '.gt.gt .gt-notes': {
         'font-size': '0.85em',
         'opacity': '0.75',

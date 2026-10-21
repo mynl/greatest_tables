@@ -418,8 +418,17 @@ show('truncated')
 
 ## Markdown input
 
-A markdown pipe table with a caption and a label.
+A markdown pipe table with a caption and a label. Its cells and headers are markdown: `*italic*`,
+`**bold**` and `` `code` `` set as such in HTML and TeX, and as typed in text. `Revenue*` keeps its
+footnote star and `0.23**` its significance stars, since a star that does not wrap a word is a star.
 
 ```{python}
 show('markdown')
+```
+
+A DataFrame's cells are markdown only where `markdown_cols` says so: here the model column. The
+stars in the sig column stay stars.
+
+```{python}
+show('markdown-df')
 ```

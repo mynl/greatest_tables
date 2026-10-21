@@ -1,7 +1,21 @@
-{"caption":"Simple table","label":"tbl-md","hash":"a97aff0e8d91","notes":[]}
+{"caption":"Simple table","label":"tbl-md","hash":"fb3ac23600c5","notes":[]}
 {"s":"head","r":0,"c":0,"tag":"th","classes":["gt-data","gt-l"],"text":"item"}
 {"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"count"}
+{"s":"head","r":0,"c":2,"tag":"th","classes":["gt-data","gt-l"],"text":"Note","inline":[["em","Note"]]}
+{"s":"head","r":0,"c":3,"tag":"th","classes":["gt-data","gt-r"],"text":"Revenue*"}
 {"s":"body","r":0,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"apples"}
 {"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"3"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"plain"}
+{"s":"body","r":0,"c":3,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"1.25"}
 {"s":"body","r":1,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"pears"}
 {"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"12"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"uses col_name","inline":[["code","col_name"]]}
+{"s":"body","r":1,"c":3,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"2.5"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"alpha","inline":[["em","alpha"]]}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"7"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"beta and see \\(x\\)","inline":[["strong","beta"],["em","see \\(x\\)"]]}
+{"s":"body","r":2,"c":3,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"0.23**"}
+{"s":"body","r":3,"c":0,"tag":"td","classes":["gt-data","gt-l","gt-math","gt-wrap"],"text":"\\(\\psi\\)"}
+{"s":"body","r":3,"c":1,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"1"}
+{"s":"body","r":3,"c":2,"tag":"td","classes":["gt-data","gt-l","gt-wrap"],"text":"$x$ stays code","inline":[["code","$x$"]]}
+{"s":"body","r":3,"c":3,"tag":"td","classes":["gt-data","gt-r","gt-wrap"],"text":"3"}

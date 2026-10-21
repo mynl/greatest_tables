@@ -283,3 +283,41 @@ The CHANGELOG says so, since a rebuilt document changes.
 - 2026-10-21: drafted at 7.0.0; header and caption questions ruled the same day.
 - 2026-10-21: reviewed at 7.6.2; the six review fixes folded in, and the plan reordered after
   `dev/plan-retire-matrix.md`.
+- 2026-10-22: reviewed again at 8.0.0 and executed as **8.1.0**, one commit for the one bump the
+  plan assigns. Divergences:
+  - **Flag only where it matters.** A selected cell, header or caption carries `markdown=True`
+    only when its text holds a star or a backtick (`_has_markers` in `build.py`). Text without
+    either splits into one plain run and sets exactly as unmarked text, so the flag would change
+    nothing but the IR's size, and plain cells keep the bare-string shorthand.
+  - **Python and JavaScript read alike.** The closing boundary is a negative lookahead and both
+    sides use dotall: Python's `$` also matches before a final newline and JavaScript's does not,
+    and the two dots exclude different line ends. Code and math atoms stand in as private-use
+    characters while emphasis is parsed; text already holding one sets without emphasis.
+  - **Walker checks.** `markdownRuns` is exported from `gt-render.js`, and
+    `js/markdown-check.mjs` lets `test_markdown_spans.py` compare every rule case, plus edge
+    cases, with math on and off. The DOM transcript gains an `inline` field, `[tag, text]` per
+    em, strong or code element, written only when a cell has one, so existing transcripts are
+    unchanged and the goldens tell em from strong. `GT_RENDER_VERSION` goes from 7.0.0 to 8.1.0.
+  - **CSS.** `.gt.gt code` sets `padding: 0` and `background: transparent` rather than
+    `inherit`, which would pull in the cell's own padding. Inline CSS mode (`inline_css=True`)
+    does not style `code`: the styler resolves only the selectors on `td` and `th`.
+  - **Compile smoke test.** The plan said the one in `test_tikz_tabular.py` runs over every
+    fixture; it runs over a named list, which now includes both markdown fixtures.
+  - **Heading balance.** A markdown heading's words come from `_markdown_words`; a heading with
+    `$` stays out of the balance, as it does unmarked.
+  - **Fixtures.** The `markdown` fixture keeps its plain caption, which `test_engine.py` pins;
+    the `Table: *x*` caption is tested in `test_markdown_spans.py`. Its alignment assertion
+    widened to the two new columns.
+  - **Code width, measured.** Etcher's newtx preamble sets code in Latin Modern Mono, 0.525em;
+    DejaVu Sans Mono is 0.602em. House style loads DejaVu with `Scale=MatchLowercase`, which
+    against STIX Two only narrows it, so the 0.61em estimate stays on the safe side there too.
+  - **Docs.** Not in the plan's Files: the quickstart's selector paragraph names
+    `markdown_cols`, the gallery describes the markdown fixture and shows `markdown-df`, and the
+    config template carries hints for the two new fields.
+- Acceptance, 2026-10-22: the Goal's example, the `Table: *x*` caption, the header stars, the
+  literal DataFrame caption and the `html_cols` overlap are tests in `test_markdown_spans.py`;
+  every rule case holds in Python and in the walker; `tests/make_goldens.py` changed only the
+  `markdown` goldens and added `markdown-df`'s, so every other golden is byte-identical to 8.0.0;
+  `test_code_width_holds` passes in both preambles; `test_text_holds_in_its_face` passes with both
+  markdown fixtures in all five faces; `uv run pytest` 973 passed, 10 skipped; the gallery
+  rendered in all four formats with no TeX errors.

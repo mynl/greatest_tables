@@ -2,7 +2,7 @@
   "$defs": {
     "Cell": {
       "additionalProperties": false,
-      "description": "One body/foot cell.\n\n``text`` is plain unicode \u2014 each renderer applies its own escaping.\nUnless the document says ``math='off'``, ``text`` may contain inline\n``$...$`` / ``$$...$$`` math spans (and ``\\$`` for a literal dollar);\na renderer is responsible for segmenting them \u2014 the shared rule is\n:mod:`greater_tables.mathspans`. ``raw`` is only present when the owning\ncolumn advertises ``raw: true``; an explicit JSON ``null`` there means a\nmissing value, which is distinct from the field being absent (tracked\nvia pydantic's fields-set).",
+      "description": "One body/foot cell.\n\n``text`` is plain unicode \u2014 each renderer applies its own escaping.\nUnless the document says ``math='off'``, ``text`` may contain inline\n``$...$`` / ``$$...$$`` math spans (and ``\\$`` for a literal dollar);\na renderer is responsible for segmenting them \u2014 the shared rule is\n:mod:`greater_tables.mathspans`. ``raw`` is only present when the owning\ncolumn advertises ``raw: true``; an explicit JSON ``null`` there means a\nmissing value, which is distinct from the field being absent (tracked\nvia pydantic's fields-set). ``markdown`` marks inline ``*em*``,\n``**strong**`` and ```code``` in ``text``, split by the shared rule in\n:mod:`greater_tables.markdownspans`.",
       "properties": {
         "colspan": {
           "default": 1,
@@ -26,6 +26,11 @@
         "html": {
           "default": false,
           "title": "Html",
+          "type": "boolean"
+        },
+        "markdown": {
+          "default": false,
+          "title": "Markdown",
           "type": "boolean"
         },
         "math": {
@@ -352,6 +357,11 @@
         "html": {
           "default": false,
           "title": "Html",
+          "type": "boolean"
+        },
+        "markdown": {
+          "default": false,
+          "title": "Markdown",
           "type": "boolean"
         },
         "math": {

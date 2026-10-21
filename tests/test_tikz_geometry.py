@@ -212,9 +212,11 @@ FACE_DOC = r"""\documentclass[11pt]{article}
 """
 
 # labels at their natural width, long headings, bold rows, prose under a
-# budget, and the number that once broke at its hyphen in Fira Sans
+# budget, markdown's bold, italic and code, and the number that once broke at
+# its hyphen in Fira Sans
 FACE_TABLES = [('loss-lab', {}), ('long-head-ratios', {}), ('subtotals', {}),
-               ('long-head-groups', {}), ('wrap-low', {'max_table_width_em': 30})]
+               ('long-head-groups', {}), ('wrap-low', {'max_table_width_em': 30}),
+               ('markdown', {}), ('markdown-df', {})]
 SCIENTIFIC = (pd.DataFrame({'estimate': [1.25, 0.5], 'err': [-1.95e-05, 3.2e-06]},
                            index=pd.Index(['first', 'second'], name='case')),
               TableSpec(formatters={'err': '.2e'}))
@@ -247,6 +249,43 @@ def test_text_holds_in_its_face(face, tmp_path):
                 assert any(v['text'] in ('1', '2') and abs(v['top'] - w['top']) < 2
                            and 0 < v['x0'] - w['x1'] < 8 for v in page), \
                     f'{face}: "Unit" wrapped from its number'
+
+
+# code sets in the document's monospace font, which tikz_font does not name:
+# Etcher's newtx preamble, and house style's DejaVu Sans Mono, the widest
+CODE = (pd.DataFrame({'code': ['`col_name`', '`lag_1` and `x`', '`np.log1p(x)`']}),
+        TableSpec(show_index=False, markdown_cols='all'))
+CODE_WORDS = ('col_name', 'lag_1', 'np.log1p(x)')
+MONO_PREAMBLES = {
+    'etcher': None,
+    'dejavu': FACE_PREAMBLES['stix-two'] + r'\setmonofont{DejaVuSansMono.ttf}',
+}
+
+
+@pytest.mark.parametrize('mono', list(MONO_PREAMBLES))
+def test_code_width_holds(mono, tmp_path):
+    """A code run's estimate is never narrower than it sets, and at most
+    20% wider; no code word wraps."""
+    from greater_tables.render.tikz_layout import _MONO_MILLI
+    tex = render_tikz(build(*CODE), HouseStyle(tikz_latex='H'))
+    if MONO_PREAMBLES[mono] is None:
+        pdf = Etcher(tex, file_name='code', base_path=tmp_path).compile()
+    else:
+        src = tmp_path / 'code.tex'
+        src.write_text(FACE_DOC % (MONO_PREAMBLES[mono], tex), encoding='utf-8')
+        subprocess.run([shutil.which('tectonic'), '--outdir', str(tmp_path), str(src)],
+                       capture_output=True, check=False)
+        pdf = tmp_path / 'code.pdf'
+    with pdfplumber.open(pdf) as p:
+        page = p.pages[0]
+        words = {w['text']: w for w in page.extract_words(x_tolerance=1)}
+        size = {round(c['x0'], 1): c['size'] for c in page.chars}
+    for word in CODE_WORDS:
+        assert word in words, f'{mono}: {word!r} wrapped or broke'
+        w = words[word]
+        actual = (w['x1'] - w['x0']) / size[round(w['x0'], 1)]
+        estimate = _MONO_MILLI * len(word) / 1000
+        assert actual <= estimate <= 1.2 * actual, (mono, word, actual, estimate)
 
 
 @pytest.mark.parametrize('face', ['lato', 'fira-sans'])

@@ -24,6 +24,7 @@ import html as _html
 import re
 
 from ..ir import Cell, HeadCell, Row, TableDoc
+from ..markdownspans import Run, grouped, runs
 from ..mathspans import segments
 from ..spec import HouseStyle
 from . import css as _css
@@ -182,7 +183,29 @@ def _cell_content(cell: Cell | HeadCell, cls: list[str], allow_html: bool,
     if cell.html:
         # user markup: its $s are literal, never segmented
         return (cls, cell.text) if allow_html else (cls, _esc(cell.text))
+    if cell.markdown:
+        return cls, _markdown_html(cell.text, math)
     return cls, _span_html(cell.text, math)
+
+
+def _markdown_html(text: str, math: bool) -> str:
+    """Inline markdown as ``em``, ``strong`` and ``code`` around escaped text.
+
+    The tags come from the parse, never from the input, so markdown needs no
+    ``allow_html`` gate: a ``<`` in a cell is escaped like any other.
+    """
+    def one(run: Run) -> str:
+        if run.kind == 'math':
+            return '<span class="gt-math">' + _esc(f'\\({run.text}\\)') + '</span>'
+        if run.kind == 'code':
+            return f'<code>{_esc(run.text)}</code>'
+        return _esc(run.text)
+
+    out = []
+    for style, group in grouped(runs(text, math)):
+        body = ''.join(one(r) for r in group)
+        out.append(f'<{style}>{body}</{style}>' if style else body)
+    return ''.join(out)
 
 
 def _span_html(text: str, math: bool) -> str:

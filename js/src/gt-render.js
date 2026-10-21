@@ -20,9 +20,12 @@
  *                   breaks are ruled. Style, so it is NOT in the document:
  *                   a server passes it alongside, with the theme
  *   opts.maxVruleDepth  same for column-group verticals (default 1)
+ *
+ * markdownRuns(text, mathOn) → [[kind, style, text], ...], the inline
+ * markdown rule, exported for js/markdown-check.mjs.
  */
 
-export const GT_RENDER_VERSION = '7.0.0';
+export const GT_RENDER_VERSION = '8.1.0';
 export const IR_VERSION_SUPPORTED = 1;
 
 /* Rule policy — a line-for-line port of src/greater_tables/render/policy.py.
@@ -91,6 +94,102 @@ function mathSegments(text) {
         out.push([false, text.slice(pos).replace(/\\\$/g, '$')]);
     }
     return out;
+}
+
+/* Inline-markdown rule — a line-by-line port of markdownspans.runs in
+ * src/greater_tables/markdownspans.py, which carries the rule's statement.
+ * js/markdown-check.mjs and the DOM-transcript goldens hold the two in
+ * step. A run is [kind, style, text]: kind 'text' | 'math' | 'code', style
+ * null | 'em' | 'strong'. The lookbehinds need Safari >= 16.4. */
+const CODE_RE = new RegExp('(?<![\\\\`])`([^`]*[^`\\\\])`(?!`)', 'g');
+const MD_OPEN = '(?<![^\\s(\\[{"\'“‘])';
+const MD_CLOSE = '(?![^\\s.,;:!?)\\]}"\'”’…/–—-])';
+const STRONG_RE = new RegExp(
+    MD_OPEN + '\\*\\*(?=\\S)(.+?)(?<=[^\\s\\\\])\\*\\*' + MD_CLOSE, 'gs');
+const EM_RE = new RegExp(
+    MD_OPEN + '\\*(?=[^\\s*])(.+?)(?<=[^\\s\\\\*])\\*' + MD_CLOSE, 'gs');
+// code and math atoms stand in the text as private-use characters while the
+// emphasis rules run; text that already holds one sets without emphasis
+const MD_ATOM = 0xE000;
+const MD_ATOM_SPLIT = /([-])/;
+const MD_ATOM_ONLY = /^[-]$/;
+const MD_ESCAPE_RE = /\\([*`])/g;
+
+export function markdownRuns(text, mathOn = true) {
+    const tokens = [];                      // text pieces and atoms, in order
+    let pos = 0;
+    let m;
+    CODE_RE.lastIndex = 0;
+    while ((m = CODE_RE.exec(text)) !== null) {
+        tokens.push(...mdMathTokens(text.slice(pos, m.index), mathOn));
+        tokens.push(['code', null, m[1]]);
+        pos = m.index + m[0].length;
+    }
+    tokens.push(...mdMathTokens(text.slice(pos), mathOn));
+
+    const out = [];
+    if (MD_ATOM_SPLIT.test(text)) {
+        for (const t of tokens) {
+            if (typeof t !== 'string') out.push(t);
+            else if (t !== '') out.push(['text', null, mdUnescape(t)]);
+        }
+        return out.length ? out : [['text', null, '']];
+    }
+
+    const atoms = tokens.filter(t => typeof t !== 'string');
+    let flat = '';
+    let k = 0;
+    for (const t of tokens) {
+        flat += typeof t === 'string' ? t : String.fromCharCode(MD_ATOM + k++);
+    }
+    for (const [style, chunk] of mdStyled(flat)) {
+        for (const piece of chunk.split(MD_ATOM_SPLIT)) {
+            if (!piece) continue;
+            if (MD_ATOM_ONLY.test(piece)) {
+                const [kind, , atomText] = atoms[piece.charCodeAt(0) - MD_ATOM];
+                out.push([kind, style, atomText]);
+            } else {
+                out.push(['text', style, mdUnescape(piece)]);
+            }
+        }
+    }
+    return out.length ? out : [['text', null, '']];
+}
+
+function mdMathTokens(text, mathOn) {
+    if (!mathOn || !text.includes('$')) return [text];
+    return mathSegments(text).map(([isMath, run]) =>
+        (isMath ? ['math', null, run] : run));
+}
+
+function mdStyled(flat) {
+    const out = [];
+    for (const [strong, chunk] of mdSplit(STRONG_RE, flat)) {
+        if (strong) {
+            out.push(['strong', chunk]);
+        } else {
+            for (const [em, c] of mdSplit(EM_RE, chunk)) out.push([em ? 'em' : null, c]);
+        }
+    }
+    return out;
+}
+
+function mdSplit(re, text) {
+    const out = [];
+    let pos = 0;
+    let m;
+    re.lastIndex = 0;
+    while ((m = re.exec(text)) !== null) {
+        if (m.index > pos) out.push([false, text.slice(pos, m.index)]);
+        out.push([true, m[1]]);
+        pos = m.index + m[0].length;
+    }
+    if (pos < text.length) out.push([false, text.slice(pos)]);
+    return out;
+}
+
+function mdUnescape(text) {
+    return text.replace(MD_ESCAPE_RE, '$1');
 }
 
 export function renderTable(doc, opts = {}) {
@@ -273,6 +372,30 @@ function fillCell(d, node, cell, opts, mathOn) {
         // user markup: its $s are literal, never segmented
         if (opts.allowHtml) node.innerHTML = cell.text;
         else node.textContent = cell.text;
+    } else if (cell.markdown) {
+        // the elements come from the parse, never from the text, so markdown
+        // needs no allowHtml gate; consecutive runs of one style share one
+        let group = null;
+        for (const [kind, style, text] of markdownRuns(cell.text, mathOn)) {
+            if (!style) {
+                group = null;
+            } else if (!group || group.tagName.toLowerCase() !== style) {
+                group = node.appendChild(d.createElement(style));
+            }
+            const parent = group || node;
+            if (kind === 'math') {
+                const span = d.createElement('span');
+                span.className = 'gt-math';
+                renderMath(d, span, text, opts);
+                parent.appendChild(span);
+            } else if (kind === 'code') {
+                const code = d.createElement('code');
+                code.textContent = text;
+                parent.appendChild(code);
+            } else if (text) {
+                parent.appendChild(d.createTextNode(text));
+            }
+        }
     } else if (mathOn && cell.text.includes('$')) {
         for (const [isMath, run] of mathSegments(cell.text)) {
             if (isMath) {

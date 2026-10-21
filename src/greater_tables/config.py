@@ -65,6 +65,8 @@ _HINTS = {
     'date_cols': '[reported]',
     'raw_cols': '[account_id]    # no formatting at all, left-aligned',
     'html_cols': '[link]',
+    'markdown_cols': '[note]       # *em*, **strong** and `code` in these cells',
+    'markdown_caption': 'null          # null = markdown for a markdown table',
     'unbreakable': '[note]       # never wrap',
     'aligners': "llrrc          # positional, or {label: 'r'}",
     'formatters': "{paid: ',.1f', premium: {kind: dec, digits: 1, "
