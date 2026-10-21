@@ -1,0 +1,575 @@
+%==============================================================================
+% house-beamer.tex -- the house preamble for slide decks
+%
+% Loaded by the house-beamer format, after house-common.tex, which carries the
+% code treatment and the table packages that documents and slides share. The
+% format keys in _extension.yml carry the canvas, the themes, the fonts and the
+% link colors.
+%
+% Built on 2026-10-18 from aggregate\presentations\agg-beamer.tex, as it stood
+% in that repository's working tree (with the QR-card section, then
+% uncommitted). Removed here because house-common.tex now does it for every
+% format: fvextra and the \fvset defaults, the hook that sized verbatim output,
+% and the \I strut that greater_tables 7 defines itself. \codesize is redefined
+% rather than defined, since house-common.tex provides the document value.
+%
+% Provenance of the look. The ACT606 teaching template
+% (Teaching/common/general.tex): metropolis inner and outer themes, the orchid
+% color theme, and a single red structure color on beamer's white ground. That
+% file used St John's red, RGB 207,10,44; here the red is the aggregate house
+% color. The full-bleed image macros are ported from TELOS/common/newgeneral.tex,
+% where the CAGNY 2018 blockchain deck used them, minus that deck's dark blue
+% ground.
+%
+% NO \geometry CALL ANYWHERE. Beamer owns the page: it sets \paperwidth and
+% \paperheight from the `aspectratio` class option and derives every theme
+% dimension from them. The pre-Quarto preamble used
+% \geometry{paper=legalpaper, landscape, truedimen, left=0.5cm, mag=2000} to get
+% big text, which works but fights any theme positioning relative to
+% \paperwidth: magnification doubled the metropolis frametitle's outdent while
+% geometry's `left` stayed put, and the title ran off the page. For a legal
+% landscape handout, scale at print time with pdfjam, not in the preamble.
+%==============================================================================
+
+%------------------------------------------------------------------- packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{url}
+% The tikz libraries are for hand-written tikz, including the page coordinate
+% system below, and for greater_tables' optional `matrix` emitter, which needs
+% matrix, calc and fit. house-common.tex loads tikz itself.
+\usetikzlibrary{matrix}
+\usetikzlibrary{calc}
+\usetikzlibrary{fit}
+\usetikzlibrary{arrows,positioning,shadows.blur,decorations.pathreplacing}
+\usetikzlibrary{automata}
+\usetikzlibrary{intersections}
+\usetikzlibrary{decorations.markings,decorations.text,decorations.pathmorphing}
+\usetikzlibrary{decorations.shapes,decorations.fractals,decorations.footprints}
+\usetikzlibrary{graphs}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{mindmap,shadows}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{cd}
+
+% greater_tables wraps every table in a bare \begin{table}, a float with no
+% placement specifier, so LaTeX applies the class default tbp and the table
+% drifts. `H` pins it where it was written.
+\usepackage{float}
+\floatplacement{table}{H}
+
+%------------------------------------------------------------------- macros
+\newcommand{\set}[1]{\left\{\,#1\,\right\}}
+
+%------------------------------------------------------------------ the palette
+% Taken from the aggregate Loss Lab stylesheet, aggregate-api/web/src/styles/
+% site.css, so a slide and the application agree on the red. --house is the
+% accent the application uses for links, primary buttons and code.
+\definecolor{agghouse}{HTML}{A81313}      % --house,      the accent
+\definecolor{agghousedark}{HTML}{8C1010}  % --house-dark, pressed and hover
+% The logo is drawn in two colors: this same red for the density curve, and a
+% near-black navy for the histogram and the wordmark. The navy is the only brand
+% color the stylesheet does not carry, so it is sampled from the logo.
+\definecolor{aggnavy}{HTML}{142537}       % logo histogram and wordmark
+\definecolor{aggink}{HTML}{000000}        % --ink,        body text
+\definecolor{aggink2}{HTML}{2B2B2B}       % --ink-2,      secondary text
+\definecolor{aggmuted}{HTML}{5F5F5F}      % --mut,        captions, furniture
+\definecolor{aggline}{HTML}{D4D4D4}       % --line,       borders
+\definecolor{aggsoft}{HTML}{F6F6F6}       % --soft,       tinted panels
+\definecolor{agggreen}{HTML}{2E7D32}      % --ok
+\definecolor{aggwarn}{HTML}{C2410C}       % --warn
+\definecolor{aggbad}{HTML}{E11D2E}        % --bad
+
+%--------------------------------------------------------------- the slide look
+% One color does nearly all of it. `structure` drives the frame title, the
+% bullets, the block titles and the section furniture, so setting it recolors the
+% deck and nothing else needs touching. This is what the teaching template did,
+% and why that template is three lines long.
+\setbeamercolor*{structure}{fg=agghouse}
+\setbeamercolor{normal text}{fg=aggink}
+
+% Quiet furniture, not structure, so the frame number takes the muted gray.
+%
+% This is beamer's own `frame number` footline, from beamerbaseauxtemplates.sty,
+% with one change: frame 1 is the title page and gets no number, because a page
+% number there is furniture the slide does not want. The body is copied rather
+% than wrapped, since a beamer template is a \def with nothing to hook a
+% conditional onto. The empty branch still emits the same struts and skips, so
+% the footline keeps its height and the title page does not shift down.
+\setbeamertemplate{footline}{%
+  \hfill%
+  \usebeamercolor[fg]{page number in head/foot}%
+  \usebeamerfont{page number in head/foot}%
+  \ifnum\insertframenumber>1\relax
+    \setbeamertemplate{page number in head/foot}[totalframenumber]%
+    \usebeamertemplate*{page number in head/foot}%
+  \else
+    \vphantom{0}%
+  \fi
+  \kern1em\vskip2pt%
+}
+\setbeamercolor{page number in head/foot}{fg=aggmuted}
+
+% Nothing navigates a slide deck with those buttons.
+\beamertemplatenavigationsymbolsempty
+
+% The title page is metropolis's, with one change: its height. Metropolis sets
+% the title block in a minipage \paperheight tall, which fits the plain frame
+% its own \maketitle opens. Pandoc opens an ordinary frame, \frame{\titlepage},
+% whose text area is \textheight less the `t` top skip, so every title frame
+% overflowed by 32.2pt on any canvas and the block sat 6pt below the middle of
+% the page. Sized to the frame instead, it fits and sits within 3pt of the
+% middle. Set in vertical mode, so no \parskip or \parindent comes with it.
+\makeatletter
+\setbeamertemplate{title page}{%
+  \par\nointerlineskip
+  \vbox to\dimexpr\textheight-\beamer@frametopskip\relax{%
+    \ifx\inserttitlegraphic\@empty\else\usebeamertemplate*{title graphic}\fi
+    \vfill
+    \ifx\inserttitle\@empty\else\usebeamertemplate*{title}\fi
+    \ifx\insertsubtitle\@empty\else\usebeamertemplate*{subtitle}\fi
+    \usebeamertemplate*{title separator}
+    \ifx\beamer@shortauthor\@empty\else\usebeamertemplate*{author}\fi
+    \ifx\insertdate\@empty\else\usebeamertemplate*{date}\fi
+    \ifx\insertinstitute\@empty\else\usebeamertemplate*{institute}\fi
+    \vfill
+    \vspace*{1mm}%
+  }%
+}
+\makeatother
+
+%--------------------------------------------------------------------- the faces
+% Text and mathematics are serif, as on the page; sans mathematics reads badly.
+% Headings are sans: the title and subtitle, frame titles, section pages and
+% block titles (an alert or example block inherits its title font from the
+% plain block). The serif theme is what pandoc's template asks for whenever a
+% main font is named; it is stated here so the deck does not depend on that.
+%
+% Deferred, and that is load bearing: the font and inner themes set these
+% elements again after the header includes, and a \setbeamerfont made in the
+% preamble came out serif. From \AtBeginDocument it holds.
+\usefonttheme{serif}
+\AtBeginDocument{%
+  \setbeamerfont{title}{family=\sffamily}%
+  \setbeamerfont{subtitle}{family=\sffamily}%
+  \setbeamerfont{frametitle}{family=\sffamily}%
+  \setbeamerfont{section title}{family=\sffamily}%
+  \setbeamerfont{part title}{family=\sffamily}%
+  \setbeamerfont{block title}{family=\sffamily}%
+}
+
+% One number controls two things: body text is inset by this much, and the
+% metropolis frametitle is outdented by the same amount, which is what gives the
+% title its hanging left edge. Larger value, deeper outdent and narrower text.
+\setbeamersize{text margin left=12mm, text margin right=12mm}
+
+% Section dividers. metropolis raises a section page at every level-one heading
+% and sets its title as a hyperlink, so the title takes hyperref's linkcolor and
+% ignores every beamer color, `structure` and `section title` alike. That is why
+% the dividers stayed blue while the rest of the deck went red, and why the fix
+% is the smcolor redefinition below rather than anything here.
+%
+% These still matter: with `number-sections: false` the Quarto template
+% substitutes its own centered section page, which is not a link and does read
+% them, so the dividers come out red either way.
+\setbeamercolor{section title}{fg=agghouse}
+\setbeamercolor{subsection title}{fg=agghouse}
+\setbeamercolor{part title}{fg=agghouse}
+\setbeamercolor{progress bar in section page}{fg=agghouse, bg=agghouse!20}
+
+% metropolis builds the section page from \insertsectionhead, which beamer makes
+% a hyperlink, so the divider title took hyperref's linkcolor and forced linkcolor
+% to stay red. That coupling is what this template breaks: same layout, but
+% \insertsection is plain text, so the color comes from `section title` above and
+% linkcolor is free to be the contrasting blue that in-text links actually want.
+% Replacing \insertsectionhead with \insertsection is not enough: beamer hands
+% back a hyperlink either way, so the title still took linkcolor. \hypersetup
+% inside the template is local to the group, so it repaints just this link and
+% leaves every other link in the deck on the contrasting blue.
+\setbeamertemplate{section page}{%
+  \begin{minipage}{22em}%
+    \raggedright
+    \hypersetup{linkcolor=agghouse}%
+    \usebeamercolor[fg]{section title}%
+    \usebeamerfont{section title}%
+    \insertsection\par
+    \usebeamertemplate*{progress bar in section page}%
+  \end{minipage}%
+  \par\vspace{\baselineskip}%
+}
+
+%--------------------------------------------------------- bibliography colors
+% Beamer derives every bibliography entry color from `structure`, so setting
+% structure to the house red turned the whole reference list red. End matter
+% should read as text: ink for the substance, muted for the apparatus.
+\setbeamercolor{bibliography entry author}{fg=aggink}
+\setbeamercolor{bibliography entry title}{fg=aggink}
+\setbeamercolor{bibliography entry location}{fg=aggmuted}
+\setbeamercolor{bibliography entry note}{fg=aggmuted}
+\setbeamercolor{bibliography item}{fg=aggink}
+
+% Two link colors, because one cannot serve both jobs.
+%
+% smcolor is what `linkcolor` names in _quarto.yml, and linkcolor is what the
+% metropolis section page title takes, since that title is a hyperlink. So
+% smcolor has to stay the house red or the section dividers go off-brand.
+%
+% Everything a reader recognizes AS a link, a URL or a citation, wants to
+% contrast with the red rather than echo it, so those take agglink: a mid slate
+% blue in the same hue family as the logo navy, dark enough to read on white at
+% projector distance. _quarto.yml points urlcolor and citecolor at it.
+%
+% Both have to be color definitions, NOT \hypersetup. The Quarto beamer template
+% emits its own \hypersetup from the linkcolor, urlcolor, citecolor and filecolor
+% keys AFTER the header includes, so a \hypersetup here is overwritten a few
+% lines later and silently does nothing.
+\definecolor{smcolor}{HTML}{A81313}
+\definecolor{agglink}{HTML}{1F5C99}
+
+%------------------------------------------------------------------ references
+% The bibliography is end matter and should look like it: set smaller than the
+% body and left as plain text, not as a wall of colored links. The color half is
+% `link-bibliography: false` in _quarto.yml; this is the size half.
+%
+% Guarded and deferred. Pandoc defines CSLReferences only for a document that
+% actually has a bibliography, so patching it unconditionally in the preamble
+% stops the build on every deck that does not cite anything.
+\usepackage{etoolbox}
+\AtBeginDocument{%
+  \ifcsname CSLReferences\endcsname
+    \AtBeginEnvironment{CSLReferences}{\scriptsize}%
+  \fi
+}
+
+%------------------------------------------------------ list vertical rhythm
+% Every list in the deck arrived with no vertical separation at all, at any
+% level, and the cause is upstream: pandoc's template loads parskip.sty, which
+% rewrites \@listI, \@listii and \@listiii to set \topsep, \itemsep and
+% \partopsep to zero whenever \parskip is positive at load time, which it is.
+%
+% Two consequences, both measured. A tight and a loose markdown list rendered
+% identically, to the pixel, at a 15.6pt line pitch: pandoc's \tightlist exists
+% to zero \itemsep, and \itemsep was already zero, so the blank lines between
+% items bought nothing. And a sub-list sat exactly as far from its parent as the
+% next top-level bullet sat from the sub-list, so nothing on the slide said
+% which bullets belonged to which.
+%
+% These definitions win because header includes are emitted after the template's
+% \usepackage lines. They have to be definitions of \@list<level> and not
+% lengths set from a beamer template, because \list calls \@list<level> itself,
+% after any template has run, and would overwrite them.
+%
+% One dial, \bulletgap, used in two places:
+%
+%   top level    \itemsep, so a loose list separates and \tightlist zeroes it,
+%                which restores the tight and loose distinction the markdown
+%                already encodes
+%   sub-lists    trailing space, so a sub-list closes up to the parent above it
+%                and the next top-level bullet starts a new group below it
+%
+% Sub-levels keep \itemsep at zero whether the markdown is tight or loose. A
+% sub-list is one unit; relaxing inside it would defeat the grouping the
+% trailing gap creates.
+\newlength{\bulletgap}
+\setlength{\bulletgap}{4pt}
+
+\makeatletter
+\def\@listI{\leftmargin\leftmargini
+  \topsep\z@ \parsep\parskip \itemsep\bulletgap}
+\let\@listi\@listI
+\def\@listii{\leftmargin\leftmarginii
+  \labelwidth\leftmarginii \advance\labelwidth-\labelsep
+  \topsep\z@ \parsep\parskip \itemsep\z@}
+\def\@listiii{\leftmargin\leftmarginiii
+  \labelwidth\leftmarginiii \advance\labelwidth-\labelsep
+  \topsep\z@ \parsep\parskip \itemsep\z@}
+\makeatother
+
+% The trailing gap, and it must be \addvspace, not \vspace. \addvspace keeps the
+% larger of its argument and the space already there, so the gap after a
+% sub-list comes out at \bulletgap whether the enclosing list is relaxed, where
+% the next \item contributes \itemsep as well, or dense, where it contributes
+% nothing: measured 18.96pt baseline to baseline in both. \vspace adds
+% unconditionally, and in a relaxed list the two summed to 8pt, which read as a
+% hole. Where a list ENDS with a sub-list the gap stays at its foot, invisible
+% on a top-aligned slide and wanted where prose follows the list.
+\addtobeamertemplate{itemize/enumerate subbody end}{}{\addvspace{\bulletgap}}
+\addtobeamertemplate{itemize/enumerate subsubbody end}{}{\addvspace{\bulletgap}}
+
+%------------------------------------------------------------------- bullets
+% Small square bullets in place of the themes' round ones: a square well under
+% the text size, raised to sit level with the middle of the lowercase, and
+% smaller again below the top level. They take the structure color, the house
+% red. Taken from the education decks' old beamer-style.tex.
+\setbeamertemplate{itemize item}{\tiny\raise1.5pt\hbox{$\blacksquare$}}
+\setbeamertemplate{itemize subitem}{\fontsize{4}{4}\selectfont\raise1.75pt\hbox{$\blacksquare$}}
+\setbeamertemplate{itemize subsubitem}{\fontsize{4}{4}\selectfont\raise1.75pt\hbox{$\blacksquare$}}
+
+%---------------------------------------------------------- blocks and lists
+% A level-three heading inside a slide becomes a beamer block, and between the
+% block title and its first bullet beamer leaves the body's top padding AND the
+% list's \topsep, which on a slide reads as a hole.
+%
+% Two earlier attempts were both wrong, and both in instructive ways. Emitting a
+% negative \vspace from `block begin` shifts the whole body, so a block whose
+% first content is a code listing has the listing ride up over its own title
+% bar. Hooking `itemize/enumerate body begin` instead fires on EVERY list in the
+% deck, including one that follows a paragraph or a display equation, and pulls
+% it up into the line above: that is what wrecked the "Management's Complaint"
+% and "CCoC Pricing Rule Formula" slides in the intro deck.
+%
+% What is actually wanted is narrower than either: less space above a list that
+% happens to open a block. Setting the list separation lengths inside
+% `block begin` does exactly that and nothing else. Beamer environments are TeX
+% groups, so these revert at \end{block} and lists elsewhere are untouched;
+% lengths move no content, so code, tables and images in a block stay put.
+%
+% \topsep and \partopsep are set but do nothing here, and the reason is the one
+% the list rhythm section above documents: \list calls \@list<level> after this
+% template has run, and those definitions set \topsep themselves. Measuring the
+% rendered slide showed it, the title bar to first bullet distance staying at
+% 11.5pt whether \topsep was 2pt or -2pt. The two lines are left in only because
+% a non-beamer list would honor them.
+%
+% The lever that works is the itemize body template, hooked HERE rather than in
+% the preamble. Beamer templates are \def, so redefining one inside `block begin`
+% is local to the block: lists that open a block tighten, and a list following a
+% paragraph or a display anywhere else is untouched, which is what broke twice
+% before. Measured 11.5pt, and -4pt takes out the third that was wanted.
+\addtobeamertemplate{block begin}{}{%
+  \addtobeamertemplate{itemize/enumerate body begin}{}{\vspace*{-4pt}}%
+  \setlength{\topsep}{0pt}%
+  \setlength{\partopsep}{0pt}%
+  % Code inside a block sits flush to the block, not bled past it. The two
+  % lengths are separate because the box cannot be centered with one: the
+  % colorbox adds \fboxsep beyond the minipage on each side, so the box is
+  % 2\fboxsep wider than the block and any symmetric widening moves both edges
+  % together. Narrowing the minipage by 2\fboxsep gives the box the width of
+  % the block's tinted ground exactly.
+  %
+  % The shift is what puts it in the right place, and zero is wrong. A beamer
+  % block body is a beamercolorbox with `colsep*=.75ex`, which indents the text
+  % by setting \leftskip and \rightskip to 0.75ex, 3.646pt at this font size,
+  % while leaving \linewidth reporting the full frame width. So the box came
+  % out the right width but started 0.75ex in from the tinted left edge and
+  % overhung the right edge by 0.75ex less \fboxsep, about 0.65pt, which is the
+  % gray sliver that showed past the block on the right. Shifting left by
+  % exactly that difference lands both edges on the tinted ground. \leftskip is
+  % already set when this hook runs, which is why the value can be read here.
+  %
+  % The 1.29pt overfull \hbox this leaves in the log is inherent, not a symptom:
+  % the box is deliberately wider than the block's text width, since that is
+  % what reaching the tinted edges means.
+  \setlength{\codebleed}{-\fboxsep}%
+  \setlength{\codeshift}{\leftskip}%
+  \addtolength{\codeshift}{-\fboxsep}%
+}
+
+\setlength{\parskip}{0pt plus 0.5pt}
+
+%----------------------------------------------------------------- code blocks
+% Pandoc defines Highlighting with no font size, so code is set at body size: on
+% a slide that is about eight tokens to the line and it wraps constantly.
+%
+% \codesize is the single dial, at 6pt (Steve's choice, 2026-10-19, from
+% specimens at 5.5, 7 and 9pt). The code face is scaled to the text face's
+% lowercase height, so the size is relative to STIX Two. Raise the pair to grow
+% it; the second number is the baseline skip and wants to stay about 1.2x the
+% first.
+\makeatletter
+\renewcommand\codesize{\@setfontsize\codesize{6}{7.2}}
+\makeatother
+
+% house-common.tex hands \codesize to \fvset, which sizes code and the
+% verbatim that carries printed output, so the dial above sizes both.
+
+% The shaded box behind code. Pandoc sets shadecolor near-white and Quarto
+% overrides it with a faintly blue gray, neither of which is in this palette;
+% aggsoft is the tinted-panel color the application uses, so the slide and the
+% app agree. This has to come after the highlighting macros, which it does:
+% Quarto emits those before the header includes.
+\definecolor{shadecolor}{HTML}{F6F6F6}
+
+% The box spans the text block exactly, so its edges fall on the same margins as
+% a paragraph, a block's tinted ground, or a pair of columns. framed's colorbox
+% adds \fboxsep beyond the minipage on each side, so the minipage is made
+% 2\fboxsep narrower than the line and moved right by \fboxsep: \codebleed and
+% \codeshift are each -\fboxsep. Until 1.11.0 the box ran 8mm past the text on
+% each side; a deck that wants that back sets both lengths to 8mm. Either must
+% stay below the 12mm text margin set above, or the box runs off the sheet.
+%
+% \codeshift is the left shift and is normally the same number. They are two
+% lengths rather than one so a block can narrow the box without also moving it,
+% which is what centering the listing inside a block requires.
+\newlength{\codebleed}
+\setlength{\codebleed}{-\fboxsep}
+\newlength{\codeshift}
+\setlength{\codeshift}{-\fboxsep}
+
+% Widening it is fiddlier than it looks. changepage's adjustwidth is inert here:
+% framed's snugshade sizes itself from \hsize, the frame's text width, not from
+% the enclosing list. Setting the width on a minipage and shifting it left by the
+% same amount does work. The cost is that a code block can no longer break across
+% a page, which on a slide it could not do anyway.
+%
+% Guarded, because Shaded is not always there to renew: pandoc emits the
+% highlighting macros only for a document containing at least one highlighted
+% code block, so a deck of pure prose reaches this line with Shaded undefined and
+% \renewenvironment would stop the build.
+\ifcsname Shaded\endcsname
+  \let\oldShaded\Shaded
+  \let\endoldShaded\endShaded
+  \renewenvironment{Shaded}
+    {\par\noindent\hspace*{-\codeshift}%
+     \begin{minipage}{\dimexpr\linewidth+2\codebleed\relax}%
+     \oldShaded}
+    {\endoldShaded\end{minipage}\par}
+\fi
+
+%--------------------------------------------------------- the page coordinates
+% `page cs` addresses the paper in normalized coordinates: (-1,-1) is the bottom
+% left corner, (1,1) the top right, (0,0) the center. Overlay text on a
+% full-bleed image is positioned with it, and it is why the macros below can
+% place a caption at a fixed spot regardless of theme margins.
+% From https://tex.stackexchange.com/questions/89588.
+\makeatletter
+\def\parsecomma#1,#2\endparsecomma{\def\page@x{#1}\def\page@y{#2}}
+\tikzdeclarecoordinatesystem{page}{%
+    \parsecomma#1\endparsecomma
+    \pgfpointanchor{current page}{north east}%
+    \pgf@xc=\pgf@x\relax
+    \pgf@yc=\pgf@y\relax
+    \pgfpointanchor{current page}{south west}%
+    \pgf@xb=\pgf@x\relax
+    \pgf@yb=\pgf@y\relax
+    \pgfmathparse{(\pgf@xc-\pgf@xb)/2.*\page@x+(\pgf@xc+\pgf@xb)/2.}%
+    \expandafter\pgf@x\expandafter=\pgfmathresult pt
+    \pgfmathparse{(\pgf@yc-\pgf@yb)/2.*\page@y+(\pgf@yc+\pgf@yb)/2.}%
+    \expandafter\pgf@y\expandafter=\pgfmathresult pt
+}
+\makeatother
+
+%------------------------------------------------------------ full-bleed images
+% Both macros want a frame with no title bar and no footline, which is what the
+% `plain` class gives:
+%
+%   ## {.plain}
+%   \fullbleedpicture{../img/photograph.jpg}
+%
+% \fullbleedpicture stretches the image to the sheet exactly, so it always fills
+% and the aspect ratio bends to fit. On the 28:17 canvas that is visible on a
+% portrait photograph and invisible on a screenshot of a wide window. Use
+% \fullbleedfit when the proportions matter: it scales the image to fit inside
+% the sheet and fills what is left with a color, white unless another is named.
+\newcommand{\fullbleedpicture}[1]{%
+\begin{tikzpicture}[remember picture, overlay]
+  \node[at=(current page.center), inner sep=0, outer sep=0]
+    {\includegraphics[width=\paperwidth, height=\paperheight,
+                      keepaspectratio=false]{#1}};
+\end{tikzpicture}}
+
+\newcommand{\fullbleedfit}[2][white]{%
+\begin{tikzpicture}[remember picture, overlay]
+  \path[fill=#1] (page cs:-1,-1) rectangle (page cs:1,1);
+  \node[at=(current page.center), inner sep=0, outer sep=0]
+    {\includegraphics[width=\paperwidth, height=\paperheight,
+                      keepaspectratio=true]{#2}};
+\end{tikzpicture}}
+
+% A section divider on a photograph: heading, then a body paragraph under it.
+%   \imagedivider{file}{heading color}{heading}{body color}{body width}{body}
+% Both text colors are arguments because the right one depends on the image.
+\newcommand{\imagedivider}[6]{%
+\begin{tikzpicture}[remember picture, overlay]
+  \node[at=(current page.center), inner sep=0, outer sep=0]
+    {\includegraphics[width=\paperwidth, height=\paperheight,
+                      keepaspectratio=false]{#1}};
+  \node[right, text width=0.8\paperwidth, align=left, text=#2]
+    at (page cs:-0.9, 0.35) {\LARGE #3};
+  \node[below right, text width=#5, align=left, text=#4]
+    at (page cs:-0.9, 0.15) {\large #6};
+\end{tikzpicture}}
+
+%--------------------------------------------------------- red ground callouts
+% The full-page colored slide from the CAGNY deck, in the house red instead of
+% that deck's blue. \tzshout is the whole slide in one call and is what a quote
+% or a single claim wants; \tzbackground and \tztitle are the two halves, for a
+% slide that then places its own tikz content on the red ground. All three need
+% a `plain` frame, as the full-bleed macros do, and arbitrary tikz around them
+% belongs in a ```{=latex} fence.
+\newcommand{\tzbackground}{%
+  \path[draw, fill, agghousedark] (page cs:-1,-1) rectangle (page cs:1,1)}
+
+\newcommand{\tztitle}[1]{%
+  \node[right, align=left, text badly ragged,
+        text width=0.75\paperwidth, text=white]
+    at (page cs:-0.93, 0.85) {\Large #1}}
+
+\newcommand{\tzbullet}{{\scriptsize ${}^\blacksquare$}\ }
+
+\newcommand{\tzshout}[1]{%
+\begin{tikzpicture}[remember picture, overlay,
+                    every node/.style={anchor=center}]
+  \tzbackground;
+  \node[below right, align=left, text badly ragged,
+        text width=0.75\paperwidth, text=white]
+    at (page cs:-0.85, 0.45) {\Large #1};
+\end{tikzpicture}}
+
+%---------------------------------------------------------------- QR code cards
+% A QR code with its label and destination beneath it, as one card:
+%
+%   \qrcard{image}{url}{label}{short url}
+%
+% for the contact and resources slide that closes a deck. The code, the label
+% and the URL are one hyperlink, so the slide works both in the room, where the
+% audience scans, and in the PDF afterwards, where they click.
+%
+% \qrsize is the card width, and the code is drawn at 66% of it so a label has
+% room to sit on one line: the card, not the code, is the unit that tiles. Four
+% cards to a row is the comfortable fit on the 28:17 canvas, which is where
+% 0.235\textwidth comes from, with the balance going to the gaps. Set \qrsize
+% before a row to tile a different number, and keep a label to about twenty
+% characters and the URL below it to about twenty-five, or they overrun the
+% card. Codes are generated by V:\dev\qr-code\make_qr.py.
+%
+% Rows are separated by a blank line and \vspace{\qrrowgap}, cards within a row
+% by \hfill, with \hspace*{0pt} at both ends of the row so the first and last
+% cards sit flush against the margins rather than being centered as a group.
+%
+% Three lengths carry the rhythm, and the card reads as one object only if the
+% first two stay well under the third:
+%
+%   \qrgap      code to label
+%   \qrtextgap  label to URL
+%   \qrrowgap   between rows of cards
+%
+% Setting them is not enough on its own, which is why they exist. Each line of
+% a card is its own paragraph, and TeX puts \parskip plus interline glue
+% between two paragraphs before any \vspace is considered. Pandoc's template
+% loads parskip.sty and \parskip is positive, so a card carries about 12pt of
+% spacing that no \vspace in the document can reach, and shrinking the \vspace
+% to nothing leaves the code and its label as far apart as they started. The
+% card therefore zeroes \parskip inside its own group and follows each \par
+% with \nointerlineskip, which drops the interline glue as well. What is left
+% is exactly the length named, so \qrgap at 0pt really does close the gap.
+\newlength{\qrsize}
+\setlength{\qrsize}{0.235\textwidth}
+\newlength{\qrgap}
+\setlength{\qrgap}{0.4ex}
+\newlength{\qrtextgap}
+\setlength{\qrtextgap}{0.8ex}
+\newlength{\qrrowgap}
+\setlength{\qrrowgap}{6ex}
+\newcommand{\qrcard}[4]{%
+  \begin{minipage}[t]{\qrsize}%
+    \setlength{\parskip}{0pt}%
+    \centering
+    \href{#2}{\includegraphics[width=0.72\qrsize]{#1}}%
+    \par\nointerlineskip\vspace{\qrgap}%
+    \href{#2}{\small #3}%
+    \par\nointerlineskip\vspace{\qrtextgap}%
+    {\scriptsize\textcolor{black!70}{#4}}%
+  \end{minipage}%
+}

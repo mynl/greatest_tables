@@ -1,0 +1,57 @@
+%==============================================================================
+% house-common.tex -- the preamble shared by documents and slides
+%
+% Loaded first by house-pdf and house-beamer, ahead of house.tex or
+% house-beamer.tex. It holds what a page and a slide treat alike: tables, the
+% math sans alphabet, code and printed output.
+%==============================================================================
+
+%-------------------------------------------------------------- math alphabets
+% Expectation is written \mathsf{P}. By default unicode-math sets \mathsf in the
+% text sans family, which is Lato, the heading face; in a document that named no
+% sans it was Latin Modern Sans. `sym` takes the letter from the math font's own
+% sans-serif alphabet instead, which STIX Two Math draws to match the rest of
+% the mathematics. Guarded, because unicode-math is loaded only when a math font
+% is named.
+\makeatletter
+\@ifundefined{unimathsetup}{}{\unimathsetup{mathsf=sym}}
+\makeatother
+
+%---------------------------------------------------------------------- tables
+% greater_tables 7 draws a table with its `tabular` emitter: one real tabular
+% inside a single tikz node, taking its horizontal rules from booktabs and
+% drawing only the verticals in tikz. Pandoc's template loads booktabs and
+% array only when the document happens to contain a markdown table, which is
+% not a thing to depend on. The emitter defines its own \I strut with
+% \providecommand, so the preamble no longer needs to.
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+%------------------------------------------------------------------------ code
+% \codesize is the one dial for code and printed output. Documents set code at
+% \footnotesize; house-beamer.tex redefines the dial for the slide canvas.
+% \fvset stores the macro, not its meaning, so the later definition wins.
+\providecommand{\codesize}{\footnotesize}
+
+% Smaller code, and long lines break rather than running off the page.
+% \fvset sets the defaults every fancyvrb environment inherits, which includes
+% pandoc's Highlighting, so Quarto's own options on it survive; redefining the
+% environment would discard them. breakanywhere is needed because Python has
+% long dotted names with no break points.
+\usepackage{fvextra}
+\fvset{breaklines=true,breakanywhere=true,breaksymbolleft={},fontsize=\codesize}
+
+% Printed output (a cell's stdout, and the text tables `qd` prints) arrives as
+% LaTeX's own verbatim, which \fvset cannot reach, so it is rerouted through
+% fancyvrb and takes the size and the line breaking above.
+%
+% \AtBeginDocument, not here, and that is load bearing. Quarto appends its
+% callout machinery after include-in-header, and loading tcolorbox there pulls
+% in the classic verbatim environment again, silently undoing a redefinition
+% made at this point in the preamble. The symptom is a cell's stderr running
+% off the right edge of the page: a warning carrying an absolute path has no
+% spaces to break at, so breakanywhere is the only thing holding it on the
+% page. Deferring puts this definition last, where it wins.
+\AtBeginDocument{\DefineVerbatimEnvironment{verbatim}{Verbatim}{}}

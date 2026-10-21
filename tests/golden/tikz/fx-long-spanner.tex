@@ -1,0 +1,45 @@
+\begin{table}
+\centering
+\begin{tikzpicture}[
+    auto, transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.25em,
+        column sep=1.0em,
+        nodes in empty cells,
+        nodes={rectangle, scale=1.0, text badly ragged},
+	row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+	row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=flush center}},
+	row 2 column 1/.style={nodes={font=\bfseries\itshape, align=flush left}},
+	row 3/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries, align=flush center}},
+	row 3 column 1/.style={nodes={font=\bfseries\itshape, align=flush left}},
+	column  1/.style={nodes={align=flush left  }, inner xsep=1.0em, inner ysep=0, text width=4.16em},
+	column  2/.style={nodes={align=flush right }, nosep, text width=3.35em},
+	column  3/.style={nodes={align=flush right }, nosep, text width=9.78em},
+	column  4/.style={nodes={align=flush right }, nosep, text width=3.68em},
+	column  5/.style={nodes={align=flush right }, nosep, text width=4.03em},
+	column  6/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}
+	}]
+\matrix (gt3a42a7b42a7b) [table, ampersand replacement=\&]{
+            \&         \&            \&          \&            \& \\
+            \&         \&            \&          \&            \& \\
+ i\_0\I     \&  paid\I \& incurred\I \&   paid\I \& incurred\I \& \\
+ victims    \& -99,925 \&   -371,707 \& -168,919 \&    437,113 \& \\
+ gossip     \& 203,325 \&   -254,559 \&  513,164 \&    341,596 \& \\
+ disagree   \& 169,839 \&    432,878 \& -158,714 \&    -33,408 \& \\
+ group      \& 584,610 \&    376,270 \&  181,042 \&    622,508 \& \\
+ merge      \& -34,131 \&    210,973 \&  792,978 \&   -127,915 \& \\
+ reputation \& 230,898 \&    381,637 \& -120,510 \&     90,843 \& \\
+};
+\node[anchor=center, font=\bfseries] at ($(gt3a42a7b42a7b-2-2.west)!0.5!(gt3a42a7b42a7b-2-3.east)$) {A Notably Long Group Label};
+\node[anchor=center, font=\bfseries] at ($(gt3a42a7b42a7b-2-4.west)!0.5!(gt3a42a7b42a7b-2-5.east)$) {Short};
+\path[draw, semithick] (gt3a42a7b42a7b-1-1.north west) -- (gt3a42a7b42a7b-1-6.north east);
+\path[draw, semithick] ([yshift=0.125em]gt3a42a7b42a7b-4-6.north -| gt3a42a7b42a7b-4-1.west) -- ([yshift=0.125em]gt3a42a7b42a7b-4-6.north -| gt3a42a7b42a7b-4-6.east);
+\path[draw, semithick] ([yshift=-0.125em]gt3a42a7b42a7b-1-1.south west |- gt3a42a7b42a7b.south) -- ([yshift=-0.125em]gt3a42a7b42a7b-1-6.south east |- gt3a42a7b42a7b.south);
+\path[draw, very thin] ([xshift=-0.5em, yshift=-0.125em]gt3a42a7b42a7b-2-2.south west) -- ([xshift=0.5em, yshift=-0.125em]gt3a42a7b42a7b-2-3.south east);
+\path[draw, very thin] ([xshift=-0.5em, yshift=-0.125em]gt3a42a7b42a7b-2-4.south west) -- ([xshift=0.5em, yshift=-0.125em]gt3a42a7b42a7b-2-5.south east);
+\path[draw, semithick] ([xshift=0.5em]gt3a42a7b42a7b-1-1.south east) -- ([xshift=0.5em]gt3a42a7b42a7b-1-1.south east |- gt3a42a7b42a7b.south);
+\path[draw, ultra thin] ([xshift=-0.5em]gt3a42a7b42a7b-1-4.north west) -- ([xshift=-0.5em]gt3a42a7b42a7b-1-4.north west |- gt3a42a7b42a7b.south);
+\end{tikzpicture}
+\end{table}

@@ -192,7 +192,7 @@ gallery; tracked here so the sequence is visible.
 | File | Step | Change |
 |---|---|---|
 | `docs/cheatsheet.md`, `docs/index.rst` | [guide] | new page, toctree entry |
-| `dev/gallery/gallery.qmd`, `dev/gallery/_extensions/house/` | [gallery] | new |
+| `guide/gallery.qmd`, `guide/panels.py`, `guide/_extensions/house/` | [gallery] | new (moved from `dev/gallery/`; see log) |
 | `tests/registry.py`, `tests/golden/*` | [gallery] | new fixtures and goldens |
 | `dev/check-widths.qmd`, `dev/tools/make_example_qmd.py` | [gallery] | deleted when superseded |
 | `tests/test_tikz_geometry.py`, `pyproject.toml` | [vrules] | new module; `pdfplumber` in the dev group |
@@ -223,3 +223,42 @@ gallery; tracked here so the sequence is visible.
   progress.
 - 2026-10-21: execution started (Steve: "run the GT7 plan"). [widths] cause 2, the silent
   overrun, fixed in 7.0.1.
+- 2026-10-21: [gallery] delivered as `guide/gallery.qmd` with `guide/panels.py`, not in
+  `dev/gallery/`: `guide/` already held the one installed copy of house style (beside the cheat
+  sheet), and two installed copies drift. Eleven new fixtures (seven shapes, four width
+  regressions moved out of `dev/check-widths.qmd`), 37 tables in all, rendered in all four
+  formats: `house-html` and `house-pdf` write `gallery-house.*`, `html` and `pdf` write
+  `gallery.*`. The PDF headers add what house style's preamble lacks for the `matrix` engine (its
+  TikZ library and the `\I` strut). `dev/check-widths.qmd` and `dev/tools/make_example_qmd.py`
+  deleted. Findings are below.
+
+## Findings from the gallery, 2026-10-21
+
+Each is a defect seen in the rendered gallery, with the fixture that shows it.
+
+1. **Prose wraps at its natural width under STIX Two** (`plain`: "contaminate emigration" breaks
+   with the table far inside its budget). The estimate is Times, STIX lowercase sets about 5%
+   wider, and the 0.1em pad does not absorb it. House-pdf logs 404 overfull cells, median 3.2pt;
+   the same gallery in Times logs none outside the deliberate overrun. This is
+   `dev/plan-font-metrics.md` [font-metrics], now measured.
+2. **Vertical rules cross the spanner labels above them, both engines** (`col-mi-3`): a depth-1
+   vertical runs up through the level-0 "Gross" and "Net" labels. It should start below the
+   header row whose spanner covers it. [vrules]
+3. **Tabular verticals sit at the right edge of the left column, not mid-gap** (`col-mi-3`,
+   `both-mi`, `row-mi-3`): they touch right-aligned numbers and the widest stub word
+   ("supplements"); the matrix engine leaves a gap. [vrules]
+4. **Matrix spanner labels ignore `tikz_scale`** (`both-mi` at 24em): the body scales, "exceed"
+   and "subdivided" stay full size. The tabular engine scales everything.
+5. **A headerless table gets a doubled top rule**, both engines (`headerless`).
+6. **The engines align stub headers differently**: matrix left, tabular centered (`row-mi-2`).
+7. **Quarto stripes greater_tables' HTML.** Quarto adds `table table-sm table-striped small` to
+   the table; Bootstrap 5.3 draws the stripes with an inset `box-shadow` that `gt.css` does not
+   reset, and `small` shrinks the font. Every Quarto HTML page with a GT table is affected, the
+   blog included. Candidate fixes: emit `data-quarto-disable-processing="true"` on the table, or
+   reset the shadow in `render/css.py`.
+8. **House style's PDF preamble supports the `tabular` engine only**: `\usetikzlibrary{matrix}`
+   and `\I` are missing, so `tikz_engine='matrix'` fails in a house-pdf document. House style's
+   concern, recorded there.
+9. **A TikZ table cannot break across pages**, so narrowing prose to fit a tight budget can make
+   a table taller than the page (`wrap-low` at 24em), and the default `max_rows=200` never fits a
+   page. Known; recorded for the cheat sheet and the blog post.

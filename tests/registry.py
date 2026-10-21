@@ -175,4 +175,35 @@ def fixtures() -> dict[str, tuple[object, TableSpec]]:
         TableSpec())
     fx['long'] = (Fabricator(seed=123).make(250, 's2ff'),
                   TableSpec(max_rows=30))
+    # --- width regressions, from the retired dev/check-widths.qmd
+    # a long heading wraps to its widest word instead of widening its column
+    fx['long-headings'] = (pd.DataFrame({
+        'Cumulative Incurred Loss': [1234.5, 2345.6, 3456.7],
+        'Cumulative Paid Loss': [1000.0, 2000.0, 3000.0],
+        'Case Outstanding Reserve': [234.5, 345.6, 456.7],
+    }, index=pd.Index([2022, 2023, 2024], name='Accident Year')),
+        TableSpec(year_cols=['Accident Year']))
+    # stub values set at exactly their natural width stay on one line
+    fx['stub-fits'] = (pd.DataFrame({
+        'Paid': [1234.5, float('nan'), 1234.5],
+        'Incurred': [-89.0, 12.3, -76.7],
+    }, index=pd.MultiIndex.from_tuples(
+        [(2020, 'Sub 1'), (2020, 'Sub 2'), ('Total', '')],
+        names=['Year', 'Sub'])), TableSpec())
+    # em dash, percent, SI micro and ISO dates, each measured at its true width
+    fx['glyph-widths'] = (pd.DataFrame({
+        'loss ratio': [0.458, 0.612, float('nan'), 0.397],
+        'missing': [float('nan'), 1.5, float('nan'), 2.5],
+        'as of': pd.to_datetime(['2024-01-15', '2024-06-30',
+                                 '2025-01-15', '2025-06-30']),
+        'tiny': [1.2e-6, 3.4e-6, 5.6e-6, 7.8e-6],
+    }, index=['alpha', 'beta', 'gamma', 'delta']),
+        TableSpec(ratio_cols=['loss ratio']))
+    # a group label wider than its columns widens the last one it covers
+    spanner = Fabricator(seed=42).make(6, 'ff', column_groups=2)
+    spanner.columns = pd.MultiIndex.from_tuples([
+        ('A Notably Long Group Label', 'paid'),
+        ('A Notably Long Group Label', 'incurred'),
+        ('Short', 'paid'), ('Short', 'incurred')][:len(spanner.columns)])
+    fx['long-spanner'] = (spanner, TableSpec())
     return fx

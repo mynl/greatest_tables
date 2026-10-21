@@ -1,0 +1,26 @@
+{"caption":null,"label":null,"hash":"8b34beeea071","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-l","gt-stub","gt-stub-end"],"text":"level_0"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"loss ratio"}
+{"s":"head","r":0,"c":2,"tag":"th","classes":["gt-data","gt-r"],"text":"missing"}
+{"s":"head","r":0,"c":3,"tag":"th","classes":["gt-c","gt-data"],"text":"as of"}
+{"s":"head","r":0,"c":4,"tag":"th","classes":["gt-data","gt-r"],"text":"tiny"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"alpha"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"45.8%"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"—"}
+{"s":"body","r":0,"c":3,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"2024-01-15"}
+{"s":"body","r":0,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1.200µ"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"beta"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"61.2%"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1.500"}
+{"s":"body","r":1,"c":3,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"2024-06-30"}
+{"s":"body","r":1,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"3.400µ"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"gamma"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"—"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"—"}
+{"s":"body","r":2,"c":3,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"2025-01-15"}
+{"s":"body","r":2,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"5.600µ"}
+{"s":"body","r":3,"c":0,"tag":"td","classes":["gt-l","gt-stub","gt-stub-end","gt-wrap"],"text":"delta"}
+{"s":"body","r":3,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"39.7%"}
+{"s":"body","r":3,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"2.500"}
+{"s":"body","r":3,"c":3,"tag":"td","classes":["gt-c","gt-data","gt-nowrap"],"text":"2025-06-30"}
+{"s":"body","r":3,"c":4,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"7.800µ"}

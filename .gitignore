@@ -34,3 +34,12 @@ TRANSCRIPT.md
 
 # personal operating procedure — local only, never published
 CLAUDE.md
+
+# guide/: standalone Quarto notes rendered in place; the installed house style is committed
+guide/*.html
+guide/*.pdf
+guide/*.tex
+guide/*_files/
+guide/.quarto/
+guide/__pycache__/
+guide/_gallery/

@@ -1,0 +1,17 @@
+{"caption":null,"label":null,"hash":"4440ecea633a","notes":[]}
+{"s":"head","r":0,"c":0,"tag":"th","classes":["gt-c","gt-stub","gt-stub-end"],"text":"Accident Year"}
+{"s":"head","r":0,"c":1,"tag":"th","classes":["gt-data","gt-r"],"text":"Cumulative Incurred Loss"}
+{"s":"head","r":0,"c":2,"tag":"th","classes":["gt-data","gt-r"],"text":"Cumulative Paid Loss"}
+{"s":"head","r":0,"c":3,"tag":"th","classes":["gt-data","gt-r"],"text":"Case Outstanding Reserve"}
+{"s":"body","r":0,"c":0,"tag":"td","classes":["gt-c","gt-nowrap","gt-stub","gt-stub-end"],"text":"2022"}
+{"s":"body","r":0,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1,234.50"}
+{"s":"body","r":0,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"1,000.00"}
+{"s":"body","r":0,"c":3,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"234.50"}
+{"s":"body","r":1,"c":0,"tag":"td","classes":["gt-c","gt-nowrap","gt-stub","gt-stub-end"],"text":"2023"}
+{"s":"body","r":1,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"2,345.60"}
+{"s":"body","r":1,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"2,000.00"}
+{"s":"body","r":1,"c":3,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"345.60"}
+{"s":"body","r":2,"c":0,"tag":"td","classes":["gt-c","gt-nowrap","gt-stub","gt-stub-end"],"text":"2024"}
+{"s":"body","r":2,"c":1,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"3,456.70"}
+{"s":"body","r":2,"c":2,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"3,000.00"}
+{"s":"body","r":2,"c":3,"tag":"td","classes":["gt-data","gt-nowrap","gt-r"],"text":"456.70"}

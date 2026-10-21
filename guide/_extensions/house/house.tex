@@ -1,0 +1,34 @@
+%==============================================================================
+% house.tex -- the house preamble for documents: articles, reports and books
+%
+% Loaded by the house-pdf format, after house-common.tex. Slides load
+% house-beamer.tex in its place. The page itself (A4, 11pt, 2.5cm margins, one
+% sided) and the fonts are format keys in _extension.yml, not LaTeX, so a
+% project overrides them in YAML.
+%==============================================================================
+
+%-------------------------------------------------------------------- headings
+% Headings and the title are set in the sans, Lato Semibold (the sans font's
+% bold), as on a slide, so an article, a book and a deck read as one house.
+% KOMA's `disposition` is sans and bold by default; \sffamily is stated so the
+% house does not depend on that. Description labels are text, not headings, so
+% they take the text face, bold. Guarded, because a project that overrides the
+% class with a standard one (article, report, book) has no KOMA font commands.
+\makeatletter
+\@ifundefined{addtokomafont}{}{%
+  \addtokomafont{disposition}{\sffamily}%
+  \setkomafont{descriptionlabel}{\normalfont\bfseries}%
+}
+\makeatother
+
+%------------------------------------------------------------- float placement
+% Figures and tables stay beside the text that introduces them. greater_tables
+% and pandoc both wrap a table in a bare `\begin{table}`, a float with no
+% placement specifier, so LaTeX applies the class default `tbp`: top, bottom
+% or its own page, but never here. The table then lands at the top of the next
+% page, above the sentence that introduces it, and reads as missing. `float`
+% adds the `H` specifier and `\floatplacement` makes it the default. `fig-pos:
+% H` in _extension.yml does the same for figures. This is the setting the
+% books used in their prefob.tex.
+\usepackage{float}
+\floatplacement{table}{H}

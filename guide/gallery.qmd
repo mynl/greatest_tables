@@ -1,0 +1,363 @@
+---
+title: "greater_tables gallery"
+subtitle: "Every shape in HTML and both TikZ engines"
+author: "Stephen J. Mildenhall"
+date: today
+execute:
+  echo: false
+format:
+  house-html:
+    output-file: gallery-house.html
+    theme: cosmo
+    page-layout: full
+    toc: true
+  house-pdf:
+    output-file: gallery-house.pdf
+    include-in-header:
+      text: |
+        % house style loads tikz for the tabular engine only; the matrix
+        % engine also needs its library and its row strut
+        \usetikzlibrary{matrix,calc,fit}
+        \providecommand{\I}{\vphantom{lp}}
+  html:
+    theme: cosmo
+    page-layout: full
+    toc: true
+  pdf:
+    documentclass: article
+    papersize: a4
+    fontsize: 10pt
+    geometry: margin=1in
+    toc: false
+    pdf-engine: tectonic
+    include-in-header:
+      text: |
+        \usepackage{newtxtext}
+        \usepackage{tikz}
+        \usetikzlibrary{matrix,calc,fit,backgrounds}
+        \usepackage{booktabs}
+        \usepackage{array}
+        \usepackage{xcolor}
+        \usepackage{float}
+        \floatplacement{table}{H}
+        \providecommand{\I}{\vphantom{lp}}
+---
+
+```{=html}
+<style>
+.gt-panels { display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; align-items: flex-start;
+             margin: 0.5rem 0 1.5rem; }
+.gt-panel { margin: 0; max-width: 100%; }
+.gt-panel figcaption { font-size: 0.8rem; opacity: 0.65; margin-bottom: 0.4rem; }
+.gt-panel img { max-width: 100%; height: auto; }
+</style>
+```
+
+```{python}
+from panels import show
+```
+
+Each table comes from `tests/registry.py`, so every shape here is also a fixture with goldens, and
+the gallery and the test suite cannot drift apart. The style is house style's `house_style()`: the
+document budget of 41.4em and a scale ceiling of 0.9. Where a section varies a `HouseStyle` field,
+the text says which.
+
+On the web each table appears three times: the HTML, then each TikZ engine's TeX compiled on its
+own and converted to SVG. Those images are set in Times at 11pt on a page with no margins, so judge
+rules, alignment, spans and wrapping there, and judge width against the margins in the PDF. The PDF
+shows the two engines, `matrix` above `tabular`, in the document's own text block. Render with:
+
+```powershell
+$env:QUARTO_PYTHON = "V:\dev\greatest-tables\.venv\Scripts\python.exe"
+quarto render guide\gallery.qmd --to house-html   # gallery-house.html
+quarto render guide\gallery.qmd --to house-pdf    # gallery-house.pdf, STIX Two
+quarto render guide\gallery.qmd --to html         # gallery.html
+quarto render guide\gallery.qmd --to pdf          # gallery.pdf, Times
+```
+
+## Flat tables
+
+A trivial index is hidden. Text left, numbers right, uniform decimals per column.
+
+```{python}
+show('plain')
+```
+
+A list of rows with no header row.
+
+```{python}
+show('headerless')
+```
+
+## Row indexes
+
+Two levels, sparsified: an outer label appears once, at the top of its group, with a rule between
+groups.
+
+```{python}
+show('row-mi-2')
+```
+
+Three levels. Rules at the outer two breaks, none between rows of the innermost level.
+
+```{python}
+show('row-mi-3')
+```
+
+The same table with `sparsify=False`: every row carries its full label.
+
+```{python}
+show('row-mi-3-dense')
+```
+
+Four levels, with a year as the innermost level, printed plain because it is tagged `year_cols`.
+
+```{python}
+show('row-mi-4')
+```
+
+Five levels: the depth at which the rule policy and a fixed depth cap disagree.
+
+```{python}
+show('deep-stub')
+```
+
+## Horizontal rules
+
+`max_rule_depth` on the three-level index: `'auto'` (the default) rules every break but the
+innermost, `0` only the outermost, `1` the outer two, and `None` none at all.
+
+```{python}
+show('row-mi-3', max_rule_depth=0)
+```
+
+```{python}
+show('row-mi-3', max_rule_depth=1)
+```
+
+```{python}
+show('row-mi-3', max_rule_depth=None)
+```
+
+## Totals and subtotals
+
+A total row appended to a flat table, set bold with a rule above it.
+
+```{python}
+show('totals')
+```
+
+Subtotals inside the groups of a two-level index, and a grand total, all through `row_flags`.
+
+```{python}
+show('subtotals')
+```
+
+## Column groups
+
+Two levels of column headers.
+
+```{python}
+show('col-mi-2')
+```
+
+Three levels. Vertical rules separate the outermost groups at `max_vrule_depth=1` (the default);
+look for where each vertical lands against the cells in both engines.
+
+```{python}
+show('col-mi-3')
+```
+
+```{python}
+show('col-mi-3', max_vrule_depth=0)
+```
+
+```{python}
+show('col-mi-3', max_vrule_depth=None)
+```
+
+## Both hierarchies
+
+A two-level row index under two-level columns.
+
+```{python}
+show('both-mi')
+```
+
+The aggregate Loss Lab shape: portfolio, unit and layer down the side, gross and net statistics
+across the top.
+
+```{python}
+show('loss-lab')
+```
+
+## Numbers
+
+Negatives.
+
+```{python}
+show('negatives')
+```
+
+Missing values, printed as an em dash.
+
+```{python}
+show('nulls')
+```
+
+Engineering notation with SI suffixes for a column spanning many orders of magnitude.
+
+```{python}
+show('eng')
+```
+
+Normal, log-wide and extreme-range floats side by side.
+
+```{python}
+show('wide-floats')
+```
+
+Integers past $2^{53}$ beside floats.
+
+```{python}
+show('bigints')
+```
+
+Ratios, tagged `ratio_cols='all'`, as percentages.
+
+```{python}
+show('ratios')
+```
+
+A year column, tagged `year_cols`, without a thousands separator.
+
+```{python}
+show('year')
+```
+
+Dates and times, centered.
+
+```{python}
+show('dates')
+```
+
+## Prose
+
+A long description and a shorter note beside a number: the prose wraps, the number does not.
+
+```{python}
+show('wrap-low')
+```
+
+Text of variable length.
+
+```{python}
+show('wrap-high')
+```
+
+TeX expressions beside commentary.
+
+```{python}
+show('tex')
+```
+
+## Width
+
+The two-prose-column table under three budgets. At 45em it fits by narrowing alone; at 30em it
+narrows further; at 24em the prose has reached its floors and the scale drops.
+
+```{python}
+show('wrap-low', max_table_width_em=45)
+```
+
+```{python}
+show('wrap-low', max_table_width_em=30)
+```
+
+```{python}
+show('wrap-low', max_table_width_em=24)
+```
+
+A table of numbers only has nothing to narrow, so it steps down the scale ladder.
+
+```{python}
+show('both-mi', max_table_width_em=24)
+```
+
+Twenty number columns against the 41.4em document budget: the ladder stops at 0.6 and the table
+still overruns. greater_tables logs that at ERROR, so it shows here, under the cell, even with house
+style's logger setting.
+
+```{python}
+show('wide-numbers')
+```
+
+## Width details
+
+The regressions `dev/check-widths.qmd` used to hold, now fixtures.
+
+A long heading wraps to its widest word, so three narrow columns of numbers sit under wrapped
+headings, not three wide columns under one-line headings.
+
+```{python}
+show('long-headings')
+```
+
+Stub values set at exactly their natural width stay on one line: `Sub 1` and `Sub 2`, not `Sub`
+over `1`.
+
+```{python}
+show('stub-fits')
+```
+
+The em dash, the percent sign, the SI micro and ISO dates are each measured at their true width:
+the dashes sit clear of the next column, and the dates leave no trailing gap.
+
+```{python}
+show('glyph-widths')
+```
+
+A group label wider than the columns beneath it widens the last column it covers instead of
+spilling over the rules on either side.
+
+```{python}
+show('long-spanner')
+```
+
+## Math
+
+Inline and whole-cell math in the body, a header, the stub, the caption and a note, beside
+currency that must never become math.
+
+```{python}
+show('inline-math')
+```
+
+Math beside a column of raw HTML.
+
+```{python}
+show('math-html')
+```
+
+## Long tables
+
+The first 30 of 250 rows, with the truncation note. A TikZ table is one box and cannot break across
+pages, which is why `max_rows` matters in a PDF; the default of 200 rows does not fit a page.
+
+```{python}
+show('long')
+```
+
+The first 5 of 12.
+
+```{python}
+show('truncated')
+```
+
+## Markdown input
+
+A markdown pipe table with a caption and a label.
+
+```{python}
+show('markdown')
+```
