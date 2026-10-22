@@ -2,7 +2,7 @@
 
 Open items only; delete a section when it is done, not when it is decided.
 Completed work is recorded in `CHANGELOG.md`, plans in `dev/done`. Last
-reviewed 2026-10-21 at 7.6.2.
+reviewed 2026-10-22 at 8.1.0.
 
 ## [md-xref] A markdown string's `{#tbl-...}` label does not cross-reference in Quarto
 
@@ -37,14 +37,15 @@ bump; PyPI will not accept a re-upload of an existing version. 6.0.0 and
 The GT2 logo and favicon set in `docs/_static/` are final (confirmed
 2026-08-05) and wired up via `html_logo` / `html_favicon`. What is still
 missing is a `docs/img/` example figure — the 5.x docs led with one — now
-that the demo tables are settled. `demo.html` and `demo2.html` are the
-obvious sources. Nice to have, not a release blocker.
+that the demo tables are settled. The gallery (`guide/gallery.qmd`) and the
+walker demos `tests/make_goldens.py` writes to `dev/out/` are the obvious
+sources. Nice to have, not a release blocker.
 
 ## [ci] GitHub Actions
 
 Nothing runs on push yet, and the docs no longer claim otherwise (6.0.0b1
 reworded two "in CI" claims to "the test suite"). Minimum useful workflow:
-`uv sync`, `pytest` (428 tests, ~25 s) on 3.12/3.13/3.14, `npm run build` +
+`uv sync`, `pytest` (about 980 tests) on 3.12/3.13/3.14, `npm run build` +
 a walker transcript check, and the `schema/ir-v1.json` diff guard. The 3.12
 floor in `pyproject.toml` is **declared but untested** — a matrix build is
 what would actually verify it. Unblocked: the repo is public. The suite now

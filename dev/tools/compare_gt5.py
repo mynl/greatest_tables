@@ -8,8 +8,8 @@ touch the project venv. Run from the repo root with the project env:
 
     uv run python dev/tools/compare_gt5.py
 
-Writes ``compare-gt5.html`` at the repo root (gitignored — a review
-artifact, regenerate at will). The GT2 column is the committed-golden
+Writes ``dev/out/compare-gt5.html`` (gitignored, a review artifact,
+regenerate at will). The GT2 column is the committed-golden
 behavior; differences are either 5.x bugs, documented GT2 deviations (see
 CHANGELOG 1.1.0/1.5.0), or regressions to investigate.
 """
@@ -89,7 +89,8 @@ h3 {{ font-size: 0.9em; opacity: 0.6; }}
 <h1>Migration check: greater_tables 5.3 vs the GT2 rewrite</h1>
 {chr(10).join(blocks)}
 </body></html>'''
-    out = ROOT / 'compare-gt5.html'
+    out = ROOT / 'dev' / 'out' / 'compare-gt5.html'
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page, encoding='utf-8', newline='\n')
     print(f'wrote {out}')
 

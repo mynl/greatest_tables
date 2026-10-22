@@ -1,4 +1,4 @@
-# venv lives on V:\dev via junction
+# build churn stays in the checkout, ignored
 .venv/
 __pycache__/
 *.pyc
@@ -9,6 +9,7 @@ build/
 .ruff_cache/
 node_modules/
 uv.lock
+transcript.md
 
 # data firewall: no real data in the repo — synthetic fixtures and package data only
 *.csv
@@ -21,13 +22,9 @@ docs/_build/
 
 .ipynb_checkpoints/
 *.ipynb
-# regenerate-at-will review artifacts (dev/tools/compare_gt5.py, dev/check-widths.qmd)
-compare-gt5.html
+# regenerate-at-will review artifacts: the walker demos (tests/make_goldens.py)
+# and the 5.x comparison (dev/tools/compare_gt5.py)
 dev/out/
-dev/check-widths.pdf
-dev/check-widths.html
-dev/check-widths.tex
-dev/check-widths_files/
 
 # conversation archive stays personal
 TRANSCRIPT.md

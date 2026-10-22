@@ -77,5 +77,3 @@ include = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# .pytest_cache is a junction to V:\dev\greatest-tables\.pytest_cache (dev
-# drive, like .venv) — cache-dir creation fails on the NAS-synced repo path

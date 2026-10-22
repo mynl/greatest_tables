@@ -6,6 +6,9 @@ Run from the repo root after a deliberate schema or exemplar change::
 
 Writes tests/golden/ir/<name>.json (canonical bytes) and schema/ir-v1.json.
 Review the diff before committing — these files are the IR contract.
+
+Also writes the two walker demo pages, demo.html and demo2.html, to dev/out
+(gitignored): open either in a browser to see every table the walker draws.
 """
 
 import json
@@ -22,6 +25,7 @@ from exemplars import EXEMPLARS
 from registry import fixtures, golden_bytes
 
 ROOT = Path(__file__).parent.parent
+DEMO_DIR = ROOT / 'dev' / 'out'
 
 
 def main() -> None:
@@ -118,7 +122,8 @@ document.querySelectorAll('script.gt-doc').forEach(s => {{
 </body>
 </html>
 '''
-    path = ROOT / 'demo.html'
+    path = DEMO_DIR / 'demo.html'
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(page, encoding='utf-8', newline='\n')
     return path
 
@@ -219,7 +224,8 @@ document.querySelectorAll('script.gt-doc').forEach(s => {{
 </body>
 </html>
 '''
-    path = ROOT / 'demo2.html'
+    path = DEMO_DIR / 'demo2.html'
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(page, encoding='utf-8', newline='\n')
     return path
 
