@@ -19,7 +19,7 @@ GT(df)
 Between the DataFrame and the page sits a versioned, JSON-serializable
 **table document**, the intermediate representation (IR). Python owns
 *semantics* (dtypes, format inference, multi-index hierarchy, spans, break
-depths); each renderer owns *geometry and style*. Nothing in the IR names a
+depths); each renderer owns *geometry and style*. Nothing in the IR sets a
 width, a rule weight, a font, or a CSS property, so the HTML renderer, the
 TikZ renderer, the text renderer, and the bundled JavaScript walker all draw
 the same table and are conformance tested against each other.

@@ -1,0 +1,40 @@
+```{python}
+# writedown wrapper for GT
+from greater_tables import Fabricator, GT, __version__ as v
+# from IPython.display import HTML
+# def GT(df, **kwargs):
+#     return HTML(_GT(df).html)
+```
+
+
+```{python}
+df = Fabricator().make(10, 'fivd')
+```
+
+
+```{python}
+GT(df, date_format='%y-%m-%d')
+```
+
+
+```{python}
+GT(df, date_format='%H:%M:%S')
+```
+
+
+```{python}
+GT(df, float_format='.5g')
+```
+
+THIS IS THE HARDER PART!
+```{python}
+GT(df, formatters={'all': lambda x: f'{x:,.5f}'})
+```
+
+
+## Nice Formats
+
+
+
+
+
