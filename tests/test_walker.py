@@ -14,7 +14,8 @@ import pytest
 ROOT = Path(__file__).parent.parent
 GOLDEN = ROOT / 'tests' / 'golden' / 'transcript'
 NODE = shutil.which('node')
-CSV_GRID_UTIL = Path('C:/S/AI/csv-viewer/src/grid/util.js')
+# csv-grid is checked out beside this repo, as csv-viewer
+CSV_GRID_UTIL = ROOT.parent / 'csv-viewer' / 'src' / 'grid' / 'util.js'
 
 
 @pytest.mark.skipif(NODE is None, reason='node not available')
