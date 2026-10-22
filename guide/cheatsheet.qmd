@@ -29,7 +29,7 @@ changes the document and so its hash.
 |---|---|
 | metadata | `caption`, `label`, `notes` |
 | column meaning | `ratio_cols`, `year_cols`, `date_cols`, `raw_cols`, `html_cols`, `unbreakable` |
-| column format | `formatters`, `float_format`, `int_format`, `ratio_format`, `date_format`, `table_float_format` |
+| column format | `formatters`, `shared_formatters`, `float_format`, `int_format`, `ratio_format`, `date_format`, `table_float_format` |
 | engineering notation | `pef_lower`, `pef_upper`, `eng_digits`, `eng_style` |
 | alignment | `aligners` |
 | rows | `row_flags`, `cell_flags`, `max_rows` |
@@ -55,7 +55,7 @@ wins; the TikZ fields are TikZ only.
 
 | Keyword | Does |
 |---|---|
-| `config_path` | load `TableSpec` defaults from a YAML file; explicit keywords override it |
+| `config_path` | load `TableSpec` defaults from a YAML file; explicit keywords override it, key by key for a mapping |
 | `mimes` | pin what `_repr_mimebundle_` publishes, for a target GT cannot detect (`gfm`) |
 
 The split is the pipeline: raw data, then formatted values, then printed table. The
@@ -112,7 +112,7 @@ those.
 | verticals between column groups | `vrule_widths=(1, 0, 0)` | `style=HouseStyle(max_vrule_depth=1, vrule_widths=...)`. Needs a MultiIndex on the columns |
 | the PDF table is too wide | `tikz_scale=0.8` | `style=HouseStyle(max_table_width_em=41, tikz_scale=0.9)`. Budget first, scale is a ceiling. See below |
 | one prose column is too wide | `max_str_length=40` | `style=HouseStyle(max_prose_width_em=18)`. Wraps, never truncates |
-| one set of house rules for a document | `config_path='house.yaml'` | the same, or `partial(GT, config_path='house.yaml')` |
+| one set of house rules for a document | `config_path='house.yaml'` | the same, or `partial(GT, config_path='house.yaml')`. Column formats for every table go in `shared_formatters` |
 | a `quarto render --to gfm` build | — | `GT(df, mimes=('text/plain',))`. The only target GT cannot detect |
 
 : How to achieve various effects in GT. {#tbl-a}
@@ -170,7 +170,7 @@ GT('''
 | verticals between column groups | `vrule_widths=(1, 0, 0)` | `style=HouseStyle(max_vrule_depth=1, vrule_widths=...)`. Needs a MultiIndex on the columns |
 | the PDF table is too wide | `tikz_scale=0.8` | `style=HouseStyle(max_table_width_em=41, tikz_scale=0.9)`. Budget first, scale is a ceiling. See below |
 | one prose column is too wide | `max_str_length=40` | `style=HouseStyle(max_prose_width_em=18)`. Wraps, never truncates |
-| one set of house rules for a document | `config_path='house.yaml'` | the same, or `partial(GT, config_path='house.yaml')` |
+| one set of house rules for a document | `config_path='house.yaml'` | the same, or `partial(GT, config_path='house.yaml')`. Column formats for every table go in `shared_formatters` |
 | a `quarto render --to gfm` build | — | `GT(df, mimes=('text/plain',))`. The only target GT cannot detect |
 ''')
 ```
@@ -235,6 +235,9 @@ ratio, a year, a date or raw, which is most of them.
 
 **2. Format.** For that kind, the first thing that is set, reading left to right:
 
+Each `formatters[col]` in the table stands for two steps: `formatters[col]`, then
+`shared_formatters[col]`, a table's own entry before the document's.
+
 | Kind | first | then | then | finally |
 |------|---------|---------|--------|------|
 | ratio | `formatters[col]` | `ratio_format` | percent, one decimal | |
@@ -246,14 +249,17 @@ ratio, a year, a date or raw, which is most of them.
 | **untagged float** | **`table_float_format`** | `formatters[col]` | `float_format` | inferred, step 3 |
 | string, bool, other | `formatters[col]` | `str(value)` | | |
 
-Two things to notice. A per-column `formatters` entry beats a house default on every line but
-one: `table_float_format` is above it on the untagged-float line, and nowhere else, which is why
-it is a call-site sledgehammer and never a config entry. And `year` ignores `int_format`, since a
-year has its own kind.
+Two things to notice. A per-column `formatters` or `shared_formatters` entry beats a house
+default on every line but one: `table_float_format` is above both on the untagged-float line, and
+nowhere else, which is why it is a call-site sledgehammer and never a config entry. And `year`
+ignores `int_format`, since a year has its own kind.
 
-A `formatters` key matches the column label, or for a MultiIndex column its leaf name. A callable
-entry is applied as is: it owns NaN handling, and its column carries no `FormatSpec` in the
-document, so a client cannot re-render it.
+A `formatters` key matches the column label, or for a MultiIndex column its leaf name, and a key
+that matches no column warns. A `shared_formatters` key matches the same way, but a table without
+the column skips it quietly, which is what makes it the place for a document's formats. A table's
+own entry beats a shared one, even when it matches only by leaf. A callable entry is applied as
+is: it owns NaN handling, and its column carries no `FormatSpec` in the document, so a client
+cannot re-render it.
 
 **3. Inference.** Untagged floats only, and only when nothing above is set. Setting `float_format`
 turns this off for the document, which is what makes twelve exhibits agree.
@@ -272,9 +278,9 @@ else numbers right, dates centered, text left.
 
 ### Format strings
 
-Every format field takes the same input: a `formatters` value, `float_format`, `int_format`,
-`ratio_format`, `date_format` and `table_float_format`. Each form resolves to one `FormatSpec`,
-which is what the document stores.
+Every format field takes the same input: a `formatters` or `shared_formatters` value,
+`float_format`, `int_format`, `ratio_format`, `date_format` and `table_float_format`. Each form
+resolves to one `FormatSpec`, which is what the document stores.
 
 | Form | Example | Notes |
 |--------|---------------|-------------------------|
@@ -284,7 +290,7 @@ which is what the document stores.
 | word | `'year'`, `'eng'`, `'si'` | named kinds, below |
 | date pattern | `'%d %b %Y'` | any string containing `%` that is not a number format |
 | mapping | `{'kind': 'dec', 'digits': 1}` | the `FormatSpec` fields; the YAML form |
-| callable | `my_format` | `formatters` only |
+| callable | `my_format` | `formatters` and `shared_formatters` only |
 
 **Numbers.** The type letter picks the kind, and `N` means decimals except under `g`. Examples on
 1234567.891 and 0.0012345:

@@ -7,12 +7,13 @@ formats, alignment, hierarchy, flags — and nothing stylistic.
 
 from __future__ import annotations
 
+import functools
 import math
 import re
 import warnings
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Hashable
+from typing import Any, Callable, Hashable
 
 import pandas as pd
 
@@ -106,13 +107,14 @@ def build(data, spec: TableSpec | None = None) -> TableDoc:
     raw_set = _resolve_raw(spec, data_cols, df)
     cbd = st.column_break_depths(data_names)
     defaults = format_defaults(spec)
+    shared = shared_formats(spec)
     _check_formatter_keys(spec, all_labels)
 
     for i, (label, ser) in enumerate(zip(all_labels, series_all)):
         is_stub = i < n_stub
         dtype = dt.column_dtype(ser)
         tag = dt.semantic_tag(label, tags)
-        fspec = _resolve_format(label, ser, dtype, tag, spec, defaults)
+        fspec = _resolve_format(label, ser, dtype, tag, spec, defaults, shared)
         name = ((str(label),) if is_stub else data_names[i - n_stub])
         columns.append(Column(
             key=f'c{i}',
@@ -299,8 +301,30 @@ def format_defaults(spec) -> dict[str, FormatSpec | None]:
     return out
 
 
-# the warning points at the caller's line, outside the package
-_PACKAGE = str(Path(__file__).resolve().parent.parent)
+def shared_formats(spec) -> dict[Hashable, FormatSpec | Callable[[Any], str]]:
+    """Parse ``shared_formatters`` once per build (sugar → FormatSpec).
+
+    Every value is parsed, whether or not this table has its column, so a
+    bad value raises at the first table built rather than at the first table
+    that happens to have the column. The keys go unchecked: skipping a
+    missing column quietly is the point of the field. A callable passes
+    through as it does in ``formatters``.
+    """
+    out: dict[Hashable, FormatSpec | Callable[[Any], str]] = {}
+    for key, value in spec.shared_formatters.items():
+        if callable(value):
+            out[key] = value
+            continue
+        try:
+            out[key] = parse_sugar(value)
+        except ValueError as exc:
+            raise ValueError(f'TableSpec.shared_formatters[{key!r}]: {exc}') from None
+    return out
+
+
+# the warning points at the caller's line, outside the package; functools is
+# skipped too, since GT builds inside a cached_property whose frame lies there
+_SKIP_PREFIXES = (str(Path(__file__).resolve().parent.parent), functools.__file__)
 
 
 def _check_formatter_keys(spec, labels) -> None:
@@ -310,33 +334,48 @@ def _check_formatter_keys(spec, labels) -> None:
     ``'all'`` is the likely one, since the column selectors accept it. It is
     not accepted here: one formatter over every column would reach the dates
     and the text, and a float format for the whole table already exists.
-    A warning, not a log record, so a caller that quiets the package logger
-    (house style does) still sees it.
+    ``'all'`` is also the one ``shared_formatters`` key that warns, being a
+    mistake whatever the table; every other shared key may miss a table by
+    design. A warning, not a log record, so a caller that quiets the package
+    logger (house style does) still sees it.
     """
     known = set(labels) | {lab[-1] for lab in labels if isinstance(lab, tuple)}
+    all_hint = (" For every float column use float_format, or table_float_format "
+                "to override per-column entries too.")
     for key in spec.formatters:
         if key in known:
             continue
-        hint = (" For every float column use float_format, or table_float_format "
-                "to override per-column entries too." if key == 'all' else '')
+        hint = (all_hint if key == 'all' else
+                ' A format meant for every table that has the column goes in '
+                'shared_formatters, which skips a table without it.')
         warnings.warn(f'formatters key {key!r} matches no column and is ignored.{hint}',
-                      skip_file_prefixes=(_PACKAGE,))
+                      skip_file_prefixes=_SKIP_PREFIXES)
+    if 'all' in spec.shared_formatters and 'all' not in known:
+        warnings.warn("shared_formatters key 'all' matches no column and is "
+                      f'ignored.{all_hint}', skip_file_prefixes=_SKIP_PREFIXES)
 
 
-def _resolve_format(label, ser, dtype, tag, spec, defaults):
+def _resolve_format(label, ser, dtype, tag, spec, defaults, shared):
     """Two steps: what *kind* is this column, then what does that kind wear.
 
     The kind is its semantic tag if it has one, else its dtype. Each kind
-    then resolves top-down: an explicit ``formatters`` entry, the matching
-    house default, the built-in. ``table_float_format`` sits above even the
-    explicit entry, but only on the float line — a ratio, year or date column
-    has been given a kind, so the float sledgehammer never reaches it.
+    then resolves top-down: an explicit entry, the matching house default,
+    the built-in. The explicit entry is the first of ``formatters[label]``,
+    ``formatters[leaf]``, ``shared[label]``, ``shared[leaf]`` (the leaf being
+    a tuple label's last element), so a table's own entry beats a shared one
+    even when it matches only by leaf. ``table_float_format`` sits above even
+    the explicit entry, but only on the float line — a ratio, year or date
+    column has been given a kind, so the float sledgehammer never reaches it.
     """
     user = spec.formatters.get(label)
     if user is None and isinstance(label, tuple):
         user = spec.formatters.get(label[-1])
     if user is not None and not callable(user):
         user = parse_sugar(user)
+    if user is None:
+        user = shared.get(label)
+    if user is None and isinstance(label, tuple):
+        user = shared.get(label[-1])
 
     if tag == 'ratio':
         return user or defaults['ratio_format'] or FormatSpec(kind='pct', digits=1)

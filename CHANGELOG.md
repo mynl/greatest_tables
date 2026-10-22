@@ -3,6 +3,29 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [8.2.0] - 2026-10-22
+
+### Added
+
+- `shared_formatters`: per-column formats for every table that has the column, skipped without
+  a warning where it does not. The place for a document's formats in a config file or a
+  `partial(GT, ...)`; `formatters` stays per table and still warns on a missing column. A table's
+  own `formatters` entry wins over a shared one.
+
+### Changed
+
+- **Output changes.** `GT(df, config_path=...)`: a mapping passed at the call (`formatters`,
+  `shared_formatters`, `aligners`, `row_flags`) adds to the file's mapping key by key instead of
+  replacing it, so a table that sets `formatters` at the call keeps the file's other entries.
+- The warning for a `formatters` key that matches no column points to `shared_formatters`.
+- **House files with `formatters:` keep warning** on every table without the column; rename the
+  key to `shared_formatters:`, as the quickstart now does.
+
+### Fixed
+
+- The unmatched-key warning from a table built through `GT` points at the caller's line, not
+  inside `functools`.
+
 ## [8.1.0] - 2026-10-22
 
 ### Added

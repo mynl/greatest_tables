@@ -56,7 +56,8 @@ The engine
 ``formats.py``
     Resolve display format per column. Two steps: the column's **kind** is
     its semantic tag if it has one, else its dtype; then that kind resolves
-    ``formatters[col]`` → the matching house default (``float_format`` and
+    ``formatters[col]`` → ``shared_formatters[col]`` → the matching house
+    default (``float_format`` and
     friends) → the built-in → inference. A float column's mean magnitude picks its
     decimals, and a column spanning many orders of magnitude switches to
     engineering notation (SI suffixes by default; aligned exponents on

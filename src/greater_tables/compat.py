@@ -17,6 +17,7 @@ ungrouped form.
 from __future__ import annotations
 
 import warnings
+from collections.abc import Mapping
 from dataclasses import fields as _dc_fields
 from functools import cached_property
 
@@ -39,9 +40,18 @@ class GT:
     Parameters mirror the greater_tables constructor where they still make
     sense; ``formatters`` accepts the 5.x shapes (callable, ``'{x:...}'``
     format string, or int = decimal digits, now grouped). ``config_path``
-    loads YAML TableSpec defaults which explicit arguments override.
-    ``style`` takes a :class:`~greater_tables.spec.HouseStyle` and is
-    forwarded to every renderer. ``mimes`` pins what ``_repr_mimebundle_``
+    loads YAML TableSpec defaults which explicit arguments override, key by
+    key for a mapping: a call's ``formatters`` adds to the file's, the call
+    winning on a common key, and so do ``shared_formatters`` and the mapping
+    forms of ``aligners`` and ``row_flags``. Any other value replaces the
+    file's, so an ``aligners`` string replaces a file mapping, and an empty
+    mapping at the call clears nothing. Formats for every table of a
+    document go in ``shared_formatters``, which skips a table without the
+    column: ``partial(GT, shared_formatters={...})``. A call passing
+    ``shared_formatters`` to such a partial replaces the partial's mapping
+    (Python's rule for ``partial``, which runs before ``GT``). ``style``
+    takes a :class:`~greater_tables.spec.HouseStyle` and is forwarded to
+    every renderer. ``mimes`` pins what ``_repr_mimebundle_``
     publishes — None (default) detects the target, an explicit tuple such as
     ``('text/plain',)`` publishes exactly that. It is a whole-document
     policy, so the intended form is
@@ -73,7 +83,15 @@ class GT:
                 warnings.warn(f'GT: ignoring unknown option {key!r} '
                               '(gone in greater_tables)', stacklevel=2)
         merged = {f.name: getattr(base, f.name) for f in _dc_fields(TableSpec)}
-        merged.update({k: v for k, v in kwargs.items() if v is not None})
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            old = merged[key]
+            # a mapping at the call adds to the file's mapping, rather than
+            # dropping the file's other entries without a word
+            merged[key] = ({**old, **value}
+                           if isinstance(old, Mapping) and isinstance(value, Mapping)
+                           else value)
         self.spec = TableSpec(**merged)
         self.style = style
         # validated here, not at display time, so a typo names its call site

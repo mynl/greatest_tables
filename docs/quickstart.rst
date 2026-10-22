@@ -132,9 +132,10 @@ House rules, one per kind
 
 ``float_format``, ``int_format``, ``ratio_format`` and ``date_format`` are the
 5.x ``default_*_str`` settings. Each replaces its own kind's built-in and
-loses to an explicit ``formatters`` entry, so the resolution per column is:
-its **kind** (semantic tag if it has one, else dtype), then
-``formatters[col]`` → the house default → the built-in.
+loses to an explicit ``formatters`` or ``shared_formatters`` entry, so the
+resolution per column is: its **kind** (semantic tag if it has one, else
+dtype), then ``formatters[col]`` → ``shared_formatters[col]`` → the house
+default → the built-in.
 
 Anything you leave unset is inferred from the column's dtype and its own
 statistics — magnitude decides decimals, and a float column spanning many
@@ -158,7 +159,12 @@ document:
    ratio_format: '.1%'
    date_format: '%d %b %Y'
    ratio_cols: 'lr|ratio$'
-   formatters: {paid: {kind: dec, digits: 1, negative: paren}}
+   shared_formatters: {paid: {kind: dec, digits: 1, negative: paren}}
+
+``shared_formatters`` holds the document's per-column formats: each table
+with a ``paid`` column takes the rule, and a table without one builds
+without a word. ``formatters`` is for one table, and warns when its column
+is missing, since an entry that matches nothing is most likely a typo.
 
 .. code:: python
 

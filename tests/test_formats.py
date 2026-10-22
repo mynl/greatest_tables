@@ -235,8 +235,15 @@ def test_unmatched_formatters_key_warns():
     df = pd.DataFrame({'paid': [1.5, 2.5]})
     with pytest.warns(UserWarning, match="'all'.*float_format"):
         build(df, TableSpec(formatters={'all': '.2f'}))
-    with pytest.warns(UserWarning, match="'unpaid' matches no column"):
+    with pytest.warns(UserWarning, match="'unpaid' matches no column.*shared_formatters"):
         build(df, TableSpec(formatters={'unpaid': '.2f'}))
+
+
+def test_all_key_keeps_its_own_hint():
+    df = pd.DataFrame({'paid': [1.5, 2.5]})
+    with pytest.warns(UserWarning) as caught:
+        build(df, TableSpec(formatters={'all': '.2f'}))
+    assert 'shared_formatters' not in str(caught[0].message)
 
 
 def test_matched_formatters_keys_are_quiet():
@@ -246,3 +253,62 @@ def test_matched_formatters_keys_are_quiet():
         warnings.simplefilter('error')
         build(df, TableSpec(formatters={('Gross', 'paid'): '.1f', 'case': '.3f',
                                         'line': 's'}))
+
+
+# ------------------------------------------- formats shared across tables
+
+def _texts(doc, row=0):
+    return [c.text for c in doc.body[row].cells]
+
+
+def test_shared_formats_a_table_that_has_the_column():
+    spec = TableSpec(shared_formatters={'paid': '.1f'})
+    doc = build(pd.DataFrame({'paid': [1234.56, 2.0]}), spec)
+    assert _texts(doc) == ['1234.6']
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        build(pd.DataFrame({'case': [1.5, 2.5]}), spec)
+
+
+def test_formatters_beat_shared_on_the_same_label():
+    df = pd.DataFrame({'paid': [1234.56, 2.0]})
+    doc = build(df, TableSpec(formatters={'paid': '.3f'},
+                              shared_formatters={'paid': '.1f'}))
+    assert _texts(doc) == ['1234.560']
+
+
+def test_a_formatters_leaf_beats_a_shared_full_label():
+    """A table's own entry wins even when it matches only by leaf."""
+    cols = pd.MultiIndex.from_tuples([('Gross', 'paid')])
+    df = pd.DataFrame([[1234.56]], columns=cols)
+    doc = build(df, TableSpec(formatters={'paid': '.3f'},
+                              shared_formatters={('Gross', 'paid'): '.1f'}))
+    assert _texts(doc) == ['1234.560']
+
+
+def test_shared_key_matches_a_tuple_column_by_its_leaf():
+    cols = pd.MultiIndex.from_tuples([('Gross', 'paid'), ('Net', 'paid'),
+                                      ('Net', 'case')])
+    df = pd.DataFrame([[1234.56, 1000.0, 2.5]], columns=cols)
+    doc = build(df, TableSpec(shared_formatters={'paid': '.1f'}))
+    assert _texts(doc)[:2] == ['1234.6', '1000.0']
+
+
+def test_shared_callable_formats_its_column():
+    df = pd.DataFrame({'paid': [1.0, 2.0]})
+    doc = build(df, TableSpec(shared_formatters={'paid': lambda x: f'<{x}>'}))
+    assert _texts(doc) == ['<1.0>']
+    assert doc.columns[0].format is None     # callables never enter the IR
+
+
+def test_bad_shared_value_raises_naming_the_key():
+    """Raised at the first table built, even one without the column."""
+    df = pd.DataFrame({'case': [1.5, 2.5]})
+    with pytest.raises(ValueError, match=r"shared_formatters\['paid'\].*wat"):
+        build(df, TableSpec(shared_formatters={'paid': 'wat'}))
+
+
+def test_shared_all_key_warns():
+    df = pd.DataFrame({'paid': [1.5, 2.5]})
+    with pytest.warns(UserWarning, match="shared_formatters key 'all'.*float_format"):
+        build(df, TableSpec(shared_formatters={'all': '.2f'}))

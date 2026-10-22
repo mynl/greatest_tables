@@ -186,8 +186,8 @@ you.
 | `table_float_format` | `None` | One float format for the whole table, overriding per-column | **TableSpec** `.table_float_format` | Same meaning and the same precedence: it beats an explicit `formatters` entry. Narrowed in one way — it reaches only **untagged float** columns, so `ratio_cols`/`year_cols`/`date_cols` are immune. Never written into a config template, on purpose. |
 
 The resolution order per column is its **kind** (semantic tag if it has one,
-else dtype), then within that kind: `formatters[col]` → the house default →
-the built-in. Setting `float_format` turns float *inference* off entirely,
+else dtype), then within that kind: `formatters[col]` →
+`shared_formatters[col]` → the house default → the built-in. Setting `float_format` turns float *inference* off entirely,
 including the automatic SI/engineering switch.
 
 ### Rules and lines

@@ -69,8 +69,9 @@ _HINTS = {
     'markdown_caption': 'null          # null = markdown for a markdown table',
     'unbreakable': '[note]       # never wrap',
     'aligners': "llrrc          # positional, or {label: 'r'}",
-    'formatters': "{paid: ',.1f', premium: {kind: dec, digits: 1, "
-                  'negative: paren}}',
+    'formatters': "{paid: ',.1f'}   # this table; warns if missing",
+    'shared_formatters': '{paid: {kind: dec, digits: 1, negative: paren}}'
+                         '   # every table with the column',
     'float_format': "',.2f'      # house default for every float column",
     'int_format': "',d'",
     'ratio_format': "'.1%'",

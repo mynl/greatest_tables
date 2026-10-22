@@ -1,8 +1,8 @@
 """House defaults: the format ladder, and the YAML round trip.
 
 The ladder is two steps — a column's *kind* is its semantic tag if it has
-one, else its dtype; then that kind resolves formatters[col] > house default
-> built-in. ``table_float_format`` is the exception that outranks an explicit
+one, else its dtype; then that kind resolves formatters[col] >
+shared_formatters[col] > house default > built-in. ``table_float_format`` is the exception that outranks an explicit
 per-column entry, and only on the float line.
 """
 
@@ -128,7 +128,7 @@ def test_house_yaml_round_trip(tmp_path, df):
         "ratio_format: '.1%'\n"
         "date_format: '%d %b %Y'\n"
         "ratio_cols: 'lr|ratio$'\n"
-        'formatters: {paid: {kind: dec, digits: 1, negative: paren}}\n',
+        'shared_formatters: {paid: {kind: dec, digits: 1, negative: paren}}\n',
         encoding='utf-8')
     spec = load_spec(tmp_path / 'house.yaml')
     doc = build(df, spec)
@@ -156,6 +156,14 @@ def test_template_omits_the_sledgehammer(tmp_path, df):
 def test_effective_dump_reloads(tmp_path):
     spec = TableSpec(caption='Demo', ratio_cols='all', float_format=',.2f',
                      max_rows=50)
+    path = write_template(tmp_path / 'house.yaml', spec)
+    assert load_spec(path) == spec
+
+
+def test_both_format_maps_round_trip(tmp_path):
+    """A dump keeps each map in its own field, checked and unchecked."""
+    spec = TableSpec(formatters={'paid': ',.1f'},
+                     shared_formatters={'case': {'kind': 'dec', 'digits': 3}})
     path = write_template(tmp_path / 'house.yaml', spec)
     assert load_spec(path) == spec
 

@@ -66,23 +66,33 @@ class TableSpec:
         ``',.1f'`` or GT ``'{x:.1%}'`` style), an int (decimal digits, with
         grouping), or a callable taking the value and returning a string.
         A callable owns its own NaN handling and does not reach the IR, so a
-        client cannot re-render that column.
+        client cannot re-render that column. A key that matches no column
+        warns.
+    shared_formatters
+        Per-column formats for every table that has the column, keyed and
+        matched as ``formatters`` is. A key the table lacks is skipped
+        without a warning, which makes this the place for formats shared by
+        a document's tables: a config file, or a ``functools.partial`` of
+        ``GT``. An entry in ``formatters`` wins over one here. Nothing checks
+        the keys, so a misspelled one does nothing and raises nothing; a
+        format written for one table goes in ``formatters``, which warns.
     float_format, int_format, ratio_format, date_format
         House defaults, one per kind — the 5.x ``default_*_str`` settings.
         Each overrides only its own kind's built-in default and loses to an
-        explicit ``formatters`` entry. ``date_format`` covers the date tag
-        and both date and datetime dtypes. Setting ``float_format`` turns the
-        float *inference* off entirely, including the automatic
-        engineering/SI switch, so ``pef_*`` and ``eng_*`` stop applying.
+        explicit ``formatters`` or ``shared_formatters`` entry.
+        ``date_format`` covers the date tag and both date and datetime
+        dtypes. Setting ``float_format`` turns the float *inference* off
+        entirely, including the automatic engineering/SI switch, so
+        ``pef_*`` and ``eng_*`` stop applying.
         Callables are rejected: these are house rules that must be
         YAML-expressible.
     table_float_format
         The sledgehammer: every **untagged float** column, overriding even an
-        explicit ``formatters`` entry. Ratio, year and date columns have a
-        kind, so it never reaches them. Default None, and deliberately absent
-        from ``config.write_template`` — set it consciously at a call site,
-        never in a config file where it would silently defeat per-column
-        formats months later.
+        explicit ``formatters`` or ``shared_formatters`` entry. Ratio, year
+        and date columns have a kind, so it never reaches them. Default None,
+        and deliberately absent from ``config.write_template`` — set it
+        consciously at a call site, never in a config file where it would
+        silently defeat per-column formats months later.
     row_flags
         Mapping row position (negative allowed) → flags, or a callable
         ``(position, row_series) -> flags``. Vocabulary: total, subtotal,
@@ -129,6 +139,8 @@ class TableSpec:
     aligners: str | Mapping[Hashable, str] | None = None
     formatters: Mapping[Hashable, FormatSpec | Mapping | str | int
                         | Callable[[Any], str]] = field(default_factory=dict)
+    shared_formatters: Mapping[Hashable, FormatSpec | Mapping | str | int
+                               | Callable[[Any], str]] = field(default_factory=dict)
     # --- house defaults, one per kind (5.x's default_*_str)
     float_format: FormatSpec | Mapping | str | int | None = None
     int_format: FormatSpec | Mapping | str | int | None = None

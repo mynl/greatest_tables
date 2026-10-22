@@ -1,6 +1,7 @@
 """GT facade tests: constructor compatibility, laziness, formatter mapping."""
 
 import warnings
+from functools import partial
 
 import pandas as pd
 import pytest
@@ -85,6 +86,53 @@ def test_config_path(tmp_path, df):
     assert gt.doc.caption == 'From YAML' and len(gt.doc.body) == 2
     override = GT(df, caption='Explicit wins', config_path=cfg)
     assert override.doc.caption == 'Explicit wins'
+
+
+# ------------------------------------------- one house file, many tables
+
+@pytest.fixture()
+def house(tmp_path):
+    cfg = tmp_path / 'house.yaml'
+    cfg.write_text("float_format: ',.2f'\n"
+                   'shared_formatters: {paid: {kind: dec, digits: 1, '
+                   'negative: paren}}\n', encoding='utf-8')
+    return partial(GT, config_path=cfg)
+
+
+def _texts(gt):
+    return [[c.text for c in row.cells] for row in gt.doc.body]
+
+
+def test_house_file_skips_a_table_without_the_column(house):
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        gt = house(pd.DataFrame({'case': [1.0, 2.0]}))
+        assert _texts(gt) == [['1.00'], ['2.00']]
+
+
+def test_house_file_survives_call_formatters(house):
+    df = pd.DataFrame({'paid': [1234.56, -20.0], 'case': [1.0, 2.0]})
+    gt = house(df, formatters={'case': '.3f'})
+    assert _texts(gt) == [['1234.6', '1.000'], ['(20.0)', '2.000']]
+
+
+def test_misspelled_call_key_still_warns_at_the_caller(house):
+    """The warning points at this file, not inside functools' cached_property."""
+    gt = house(pd.DataFrame({'paid': [1.0]}), formatters={'piad': 1})
+    with pytest.warns(UserWarning, match="'piad'.*shared_formatters") as caught:
+        _ = gt.doc
+    assert caught[0].filename == __file__
+
+
+def test_call_mappings_merge_with_the_file(tmp_path):
+    cfg = tmp_path / 'spec.yaml'
+    cfg.write_text("formatters: {a: '.1f', b: '.1f'}\n"
+                   'aligners: {a: c, b: c}\n', encoding='utf-8')
+    gt = GT(config_path=cfg, formatters={'b': '.3f', 'c': '.2f'},
+            aligners={'b': 'l'})
+    assert gt.spec.formatters == {'a': '.1f', 'b': '.3f', 'c': '.2f'}
+    assert gt.spec.aligners == {'a': 'c', 'b': 'l'}
+    assert GT(config_path=cfg, aligners='rrl').spec.aligners == 'rrl'
 
 
 def test_tikz_renders(df):

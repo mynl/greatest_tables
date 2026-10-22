@@ -90,6 +90,8 @@ doc.model_dump_json()   # ship it to the browser; gt-render.js draws it
   `TableSpec` (what the table is) or `HouseStyle` (how it is drawn), and each
   loads from YAML:
   `partial(GT, config_path='spec.yaml', style=load_style('style.yaml'))`.
+  Column formats meant for every table go in `shared_formatters`, which a
+  table without the column skips quietly.
 - **No import side effects.** Importing the package touches no pandas options
   or warnings filters. `max_rows` (default 200) truncates with a note.
 - **In the browser.** The zero-dependency walker, `gt-render.js`, ships as
