@@ -16,14 +16,13 @@ from greater_tables import GT
 GT(df)
 ```
 
-Version 6.0 is a ground-up rewrite. Between the DataFrame and the page sits a
-versioned, JSON-serializable **table document**, the intermediate
-representation (IR). Python owns *semantics* (dtypes, format inference,
-multi-index hierarchy, spans, break depths); each renderer owns *geometry and
-style*. Nothing in the IR names a width, a rule weight, a font, or a CSS
-property, so the HTML renderer, the TikZ renderer, the text oracle, and the
-bundled JavaScript walker all draw the same table and are conformance tested
-against each other.
+Between the DataFrame and the page sits a versioned, JSON-serializable
+**table document**, the intermediate representation (IR). Python owns
+*semantics* (dtypes, format inference, multi-index hierarchy, spans, break
+depths); each renderer owns *geometry and style*. Nothing in the IR names a
+width, a rule weight, a font, or a CSS property, so the HTML renderer, the
+TikZ renderer, the text renderer, and the bundled JavaScript walker all draw
+the same table and are conformance tested against each other.
 
 ## Installation
 
@@ -31,18 +30,19 @@ against each other.
 pip install greater-tables
 ```
 
-Requires Python 3.12+. Pin `greater-tables<6` anywhere you want to stay on
-the frozen 5.3 engine — the import name never changes, so
-`from greater_tables import GT` works on both.
+Requires Python 3.12+. The import name never changes, so
+`from greater_tables import GT` works on every version. Pin
+`greater-tables<6` to stay on the frozen 5.3 engine, or `greater-tables<8` to
+keep the retired `matrix` TikZ engine.
 
 ## Quick look
 
 ```python
 from greater_tables import GT, Fabricator
 gt = GT(Fabricator(seed=42).make(10, 's2fd', index_levels=2), caption='Demo')
-gt                      # rich display in JupyterLab / Quarto (HTML)
-print(gt)               # text oracle view
-gt.doc                  # the IR as pydantic models
+gt                      # rich display in JupyterLab / Quarto
+print(gt)               # the text rendering
+gt.doc                  # the IR, as pydantic models
 gt.tikz                 # TikZ/LaTeX source
 ```
 
@@ -56,53 +56,68 @@ render_tikz(doc)        # table environment + tikzpicture
 doc.model_dump_json()   # ship it to the browser; gt-render.js draws it
 ```
 
-[`demo.html`](https://github.com/mynl/greatest_tables/blob/main/demo.html)
-is every golden fixture rendered client-side by the walker — self-contained,
-no server needed.
+## What it does
 
-## What 6.0 changes
+- **Formats by meaning, not by hand.** Text left, numbers right with uniform
+  decimals per column chosen from the column's magnitude, engineering
+  notation for a column spanning many orders of magnitude, years without
+  commas, dates in ISO form and centered. Tag columns with `ratio_cols`,
+  `year_cols` and the other selectors (a list, `'all'`, or a regex); totals
+  and subtotals come from `row_flags`.
+- **Hierarchy drawn once, everywhere.** A row MultiIndex is sparsified, with
+  rules where an outer level changes (a *break depth*, decided in the IR);
+  column MultiIndex groups get spanning labels and optional vertical rules.
+- **TeX math just works.** `$...$` is math in body cells, stub cells,
+  headers, captions and notes, whole-cell or mid-sentence, while `$10 to $20`
+  stays two prices.
+- **Inline markdown.** `*em*`, `**strong**` and `` `code` `` set as italic,
+  bold and code. A markdown string input is markdown throughout; a DataFrame
+  opts in per column with `markdown_cols`, so significance stars and footnote
+  markers stay stars.
+- **TikZ for print.** One real `tabular` inside a single TikZ node, rules
+  from booktabs, verticals drawn in TikZ. The document needs `tikz`,
+  `booktabs` and `array`. Set a width budget, `HouseStyle(max_table_width_em=...)`,
+  and the table narrows its prose columns first, then scales down to fit, with
+  `tikz_scale` as the largest scale it may use. There is no budget by default,
+  since the page width belongs to the document: set one per document with
+  `functools.partial(GT, style=HouseStyle(...))`. `tikz_font` names the
+  document's face so column widths are estimated in its glyphs.
+- **The display bundle knows its target.** A notebook or a Quarto HTML render
+  gets HTML; a Quarto PDF render gets the TikZ. Every bundle also carries
+  `text/plain`, so a table degrades to a readable monospace rendering rather
+  than to `<GT object at 0x…>` or to nothing.
+- **One set of house rules per document.** Every option is a field of
+  `TableSpec` (what the table is) or `HouseStyle` (how it is drawn), and each
+  loads from YAML:
+  `partial(GT, config_path='spec.yaml', style=load_style('style.yaml'))`.
+- **No import side effects.** Importing the package touches no pandas options
+  or warnings filters. `max_rows` (default 200) truncates with a note.
+- **In the browser.** The zero-dependency walker, `gt-render.js`, ships as
+  package data and renders the same document client-side. Interactive grids
+  remain the job of the sibling `csv-grid` project; this package does not
+  sort, filter, or virtualize, by design.
 
-- **A table document, not a string.** `build(df, spec) → TableDoc`, validated
-  pydantic models, canonical JSON, deterministic 12-hex content hash (no time
-  salt), JSON Schema committed at `schema/ir-v1.json`. Cacheable, diffable,
-  golden-testable, and an ETag for free.
-- **Four renderers, one contract.** HTML, TikZ, text, and the zero-dependency
-  JS walker (`gt-render.js`, shipped as package data) render from that one
-  document; the Python HTML renderer and the walker must produce identical DOM
-  transcripts, per fixture, enforced by the test suite.
-- **The display bundle knows its target.** In a notebook or Quarto HTML render
-  you get HTML; a Quarto PDF render gets TikZ and no HTML, because pandoc
-  would prefer the HTML and its LaTeX writer would then throw it away. Every
-  bundle also carries `text/plain`, so a table degrades to a readable
-  monospace rendering rather than to `<GT object at 0x…>` or to nothing.
-- **Semantics stay in Python, style stays in the renderer.** One document-level
-  stylesheet generated from a `RULES` dict (or inlined for HTMX/email), a
-  `gt-*` class vocabulary, per-table scalars as CSS custom properties.
-- **No import side effects**, importing the package no longer touches pandas
-  options or warnings filters. No 50-row raise, either: `max_rows` truncates
-  with a note.
-- **Compat facade.** `GT(df, caption=..., ratio_cols=..., formatters=...)`
-  works as before and renders through the new engine, lazily and cached (5.x
-  computed TikZ eagerly even on the HTML path). Exotic 5.x config knobs warn
-  and are ignored.
-- Interactive grids remain the job of the sibling `csv-grid` project,
-  `irToGridInput(doc)` hands a table to it whole. This package does not sort,
-  filter, or virtualize, by design.
+## Upgrading
 
-**Coming from 5.x?**
+**From 7.x.** 8.0 removed the `matrix` TikZ engine, the default before 6.2.
+`HouseStyle(tikz_engine='matrix')` logs a warning and renders the `tabular`,
+which sets the same table; drop the setting. Several 7.x and 8.x releases
+change TikZ geometry or number formatting, so a rebuilt document can differ;
+each such release is marked **Output changes** in the
+[CHANGELOG](https://github.com/mynl/greatest_tables/blob/main/CHANGELOG.md).
+
+**From 5.x.**
 [Migrating from greater_tables 5.x](https://greater-tables-project.readthedocs.io/en/latest/migration.html)
-is the complete map: every 5.x option, what it did, and where it went — plus
+is the complete map: every 5.x option, what it did, and where it went, plus
 the three silent default changes to watch for (`formatters` ints now group,
-`show_index` auto-hides, `header_row` defaults off).
-
-`greater_tables` 5.x stays available and pinnable on PyPI forever; its source
-and issue archive stay at
+`show_index` auto-hides, `header_row` defaults off). `greater_tables` 5.x
+stays available and pinnable on PyPI; its source and issue archive stay at
 [mynl/greater_tables_project](https://github.com/mynl/greater_tables_project).
 
 ## Documentation
 
-[ReadtheDocs](https://greater-tables-project.readthedocs.io/en/latest/) covers design, IR
-reference, migration notes, API.
+[Read the Docs](https://greater-tables-project.readthedocs.io/en/latest/)
+covers the quickstart, design, IR reference, migration notes and API.
 
 ## Source
 
@@ -128,24 +143,24 @@ grew up next to its parent; the repo kept the codename, the package did not.
 ```
 src/greater_tables/    ir.py (pydantic IR) · spec.py · engine/ · render/ · assets/
 js/src/                gt-render.js walker (built into assets/)
-tests/                 fixtures (synthetic only) + goldens (ir / text / text-ascii / tikz / transcript)
+tests/                 fixtures (synthetic only) + goldens (ir / text / text-ascii / tikz-tabular / transcript)
 schema/                committed JSON Schema export of the IR (diff-guarded by the tests)
 docs/                  Sphinx documentation
-dev/                   plan docs; moved to dev/done when complete
+guide/                 Quarto gallery of every fixture, in HTML and TikZ
+dev/                   design notes and plans; plans move to dev/done when they execute
 ```
 
-Runtime dependencies are numpy, pandas, pydantic and PyYAML — nothing else,
+Runtime dependencies are numpy, pandas, pydantic and PyYAML, nothing else,
 and the JS walker has none at all.
 
 ## Status
 
-**Stable (`6.0.0`).** All seven design steps are complete: the engine, IR, JS
-walker, Python HTML renderer, and TikZ renderer are conformance-tested against
-each other, and the first consumer (aggregate_api's SPA) renders tables
-client-side from the IR. `ir_version` 1 and the public API are now settled —
-additive changes only within 6.x. See
+**Stable.** The engine, IR, JS walker, HTML renderer and TikZ renderer are
+conformance tested against each other. `ir_version` 1 and the public API
+follow semantic versioning: a breaking change bumps the major version, as
+8.0 did. See
 [`dev/design.md`](https://github.com/mynl/greatest_tables/blob/main/dev/design.md)
-for the full design,
+for the design,
 [`dev/pending.md`](https://github.com/mynl/greatest_tables/blob/main/dev/pending.md)
 for what is outstanding, and the
 [**CHANGELOG**](https://github.com/mynl/greatest_tables/blob/main/CHANGELOG.md)
