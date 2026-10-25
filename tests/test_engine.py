@@ -95,6 +95,19 @@ def test_markdown_ingest():
     assert doc.body[1].cells[1].text == '12'
 
 
+def test_markdown_ingest_pipe_in_math():
+    # a pipe inside math belongs to the cell; one between prices separates
+    md = ('| $|x|$ | b |\n'
+          '|---|---|\n'
+          '| $\\|x\\|$ | 1 |\n'
+          '| $1 | $2 |\n')
+    doc = build(md)
+    assert doc.columns[0].name == ('$|x|$',)
+    assert [c.text for c in doc.body[0].cells] == ['\\|x\\|', '1']
+    assert doc.body[0].cells[0].math
+    assert [c.text for c in doc.body[1].cells] == ['$1', '$2']
+
+
 def test_totals_row_flag():
     doc = build(*FIX['totals'])
     assert doc.body[-1].flags == ('total',)

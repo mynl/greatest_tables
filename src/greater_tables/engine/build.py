@@ -19,7 +19,7 @@ import pandas as pd
 
 from .._version import __version__
 from ..ir import Cell, Column, FormatSpec, HeadCell, Row, TableDoc
-from ..mathspans import whole_cell
+from ..mathspans import MATH_RE, whole_cell
 from ..spec import TableSpec
 from . import dtypes as dt
 from . import structure as st
@@ -236,8 +236,8 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
                    flags=re.MULTILINE).split('\n')
     # a header set bold whole is bold already; any other star in a header
     # (*Note*, Revenue*) is left for the markdown rule
-    lines[0] = '|'.join(re.sub(r'^\*\*(.+)\*\*$', r'\1', c.strip())
-                        for c in lines[0].split('|'))
+    header = [re.sub(r'^\*\*(.+)\*\*$', r'\1', c.strip())
+              for c in _split_cells(lines[0])]
     align_row = lines.pop(1)
     aligners = ''
     for token in (t.strip() for t in align_row.split('|')):
@@ -247,8 +247,8 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
             aligners += 'l'
         elif token.endswith(':'):
             aligners += 'r'
-    rows = [[c.strip() for c in line.split('|')] for line in lines]
-    df = pd.DataFrame(rows[1:], columns=rows[0])
+    rows = [[c.strip() for c in _split_cells(line)] for line in lines[1:]]
+    df = pd.DataFrame(rows, columns=header)
     if spec.markdown_cols is None:
         html = dt.resolve_cols(spec.html_cols, list(df.columns))
         markdown_cols = [c for c in df.columns if c not in html]
@@ -264,6 +264,27 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
         markdown_caption=(spec.markdown_caption
                           if spec.markdown_caption is not None else True),
     )
+
+
+# a math span, found by the shared rule, or a cell separator; scanning for
+# both at once lets a span swallow the pipes inside it
+_CELL_SPLIT_RE = re.compile(rf'{MATH_RE.pattern}|\|')
+
+
+def _split_cells(line: str) -> list[str]:
+    r"""Split one pipe-table row at the ``|`` separators outside math.
+
+    ``$|x|$`` and ``$\|x\|$`` stay one cell. Math spans follow
+    :data:`~greater_tables.mathspans.MATH_RE`, so a pipe between two prices
+    (``$1 | $2``) still separates cells.
+    """
+    cells, start = [], 0
+    for m in _CELL_SPLIT_RE.finditer(line):
+        if m.group() == '|':
+            cells.append(line[start:m.start()])
+            start = m.end()
+    cells.append(line[start:])
+    return cells
 
 
 # ------------------------------------------------------------------ helpers

@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [8.2.1] - 2026-10-25
+
+### Fixed
+
+- A markdown table string with a pipe inside math, `$|x|$` or `$\|x\|$`, keeps the math in one
+  cell instead of splitting it at the pipe and failing to build. A pipe between two prices,
+  `$1 | $2`, still separates cells.
+
 ## [8.2.0] - 2026-10-22
 
 ### Added
