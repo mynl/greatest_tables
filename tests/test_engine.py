@@ -108,6 +108,19 @@ def test_markdown_ingest_pipe_in_math():
     assert [c.text for c in doc.body[1].cells] == ['$1', '$2']
 
 
+def test_markdown_ingest_outer_whitespace():
+    # a space after the closing pipe or an indent before the opening one
+    # adds no empty cell, on any line
+    md = ('| a | B | c | \n'
+          '  |--|--|--|\n'
+          '  | 1 | $\\|x\\|$ | works | \n'
+          '| 2 | y | z |\n')
+    doc = build(md)
+    assert [c.name for c in doc.columns] == [('a',), ('B',), ('c',)]
+    assert [c.text for c in doc.body[0].cells] == ['1', '\\|x\\|', 'works']
+    assert [c.text for c in doc.body[1].cells] == ['2', 'y', 'z']
+
+
 def test_totals_row_flag():
     doc = build(*FIX['totals'])
     assert doc.body[-1].flags == ('total',)

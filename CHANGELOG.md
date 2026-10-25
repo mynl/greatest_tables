@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semantic.
 
+## [8.2.2] - 2026-10-25
+
+### Fixed
+
+- A markdown table string with a space after a row's closing pipe, or an indent before its
+  opening pipe, no longer gains an empty cell and fails to build. Before, only the last row was
+  safe.
+
 ## [8.2.1] - 2026-10-25
 
 ### Fixed

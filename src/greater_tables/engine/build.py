@@ -232,8 +232,10 @@ def _from_markdown(txt: str, spec: TableSpec) -> tuple[pd.DataFrame, TableSpec]:
             label = lab.group(1)
             caption = caption.replace(lab.group(0), '').strip()
 
-    lines = re.sub(r'^\||\|$', '', table_m.group(1).strip(),
-                   flags=re.MULTILINE).split('\n')
+    # strip each line before its outer pipes, so that a space after the
+    # closing pipe or an indent before the opening one leaves no empty cell
+    lines = [re.sub(r'^\||\|$', '', ln.strip())
+             for ln in table_m.group(1).strip().split('\n')]
     # a header set bold whole is bold already; any other star in a header
     # (*Note*, Revenue*) is left for the markdown rule
     header = [re.sub(r'^\*\*(.+)\*\*$', r'\1', c.strip())
